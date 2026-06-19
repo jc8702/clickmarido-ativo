@@ -1,0 +1,19 @@
+{
+  "name": "crm-servicos",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w frontend\" \"npm run start:dev -w backend\"",
+    "build": "npm run build -ws",
+    "start": "npm run start -ws",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.0.0"
+  }
+}
