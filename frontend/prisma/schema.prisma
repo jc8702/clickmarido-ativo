@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  phone     String   @db.VarChar(20)
+
+  addresses Json     @default("[]")
+
+  quotations Quotation[]
+  warranties Warranty[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
+
+model Quotation {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  items       Json     @default("[]")
+
+  total       Float    @default(0)
+  status      String   @default("rascunho")
+  notes       String   @db.Text @default("")
+
+  warranties  Warranty[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("quotations")
+  @@index([customerId])
+}
+
+model Warranty {
+  id                String   @id @default(cuid())
+  quotationId       String
+  quotation         Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  customerId        String
+  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  service_description String @db.Text
+  expiry_date       DateTime
+
+  createdAt         DateTime @default(now())
+
+  @@map("warranties")
+  @@index([quotationId])
+  @@index([customerId])
+}

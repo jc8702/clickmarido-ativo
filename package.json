@@ -3,13 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "frontend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w frontend\" \"npm run start:dev -w backend\"",
-    "build": "npm run build -ws",
-    "start": "npm run start -ws",
+    "dev": "npm run dev -w frontend",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w frontend",
     "install:all": "npm install"
   },
   "devDependencies": {

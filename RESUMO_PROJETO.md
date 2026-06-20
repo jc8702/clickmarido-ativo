@@ -1,18 +1,15 @@
-# RESUMO DE PROJETO: CRM Serviços Residenciais (Simplificado - 100% Vercel)
+# RESUMO DE PROJETO: clickmarido-ativo
 
 ## Informações Gerais
-- **Status Atual:** Transição para Stack Serverless Unificada (Fase de Planejamento dos Prompts)
-- **Objetivo Central:** Desenvolver um CRM para serviços residenciais focando no MVP para 1 usuário. Stack: Next.js 15 (Frontend + API Routes) + PostgreSQL (Neon). Tudo hospedado na Vercel com custo zero.
-- **Última Atualização:** 19/06/2026 - 17:01
+- **Status Atual:** Em Configuração de Ambiente / Resolução de Build
+- **Objetivo Central:** Preparar aplicação frontend Next.js 15 (App Router) para deploy Vercel e integração com DB Neon.
+- **Última Atualização:** 20/06/2026 - 16:05
 
 ## Histórico de Alterações
-- **[19/06/2026 - 17:01]:** Nova evolução da arquitetura: substituição do backend Express local por Next.js API Routes (Serverless na Vercel). O projeto agora será um monólito Next.js, simplificando ainda mais o deploy e a manutenção. Preparação para receber os 4 prompts de execução.
-- **[19/06/2026 - 16:59]:** Pivot para arquitetura simplificada (Express + Next.js). (Superado pela nova arquitetura unificada).
-- **[19/06/2026 - 14:07 - 15:57]:** *Registro do ciclo anterior (NestJS)*. Estruturas criadas anteriormente podem ser reaproveitadas para a lógica das API Routes.
+- **[20/06/2026 - 16:05]:** Resolução de conflitos de rotas estáticas e dinâmicas (force-dynamic em `/new` e `/view`) e unificação do `tsconfig.json`. Build local do Next.js agora passa com 100% de sucesso. Servidor validado localmente, mas esbarra na ausência de banco de dados real.
+  - Arquivos modificados: `frontend/tsconfig.json`, `frontend/app/(dashboard)/customers/new/page.tsx`, `frontend/app/(dashboard)/quotations/new/page.tsx`, `frontend/app/(dashboard)/quotations/view/page.tsx`
 
 ## TODOs / Próximos Passos
-- [x] Receber e processar o PROMPT 1: Setup inicial, Banco Neon e API Routes (Next.js).
-- [x] Receber e processar o PROMPT 2: Frontend Next.js (Pages básicas e integração Axios unificada na Vercel).
-- [x] Receber e processar o PROMPT 3: Features adicionais (Validações, Logger estruturado, Dashboard extendido e Eventos de Negócio).
-- [x] Receber e processar o PROMPT 4: Polimento Final e Deployment (Documentação).
-
+- [ ] Usuário criar a conta/projeto no Neon (PostgreSQL) para obter a string de conexão (`DATABASE_URL`).
+- [ ] Usuário criar projeto na Vercel, importar o GitHub e configurar as variáveis de ambiente.
+- [ ] Validar login e rotas de CRUD em produção após o banco ser populado.
