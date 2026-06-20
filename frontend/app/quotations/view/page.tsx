@@ -4,9 +4,9 @@ import React, { use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePublicQuotation, useApproveQuotation } from '../../../hooks/useQuotations';
 
-export default function PublicQuotationView() {
+function QuotationContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const token = searchParams?.get('token');
 
   const { data, isLoading, error } = usePublicQuotation(token || '');
   const { mutateAsync: approve, isPending } = useApproveQuotation();
@@ -107,5 +107,13 @@ export default function PublicQuotationView() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PublicQuotationView() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Carregando...</p></div>}>
+      <QuotationContent />
+    </React.Suspense>
   );
 }

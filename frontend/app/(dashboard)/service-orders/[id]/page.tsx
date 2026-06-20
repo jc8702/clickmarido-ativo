@@ -5,7 +5,8 @@ import { useParams } from 'next/navigation';
 import { useServiceOrder } from '../../../../hooks/useServiceOrders';
 
 export default function ServiceOrderDetailPage() {
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const { data: os, isLoading, mutate } = useServiceOrder(id as string);
   const [isProcessing, setIsProcessing] = useState(false);
 
