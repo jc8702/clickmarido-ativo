@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from './ThemeToggle';
 
 export interface NavLink {
   href: string;
@@ -56,14 +57,14 @@ export function Navigation({ links, logo, user, onLogout, onMenuClick }: Navigat
   const pathname = usePathname() ?? '/';
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-neutral-200/60 text-neutral-800 sticky top-0 z-[1030] shadow-sm transition-all duration-300">
+    <nav className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200/60 dark:border-neutral-700/60 text-neutral-800 dark:text-neutral-200 sticky top-0 z-[1030] shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             {onMenuClick && (
               <button
                 onClick={onMenuClick}
-                className="md:hidden text-neutral-600 hover:text-neutral-900 focus:outline-none"
+                className="md:hidden text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 focus:outline-none"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -92,8 +93,8 @@ export function Navigation({ links, logo, user, onLogout, onMenuClick }: Navigat
                     flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold
                     transition-all duration-300 select-none
                     ${isActive 
-                      ? 'bg-primary-50/60 text-primary-700 shadow-sm border border-primary-100/50' 
-                      : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
+                      ? 'bg-primary-50/60 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 shadow-sm border border-primary-100/50 dark:border-primary-800/50' 
+                      : 'text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:text-neutral-800 dark:hover:text-neutral-200'
                     }
                   `}
                 >
@@ -106,17 +107,18 @@ export function Navigation({ links, logo, user, onLogout, onMenuClick }: Navigat
 
           {user && (
             <div className="flex items-center gap-4">
+              <ThemeToggle />
               <Link
                 href="/profile"
                 className="text-xs text-right hover:opacity-80 transition-opacity focus:outline-none"
               >
-                <div className="font-bold text-neutral-800">{user.name}</div>
+                <div className="font-bold text-neutral-800 dark:text-neutral-200">{user.name}</div>
                 <div className="opacity-60 text-[10px] font-mono leading-none">{user.email}</div>
               </Link>
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  className="px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 transition-all text-xs font-bold"
+                  className="px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-all text-xs font-bold"
                 >
                   Sair
                 </button>
