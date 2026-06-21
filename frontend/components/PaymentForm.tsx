@@ -57,20 +57,20 @@ export function PaymentForm({ paymentId, onClose }: PaymentFormProps) {
 
   return (
     <div className="text-center space-y-6 animate-fade-in">
-      <p className="text-sm text-neutral-600">
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
         Escaneie o código abaixo no app do seu banco ou copie a chave (PIX Copia e Cola).
       </p>
 
-      <div className="bg-neutral-50 p-6 rounded-lg inline-block mx-auto border-2 border-neutral-200 shadow-sm">
+      <div className="bg-neutral-50 dark:bg-neutral-700/50 p-6 rounded-lg inline-block mx-auto border-2 border-neutral-200 dark:border-neutral-600 shadow-sm">
         {/* Simulação visual do QR Code */}
-        <div className="w-48 h-48 bg-white border border-neutral-300 mx-auto flex items-center justify-center p-2 rounded shadow-inner">
-          <div className="text-center border-4 border-dashed border-neutral-200 w-full h-full flex items-center justify-center bg-neutral-50">
-            <span className="text-xs font-bold text-neutral-400">QR CODE<br />SIMULADO</span>
+        <div className="w-48 h-48 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 mx-auto flex items-center justify-center p-2 rounded shadow-inner">
+          <div className="text-center border-4 border-dashed border-neutral-200 dark:border-neutral-600 w-full h-full flex items-center justify-center bg-neutral-50 dark:bg-neutral-700">
+            <span className="text-xs font-bold text-neutral-400 dark:text-neutral-500">QR CODE<br />SIMULADO</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-neutral-50 p-4 rounded-md border-2 border-neutral-200 text-xs break-all font-mono text-neutral-700 select-all max-h-24 overflow-y-auto">
+      <div className="bg-neutral-50 dark:bg-neutral-700/50 p-4 rounded-md border-2 border-neutral-200 dark:border-neutral-600 text-xs break-all font-mono text-neutral-700 dark:text-neutral-300 select-all max-h-24 overflow-y-auto">
         {qrCode || "Erro ao gerar PIX."}
       </div>
 

@@ -23,14 +23,14 @@ export default function EditCustomerPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  if (isFetching) return <div className="p-8">Carregando...</div>;
-  if (!initialData) return <div className="p-8">Cliente não encontrado.</div>;
+  if (isFetching) return <div className="p-8 text-neutral-900 dark:text-neutral-100">Carregando...</div>;
+  if (!initialData) return <div className="p-8 text-neutral-900 dark:text-neutral-100">Cliente não encontrado.</div>;
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-8 flex items-center gap-4">
-        <Link href="/customers" className="text-blue-600 hover:underline">&larr; Voltar</Link>
-        <h1 className="text-2xl font-bold text-gray-900">Editar Cliente: {initialData.name}</h1>
+        <Link href="/customers" className="text-primary-600 dark:text-primary-400 hover:underline">&larr; Voltar</Link>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Editar Cliente: {initialData.name}</h1>
       </div>
       
       <CustomerForm initialData={initialData} onSubmit={onSubmit} isLoading={isPending} />

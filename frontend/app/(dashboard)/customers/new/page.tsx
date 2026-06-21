@@ -22,8 +22,8 @@ export default function NewCustomerPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-8 flex items-center gap-4">
-        <Link href="/customers" className="text-blue-600 hover:underline">&larr; Voltar</Link>
-        <h1 className="text-2xl font-bold text-gray-900">Novo Cliente</h1>
+        <Link href="/customers" className="text-primary-600 dark:text-primary-400 hover:underline">&larr; Voltar</Link>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Novo Cliente</h1>
       </div>
       
       <CustomerForm onSubmit={onSubmit} isLoading={isPending} />

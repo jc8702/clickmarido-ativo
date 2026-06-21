@@ -67,7 +67,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -85,8 +85,8 @@ export default function PaymentsPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Pagamentos</h1>
-            <p className="text-neutral-600">Acompanhamento e faturamento dos serviços realizados</p>
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Pagamentos</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">Acompanhamento e faturamento dos serviços realizados</p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)} className="shadow-md hover:shadow-lg transition-all duration-300">
             + Registrar Recebimento Manual
@@ -94,13 +94,13 @@ export default function PaymentsPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+          <div className="text-center py-12 text-neutral-600 dark:text-neutral-400 animate-fade-in">Carregando...</div>
         ) : payments.length === 0 ? (
           <Card gradient="none" shadow="md">
-            <div className="text-center py-12 text-neutral-500">Nenhum pagamento registrado</div>
+            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">Nenhum pagamento registrado</div>
           </Card>
         ) : (
-          <Card shadow="lg" className="border border-neutral-100 overflow-hidden">
+          <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden">
             <Table>
               <TableHead>
                 <TableRow>
@@ -114,14 +114,14 @@ export default function PaymentsPage() {
               </TableHead>
               <tbody>
                 {payments.map((row) => (
-                  <TableRow key={row.id} className="group hover:bg-neutral-50/50 transition-colors">
-                    <TableCell className="font-medium font-mono text-xs text-neutral-500">
+                  <TableRow key={row.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                    <TableCell className="font-medium font-mono text-xs text-neutral-500 dark:text-neutral-400">
                       {row.id.slice(-6).toUpperCase()}
                     </TableCell>
                     <TableCell>
                       <Link 
                         href={`/customers?id=${row.customerId}`} 
-                        className="font-semibold text-neutral-800 hover:text-primary-600 hover:underline transition-colors"
+                        className="font-semibold text-neutral-800 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                       >
                         {row.customer_name}
                       </Link>
@@ -129,12 +129,12 @@ export default function PaymentsPage() {
                     <TableCell>
                       <Link 
                         href={`/service-orders`} 
-                        className="font-mono text-xs text-primary-600 hover:text-primary-800 hover:underline bg-neutral-100/80 px-2 py-1 rounded font-bold"
+                        className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline bg-neutral-100/80 dark:bg-neutral-700/80 px-2 py-1 rounded font-bold"
                       >
                         {row.service_order_id.slice(-6).toUpperCase()}
                       </Link>
                     </TableCell>
-                    <TableCell className="font-bold text-neutral-800">
+                    <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
                       {row.amount ? `R$ ${Number(row.amount).toFixed(2)}` : 'R$ 0,00'}
                     </TableCell>
                     <TableCell>
@@ -154,7 +154,7 @@ export default function PaymentsPage() {
                             </Button>
                           </>
                         ) : (
-                          <span className="text-neutral-400 text-sm">—</span>
+                          <span className="text-neutral-400 dark:text-neutral-500 text-sm">—</span>
                         )}
                       </div>
                     </TableCell>

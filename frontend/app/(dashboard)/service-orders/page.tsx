@@ -72,7 +72,7 @@ export default function ServiceOrdersPage() {
   const selectedOrder = orders.find(o => o.id === activeModalId);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -90,8 +90,8 @@ export default function ServiceOrdersPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Ordens de Serviço</h1>
-            <p className="text-neutral-600">Gerenciamento e execução dos serviços agendados</p>
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Ordens de Serviço</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">Gerenciamento e execução dos serviços agendados</p>
           </div>
           <Button onClick={() => setIsCreateOpen(true)} className="shadow-md hover:shadow-lg transition-all duration-300">
             + Criar Ordem Manual
@@ -99,13 +99,13 @@ export default function ServiceOrdersPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+          <div className="text-center py-12 text-neutral-600 dark:text-neutral-400 animate-fade-in">Carregando...</div>
         ) : orders.length === 0 ? (
           <Card gradient="none" shadow="md">
-            <div className="text-center py-12 text-neutral-500">Nenhuma ordem de serviço encontrada</div>
+            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">Nenhuma ordem de serviço encontrada</div>
           </Card>
         ) : (
-          <Card shadow="lg" className="border border-neutral-100 overflow-hidden">
+          <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden">
             <Table>
               <TableHead>
                 <TableRow>
@@ -119,11 +119,11 @@ export default function ServiceOrdersPage() {
               </TableHead>
               <tbody>
                 {orders.map((row) => (
-                  <TableRow key={row.id} className="group hover:bg-neutral-50/50 transition-colors">
+                  <TableRow key={row.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                     <TableCell className="font-medium">
                       <Link 
                         href={`/quotations?id=${row.id}`} 
-                        className="font-mono text-xs text-primary-600 hover:text-primary-800 hover:underline bg-neutral-100/80 px-2 py-1 rounded font-bold"
+                        className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline bg-neutral-100/80 dark:bg-neutral-700/80 px-2 py-1 rounded font-bold"
                       >
                         {row.id.slice(-6).toUpperCase()}
                       </Link>
@@ -131,15 +131,15 @@ export default function ServiceOrdersPage() {
                     <TableCell>
                       <Link 
                         href={`/customers?id=${row.customerId}`} 
-                        className="font-semibold text-neutral-800 hover:text-primary-600 hover:underline transition-colors"
+                        className="font-semibold text-neutral-800 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                       >
                         {row.customer_name}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-neutral-600">
+                    <TableCell className="text-neutral-600 dark:text-neutral-400">
                       {row.scheduled_date ? new Date(row.scheduled_date).toLocaleDateString('pt-BR') : 'N/A'}
                     </TableCell>
-                    <TableCell className="font-bold text-neutral-800">
+                    <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
                       {row.amount ? `R$ ${Number(row.amount).toFixed(2)}` : 'R$ 0,00'}
                     </TableCell>
                     <TableCell>
@@ -160,7 +160,7 @@ export default function ServiceOrdersPage() {
                           </Button>
                         )}
                         {row.status !== 'agendada' && row.status !== 'em_progresso' && (
-                          <span className="text-neutral-400 text-sm">—</span>
+                          <span className="text-neutral-400 dark:text-neutral-500 text-sm">—</span>
                         )}
                       </div>
                     </TableCell>

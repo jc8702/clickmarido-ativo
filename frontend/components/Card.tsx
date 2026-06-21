@@ -8,7 +8,9 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ gradient = 'subtle', shadow = 'md', interactive = false, className = '', ...props }, ref) => {
-    const bgClass = gradient === 'subtle' ? 'bg-gradient-subtle' : 'bg-white';
+    const bgClass = gradient === 'subtle' 
+      ? 'bg-gradient-subtle dark:bg-neutral-800' 
+      : 'bg-white dark:bg-neutral-800';
     const shadowClass = {
       sm: 'shadow-sm',
       md: 'shadow-md',
@@ -35,15 +37,15 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = 'Card';
 
 export function CardHeader({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={`border-b border-neutral-200 pb-4 mb-4 ${className}`} {...props} />;
+  return <div className={`border-b border-neutral-200 dark:border-neutral-700 pb-4 mb-4 ${className}`} {...props} />;
 }
 
 export function CardTitle({ className = '', ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={`text-xl font-semibold text-neutral-900 ${className}`} {...props} />;
+  return <h3 className={`text-xl font-semibold text-neutral-900 dark:text-neutral-100 ${className}`} {...props} />;
 }
 
 export function CardDescription({ className = '', ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={`text-sm text-neutral-600 ${className}`} {...props} />;
+  return <p className={`text-sm text-neutral-600 dark:text-neutral-400 ${className}`} {...props} />;
 }
 
 export function CardContent({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -51,7 +53,7 @@ export function CardContent({ className = '', ...props }: React.HTMLAttributes<H
 }
 
 export function CardFooter({ className = '', ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={`flex gap-4 justify-end border-t border-neutral-200 pt-4 mt-6 ${className}`} {...props} />;
+  return <div className={`flex gap-4 justify-end border-t border-neutral-200 dark:border-neutral-700 pt-4 mt-6 ${className}`} {...props} />;
 }
 
 export { Card };

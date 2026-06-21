@@ -119,7 +119,7 @@ export default function WarrantiesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -137,19 +137,19 @@ export default function WarrantiesPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Garantias</h1>
-            <p className="text-neutral-600">Histórico de vigência e cobertura dos serviços prestados</p>
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Garantias</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">Histórico de vigência e cobertura dos serviços prestados</p>
           </div>
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+          <div className="text-center py-12 text-neutral-600 dark:text-neutral-400 animate-fade-in">Carregando...</div>
         ) : warranties.length === 0 ? (
           <Card gradient="none" shadow="md">
-            <div className="text-center py-12 text-neutral-500">Nenhuma garantia registrada</div>
+            <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">Nenhuma garantia registrada</div>
           </Card>
         ) : (
-          <Card shadow="lg" className="border border-neutral-100 overflow-hidden">
+          <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden">
             <Table>
               <TableHead>
                 <TableRow>
@@ -166,31 +166,31 @@ export default function WarrantiesPage() {
                 {warranties.map((row) => {
                   const expired = isExpired(row.expiry_date);
                   return (
-                    <TableRow key={row.id} className="group hover:bg-neutral-50/50 transition-colors">
-                      <TableCell className="font-medium font-mono text-xs text-neutral-500">
+                    <TableRow key={row.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                      <TableCell className="font-medium font-mono text-xs text-neutral-500 dark:text-neutral-400">
                         {row.id.slice(-6).toUpperCase()}
                       </TableCell>
                       <TableCell>
                         <Link 
                           href={`/customers?id=${row.customerId}`} 
-                          className="font-semibold text-neutral-800 hover:text-primary-600 hover:underline transition-colors"
+                          className="font-semibold text-neutral-800 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                         >
-                          <div className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors">{row.customer?.name || 'Cliente'}</div>
-                          <div className="text-xs text-neutral-500 font-normal">{row.customer?.email}</div>
+                          <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{row.customer?.name || 'Cliente'}</div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">{row.customer?.email}</div>
                         </Link>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate text-neutral-600 font-medium" title={row.service_description}>
+                      <TableCell className="max-w-xs truncate text-neutral-600 dark:text-neutral-400 font-medium" title={row.service_description}>
                         {row.service_description}
                       </TableCell>
-                      <TableCell className="font-bold text-neutral-800">
+                      <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
                         <Link 
                           href={`/quotations?id=${row.quotationId}`} 
-                          className="hover:text-primary-600 hover:underline transition-colors"
+                          className="hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                         >
                           {row.quotation?.total ? `R$ ${Number(row.quotation.total).toFixed(2)}` : 'R$ 0,00'}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-neutral-600">
+                      <TableCell className="text-neutral-600 dark:text-neutral-400">
                         {row.expiry_date ? new Date(row.expiry_date).toLocaleDateString('pt-BR') : 'N/A'}
                       </TableCell>
                       <TableCell>
@@ -211,7 +211,7 @@ export default function WarrantiesPage() {
                             Acionar Garantia
                           </Button>
                         ) : (
-                          <span className="text-neutral-400 text-xs font-semibold">Sem cobertura</span>
+                          <span className="text-neutral-400 dark:text-neutral-500 text-xs font-semibold">Sem cobertura</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -228,16 +228,16 @@ export default function WarrantiesPage() {
         onClose={() => setActiveWarrantyId(null)}
         title="Acionar Garantia de Reparo"
       >
-        <form onSubmit={handleClaimWarranty} className="space-y-4 text-neutral-800">
-          <p className="text-xs text-neutral-500 leading-relaxed">
+        <form onSubmit={handleClaimWarranty} className="space-y-4 text-neutral-800 dark:text-neutral-200">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
             Descreva detalhadamente a falha técnica ou reclamação do cliente. Isso gerará uma nova Ordem de Serviço agendada com valor R$ 0,00 para execução do reparo.
           </p>
           <div>
-            <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
               Notas da Falha / Problema Reclamado
             </label>
             <textarea
-              className="w-full px-4 py-2.5 bg-white border border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 shadow-sm placeholder:text-neutral-400"
+              className="w-full px-4 py-2.5 bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 dark:text-neutral-200 shadow-sm placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
               rows={4}
               placeholder="Descreva o que houve (ex: O disjuntor voltou a desarmar ao ligar o chuveiro)..."
               value={notes}
@@ -245,7 +245,7 @@ export default function WarrantiesPage() {
               required
             />
           </div>
-          <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100">
+          <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-700">
             <Button variant="outline" type="button" onClick={() => setActiveWarrantyId(null)}>
               Cancelar
             </Button>

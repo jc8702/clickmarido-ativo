@@ -118,7 +118,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col relative overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -136,8 +136,8 @@ export default function CustomersPage() {
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Clientes</h1>
-            <p className="text-neutral-600">
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Clientes</h1>
+            <p className="text-neutral-600 dark:text-neutral-400">
               {isLoading ? 'Carregando clientes...' : `${customers.length} clientes cadastrados`}
             </p>
           </div>
@@ -153,7 +153,7 @@ export default function CustomersPage() {
             placeholder="Buscar por nome, email ou telefone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="shadow-sm border-neutral-200"
+            className="shadow-sm border-neutral-200 dark:border-neutral-600"
           />
         </div>
 
@@ -162,14 +162,14 @@ export default function CustomersPage() {
             <TableShimmer rows={5} cols={4} />
           </Card>
         ) : customers.length === 0 ? (
-          <Card gradient="none" shadow="md" className="border border-neutral-200/60">
-            <div className="text-center py-16 text-neutral-500">
+          <Card gradient="none" shadow="md" className="border border-neutral-200/60 dark:border-neutral-700">
+            <div className="text-center py-16 text-neutral-500 dark:text-neutral-400">
               <span className="text-4xl block mb-4">👥</span>
               Nenhum cliente encontrado
             </div>
           </Card>
         ) : (
-          <Card shadow="lg" className="border border-neutral-100 overflow-hidden">
+          <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden">
             <Table>
               <TableHead>
                 <TableRow>
@@ -181,27 +181,27 @@ export default function CustomersPage() {
               </TableHead>
               <tbody>
                 {customers.map((customer) => (
-                  <TableRow key={customer.id} className="group hover:bg-neutral-50/80 transition-colors">
+                  <TableRow key={customer.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                     <TableCell className="font-medium">
                       <button
                         onClick={() => setSelectedCustomer(customer)}
-                        className="text-left hover:text-primary-600 focus:outline-none transition-colors"
+                        className="text-left hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none transition-colors"
                       >
-                        <div className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors">
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                           {customer.name}
                         </div>
-                        <div className="text-xs text-neutral-500 font-normal">{customer.email}</div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">{customer.email}</div>
                       </button>
                     </TableCell>
                     <TableCell>{customer.phone}</TableCell>
-                    <TableCell className="max-w-xs truncate text-neutral-600" title={getPrimaryAddress(customer.addresses)}>
+                    <TableCell className="max-w-xs truncate text-neutral-600 dark:text-neutral-400" title={getPrimaryAddress(customer.addresses)}>
                       {getPrimaryAddress(customer.addresses)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => setSelectedCustomer(customer)}
-                          className="px-3 py-1.5 rounded-md text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors"
+                          className="px-3 py-1.5 rounded-md text-xs font-semibold bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 transition-colors"
                         >
                           Detalhes
                         </button>
@@ -238,20 +238,20 @@ export default function CustomersPage() {
 
       {/* Gaveta Lateral (Drawer) de Detalhes do Cliente */}
       <div 
-        className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col ${
+        className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white dark:bg-neutral-800 shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col ${
           selectedCustomer ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {selectedCustomer && (
           <>
-            <div className="p-6 border-b border-neutral-100 flex items-center justify-between bg-gradient-to-r from-neutral-50 to-white">
+            <div className="p-6 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between bg-gradient-to-r from-neutral-50 dark:from-neutral-700 to-white dark:to-neutral-800">
               <div>
-                <h3 className="text-xl font-bold text-neutral-900">Ficha do Cliente</h3>
-                <p className="text-xs text-neutral-500">ID: {selectedCustomer.id}</p>
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Ficha do Cliente</h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">ID: {selectedCustomer.id}</p>
               </div>
               <button 
                 onClick={() => setSelectedCustomer(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
               >
                 ✕
               </button>
@@ -260,19 +260,19 @@ export default function CustomersPage() {
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
               {/* Informações Básicas */}
               <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Informações Básicas</h4>
-                <div className="bg-neutral-50 p-4 rounded-xl space-y-3">
+                <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Informações Básicas</h4>
+                <div className="bg-neutral-50 dark:bg-neutral-700/50 p-4 rounded-xl space-y-3">
                   <div>
-                    <label className="text-xs text-neutral-500 font-medium">Nome</label>
-                    <div className="text-base font-bold text-neutral-900">{selectedCustomer.name}</div>
+                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Nome</label>
+                    <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">{selectedCustomer.name}</div>
                   </div>
                   <div>
-                    <label className="text-xs text-neutral-500 font-medium">E-mail</label>
-                    <div className="text-sm text-neutral-800">{selectedCustomer.email || 'Não informado'}</div>
+                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">E-mail</label>
+                    <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.email || 'Não informado'}</div>
                   </div>
                   <div>
-                    <label className="text-xs text-neutral-500 font-medium">Telefone</label>
-                    <div className="text-sm text-neutral-800">{selectedCustomer.phone}</div>
+                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Telefone</label>
+                    <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.phone}</div>
                   </div>
                 </div>
               </div>
@@ -280,7 +280,7 @@ export default function CustomersPage() {
               {/* Endereços */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Endereços Cadastrados</h4>
+                  <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Endereços Cadastrados</h4>
                   <Badge variant="primary" size="sm">
                     {getAddressesList(selectedCustomer.addresses).length}
                   </Badge>
@@ -288,24 +288,24 @@ export default function CustomersPage() {
                 
                 <div className="space-y-3">
                   {getAddressesList(selectedCustomer.addresses).map((addr, index) => (
-                    <div key={index} className="border border-neutral-150 p-4 rounded-xl bg-white shadow-sm hover:border-neutral-300 transition-colors relative">
-                      <span className="absolute top-3 right-3 text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full font-bold">
+                    <div key={index} className="border border-neutral-150 dark:border-neutral-600 p-4 rounded-xl bg-white dark:bg-neutral-700 shadow-sm hover:border-neutral-300 dark:hover:border-neutral-500 transition-colors relative">
+                      <span className="absolute top-3 right-3 text-xs bg-neutral-100 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 px-2 py-0.5 rounded-full font-bold">
                         {index === 0 ? 'Principal' : `Local ${index + 1}`}
                       </span>
-                      <div className="text-sm font-semibold text-neutral-900">
+                      <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                         {addr.street}, {addr.number}
                       </div>
                       {addr.complement && (
-                        <div className="text-xs text-neutral-600 mt-0.5">Compl: {addr.complement}</div>
+                        <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Compl: {addr.complement}</div>
                       )}
-                      <div className="text-xs text-neutral-500 mt-1">
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                         Bairro: {addr.neighborhood || 'N/A'} • {addr.city}/{addr.state}
                       </div>
-                      <div className="text-xs text-neutral-400 mt-0.5">CEP: {addr.zip}</div>
+                      <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">CEP: {addr.zip}</div>
                     </div>
                   ))}
                   {getAddressesList(selectedCustomer.addresses).length === 0 && (
-                    <p className="text-sm text-neutral-400 text-center py-4 bg-neutral-50 rounded-xl">
+                    <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-xl">
                       Nenhum endereço associado.
                     </p>
                   )}
@@ -313,7 +313,7 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-neutral-100 bg-neutral-50 flex gap-3">
+            <div className="p-6 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50 flex gap-3">
               <Link href={`/customers/${selectedCustomer.id}`} className="flex-1">
                 <Button fullWidth>Editar Cadastro</Button>
               </Link>

@@ -15,14 +15,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-900 mb-1">
+          <label htmlFor={inputId} className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">
             {label}
             {required && <span className="text-warning-600 ml-0.5">*</span>}
           </label>
         )}
 
         <div className="relative">
-          {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">{icon}</div>}
+          {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400">{icon}</div>}
 
           <input
             ref={ref}
@@ -30,15 +30,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className={`
               w-full px-4 py-2 rounded-md
               border-2 transition-all duration-200
+              bg-white dark:bg-neutral-700
+              text-neutral-900 dark:text-neutral-100
               ${icon ? 'pl-10' : ''}
               ${
                 error
                   ? 'border-warning-500 focus:border-warning-600 focus:ring-warning-100'
-                  : 'border-neutral-300 focus:border-primary-600 focus:ring-primary-100'
+                  : 'border-neutral-300 dark:border-neutral-600 focus:border-primary-600 focus:ring-primary-100 dark:focus:ring-primary-900/30'
               }
               focus:outline-none focus:ring-4
-              disabled:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50
-              placeholder:text-neutral-500
+              disabled:bg-neutral-100 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50
+              placeholder:text-neutral-500 dark:placeholder:text-neutral-400
               ${className}
             `}
             {...props}
@@ -46,7 +48,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error && <p className="text-xs text-warning-600 mt-1">{error}</p>}
-        {helperText && !error && <p className="text-xs text-neutral-600 mt-1">{helperText}</p>}
+        {helperText && !error && <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">{helperText}</p>}
       </div>
     );
   }

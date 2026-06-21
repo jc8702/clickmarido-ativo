@@ -85,9 +85,9 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
       />
 
       <div>
-        <label className="block text-sm font-medium text-neutral-900 mb-1">Notas do Técnico</label>
+        <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">Notas do Técnico</label>
         <textarea
-          className="w-full px-4 py-2 border-2 border-neutral-300 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 rounded-md placeholder:text-neutral-500"
+          className="w-full px-4 py-2 border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 rounded-md placeholder:text-neutral-500 dark:placeholder:text-neutral-400"
           rows={3}
           value={formData.technician_notes}
           onChange={e => setFormData({ ...formData, technician_notes: e.target.value })}
@@ -96,7 +96,7 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-neutral-900 mb-1">Foto Antes</label>
+          <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">Foto Antes</label>
           <input
             type="file"
             accept="image/*"
@@ -104,11 +104,11 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
               const file = e.target.files?.[0] || null;
               setPhotos({ ...photos, before: file });
             }}
-            className="w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+            className="w-full text-sm text-neutral-600 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 dark:file:bg-primary-900/30 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100 dark:hover:file:bg-primary-800/50"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-neutral-900 mb-1">Foto Depois</label>
+          <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-1">Foto Depois</label>
           <input
             type="file"
             accept="image/*"
@@ -116,12 +116,12 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
               const file = e.target.files?.[0] || null;
               setPhotos({ ...photos, after: file });
             }}
-            className="w-full text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+            className="w-full text-sm text-neutral-600 dark:text-neutral-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 dark:file:bg-primary-900/30 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100 dark:hover:file:bg-primary-800/50"
           />
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4 border-t border-neutral-200">
+      <div className="flex justify-end gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
         <Button variant="outline" onClick={onCancel} type="button">Cancelar</Button>
         <Button type="submit" isLoading={loading}>Concluir Serviço</Button>
       </div>

@@ -31,7 +31,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-hero dark:from-neutral-900 dark:to-neutral-800 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-animated opacity-10" />
 
       <div className="w-full max-w-md animate-fade-in">
@@ -46,13 +46,13 @@ export default function LoginPage() {
 
         <Card gradient="none" shadow="lg" className="animate-scale-in">
           <div className="p-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-6 text-center">
+            <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6 text-center">
               Entrar
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
-                <div className="p-3 bg-warning-50 border-l-4 border-warning-600 text-warning-900 rounded-md text-sm animate-slide-down">
+                <div className="p-3 bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-600 text-warning-900 dark:text-warning-200 rounded-md text-sm animate-slide-down">
                   {error}
                 </div>
               )}
@@ -82,9 +82,9 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-neutral-200 text-center">
-              <p className="text-xs text-neutral-500">
-                <strong className="text-neutral-700">Credenciais de teste:</strong>
+            <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700 text-center">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <strong className="text-neutral-700 dark:text-neutral-300">Credenciais de teste:</strong>
                 <br />
                 jose@clickmarido.local / 123456
               </p>

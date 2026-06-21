@@ -5,11 +5,23 @@
 :root {
   --foreground: #111827;
   --background: #F8F9FA;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+  --input-bg: #FFFFFF;
+  --input-border: #D1D5DB;
+  --muted-bg: #F3F4F6;
+  --muted-text: #6B7280;
 }
 
 .dark {
   --foreground: #F8F9FA;
   --background: #111827;
+  --card-bg: #1F2937;
+  --card-border: #374151;
+  --input-bg: #374151;
+  --input-border: #4B5563;
+  --muted-bg: #374151;
+  --muted-text: #9CA3AF;
 }
 
 body {
@@ -26,5 +38,15 @@ body {
   }
   .h4 {
     @apply text-xl font-semibold;
+  }
+}
+
+/* Dark mode utilities */
+@layer utilities {
+  .dark .bg-card {
+    background-color: var(--card-bg);
+  }
+  .dark .border-card {
+    border-color: var(--card-border);
   }
 }

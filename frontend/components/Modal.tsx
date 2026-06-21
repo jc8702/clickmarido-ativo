@@ -36,18 +36,18 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
       <div className="relative flex items-center justify-center min-h-screen p-6">
         <div
           className={`
-            bg-white rounded-xl shadow-2xl
+            bg-white dark:bg-neutral-800 rounded-xl shadow-2xl
             ${sizeMap[size]} w-full
             animate-scale-in
             max-h-[90vh] overflow-y-auto
           `}
         >
           {title && (
-            <div className="flex items-center justify-between border-b border-neutral-200 p-6">
-              <h3 className="text-xl font-semibold text-neutral-900">{title}</h3>
+            <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700 p-6">
+              <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
               <button
                 onClick={onClose}
-                className="text-neutral-500 hover:text-neutral-700 transition-colors"
+                className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
                 aria-label="Close"
               >
                 ✕
@@ -55,7 +55,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
             </div>
           )}
           <div className="p-6">{children}</div>
-          {footer && <div className="border-t border-neutral-200 p-6 bg-neutral-50">{footer}</div>}
+          {footer && <div className="border-t border-neutral-200 dark:border-neutral-700 p-6 bg-neutral-50 dark:bg-neutral-700/50">{footer}</div>}
         </div>
       </div>
     </div>,

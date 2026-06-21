@@ -144,7 +144,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -163,10 +163,10 @@ export default function Dashboard() {
         {/* Boas-vindas */}
         <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-[40px] font-extrabold tracking-tight text-neutral-900 leading-none mb-3">
+            <h1 className="text-[40px] font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100 leading-none mb-3">
               Painel de Controle
             </h1>
-            <p className="text-neutral-500 font-medium">Bem-vindo de volta! Aqui está o resumo operacional das suas atividades.</p>
+            <p className="text-neutral-500 dark:text-neutral-400 font-medium">Bem-vindo de volta! Aqui está o resumo operacional das suas atividades.</p>
           </div>
           <div className="flex gap-2">
             <Link href="/quotations/new">
@@ -196,16 +196,16 @@ export default function Dashboard() {
                 key={i} 
                 gradient="none" 
                 shadow="md" 
-                className="border border-neutral-100/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-white group"
+                className="border border-neutral-100/70 dark:border-neutral-700/70 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden bg-white dark:bg-neutral-800 group"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-1.5">
-                    <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">{stat.label}</p>
                     <p className={`text-3xl font-extrabold ${stat.color}`}>{stat.value}</p>
                   </div>
                   {stat.icon}
                 </div>
-                <p className="text-[11px] text-neutral-500 mt-3 font-medium">{stat.description}</p>
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-3 font-medium">{stat.description}</p>
                 {stat.trend}
               </Card>
             ))}
@@ -216,35 +216,35 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Coluna Esquerda: Últimas Ordens */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="border border-neutral-150 shadow-sm overflow-hidden">
-              <CardHeader className="bg-neutral-50/50 border-b border-neutral-100 py-5">
-                <CardTitle className="text-lg font-bold text-neutral-800">Ordens de Serviço Recentes</CardTitle>
-                <CardDescription className="text-neutral-500">Últimos serviços agendados no CRM</CardDescription>
+            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm overflow-hidden">
+              <CardHeader className="bg-neutral-50/50 dark:bg-neutral-700/50 border-b border-neutral-100 dark:border-neutral-700 py-5">
+                <CardTitle className="text-lg font-bold text-neutral-800 dark:text-neutral-200">Ordens de Serviço Recentes</CardTitle>
+                <CardDescription className="text-neutral-500 dark:text-neutral-400">Últimos serviços agendados no CRM</CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {loading ? (
                     <div className="py-8 space-y-4">
-                      <div className="h-10 bg-neutral-100 rounded animate-pulse" />
-                      <div className="h-10 bg-neutral-100 rounded animate-pulse" />
+                      <div className="h-10 bg-neutral-100 dark:bg-neutral-700 rounded animate-pulse" />
+                      <div className="h-10 bg-neutral-100 dark:bg-neutral-700 rounded animate-pulse" />
                     </div>
                   ) : stats.lastOrders && stats.lastOrders.length > 0 ? (
                     stats.lastOrders.map((order: Order) => (
                       <div 
                         key={order.id} 
-                        className="flex items-center justify-between p-4 bg-neutral-50 hover:bg-neutral-100/60 rounded-xl border border-neutral-200/50 transition-all duration-300 group cursor-pointer"
+                        className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700/50 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-xl border border-neutral-200/50 dark:border-neutral-600/50 transition-all duration-300 group cursor-pointer"
                       >
                         <div className="space-y-1">
-                          <p className="font-bold text-neutral-900 text-sm group-hover:text-primary-600 transition-colors">
+                          <p className="font-bold text-neutral-900 dark:text-neutral-100 text-sm group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                             {order.customer_name}
                           </p>
-                          <p className="text-xs text-neutral-500 font-medium">
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
                             Ordem Ref: <span className="font-mono">{order.id.slice(-6).toUpperCase()}</span>
                           </p>
                         </div>
 
                         <div className="flex items-center gap-4">
-                          <span className="text-sm font-extrabold text-neutral-800">
+                          <span className="text-sm font-extrabold text-neutral-800 dark:text-neutral-200">
                             {order.amount ? formatCurrency(order.amount) : 'R$ 0,00'}
                           </span>
                           <Badge variant={statusBadgeVariant[order.status] || 'neutral'} size="sm" className="shadow-sm">
@@ -254,7 +254,7 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-10 text-neutral-500 border border-dashed border-neutral-200 rounded-xl">
+                    <div className="text-center py-10 text-neutral-500 dark:text-neutral-400 border border-dashed border-neutral-200 dark:border-neutral-600 rounded-xl">
                       <span className="text-3xl block mb-2">⏳</span>
                       Nenhuma ordem de serviço recente cadastrada.
                     </div>
@@ -267,27 +267,27 @@ export default function Dashboard() {
           {/* Coluna Direita: Top Serviços e Performance */}
           <div className="space-y-6">
             {/* Top Serviços */}
-            <Card className="border border-neutral-150 shadow-sm overflow-hidden bg-white">
-              <CardHeader className="bg-neutral-50/50 border-b border-neutral-100 py-5">
-                <CardTitle className="text-lg font-bold text-neutral-800">Top Serviços Requisitados</CardTitle>
+            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm overflow-hidden bg-white dark:bg-neutral-800">
+              <CardHeader className="bg-neutral-50/50 dark:bg-neutral-700/50 border-b border-neutral-100 dark:border-neutral-700 py-5">
+                <CardTitle className="text-lg font-bold text-neutral-800 dark:text-neutral-200">Top Serviços Requisitados</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {loading ? (
                     <div className="py-8 space-y-4">
-                      <div className="h-6 bg-neutral-100 rounded animate-pulse" />
-                      <div className="h-6 bg-neutral-100 rounded animate-pulse" />
+                      <div className="h-6 bg-neutral-100 dark:bg-neutral-700 rounded animate-pulse" />
+                      <div className="h-6 bg-neutral-100 dark:bg-neutral-700 rounded animate-pulse" />
                     </div>
                   ) : stats.topServices && stats.topServices.length > 0 ? (
                     stats.topServices.slice(0, 4).map((srv: Service, idx: number) => (
                       <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between items-center text-sm font-semibold">
-                          <span className="text-neutral-700">{srv.name}</span>
-                          <span className="text-xs font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                          <span className="text-neutral-700 dark:text-neutral-300">{srv.name}</span>
+                          <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-full">
                             {srv.count} {srv.count === 1 ? 'pedido' : 'pedidos'}
                           </span>
                         </div>
-                        <div className="w-full bg-neutral-100 h-2 rounded-full overflow-hidden">
+                        <div className="w-full bg-neutral-100 dark:bg-neutral-700 h-2 rounded-full overflow-hidden">
                           <div 
                             className="bg-gradient-to-r from-primary-500 to-indigo-500 h-2 rounded-full" 
                             style={{ 
@@ -301,7 +301,7 @@ export default function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-10 text-neutral-400 text-xs">
+                    <div className="text-center py-10 text-neutral-400 dark:text-neutral-500 text-xs">
                       Sem dados de serviços
                     </div>
                   )}
@@ -310,30 +310,30 @@ export default function Dashboard() {
             </Card>
 
             {/* Performance Card */}
-            <Card gradient="subtle" className="border border-primary-100 shadow-sm relative overflow-hidden bg-gradient-to-br from-primary-50/30 to-indigo-50/20">
+            <Card gradient="subtle" className="border border-primary-100 dark:border-primary-800 shadow-sm relative overflow-hidden bg-gradient-to-br from-primary-50/30 to-indigo-50/20 dark:from-primary-900/20 dark:to-indigo-900/20">
               <CardContent className="p-6 space-y-4">
                 <div>
-                  <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Taxa de Conversão Semanal</h4>
+                  <h4 className="text-xs font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-1">Taxa de Conversão Semanal</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-neutral-800">{stats.conversionRate || 0}%</span>
-                    <span className="text-xs font-bold text-emerald-600">▲ Excelente</span>
+                    <span className="text-4xl font-extrabold text-neutral-800 dark:text-neutral-200">{stats.conversionRate || 0}%</span>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">▲ Excelente</span>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="w-full bg-neutral-200 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-700 h-2.5 rounded-full overflow-hidden">
                     <div 
                       className="bg-gradient-hero h-2.5 rounded-full transition-all duration-500" 
                       style={{ width: `${stats.conversionRate || 0}%` }} 
                     />
                   </div>
-                  <div className="flex justify-between items-center text-[10px] font-bold text-neutral-500">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-neutral-500 dark:text-neutral-400">
                     <span>Meta: 80%</span>
                     <span>Progresso Atual</span>
                   </div>
                 </div>
 
-                <p className="text-xs text-neutral-600 font-medium leading-relaxed">
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 font-medium leading-relaxed">
                   Continue convertendo orçamentos em ordens aprovadas para impulsionar o faturamento mensal.
                 </p>
               </CardContent>

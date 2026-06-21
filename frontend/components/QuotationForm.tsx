@@ -116,9 +116,9 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in bg-white dark:bg-neutral-800 p-6 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm">
       {error && (
-        <div className="p-4 bg-warning-50 border-l-4 border-warning-600 text-warning-950 rounded-xl text-sm animate-slide-down">
+        <div className="p-4 bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-600 text-warning-950 dark:text-warning-200 rounded-xl text-sm animate-slide-down">
           {error}
         </div>
       )}
@@ -126,11 +126,11 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
       {/* Dados do Cliente e Validade */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-neutral-800 mb-2">
+          <label className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-2">
             Cliente <span className="text-warning-600">*</span>
           </label>
           <select
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 text-sm"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 text-sm"
             value={formData.customer_id}
             onChange={(e) => setFormData({ ...formData, customer_id: e.target.value })}
             required
@@ -160,9 +160,9 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
           required
         />
         <div>
-          <label className="block text-sm font-semibold text-neutral-800 mb-2">Garantia Oferecida</label>
+          <label className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-2">Garantia Oferecida</label>
           <select
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 text-sm"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 text-sm"
             value={formData.warranty_term}
             onChange={(e) => setFormData({ ...formData, warranty_term: e.target.value })}
           >
@@ -174,9 +174,9 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
           </select>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-neutral-800 mb-2">Forma de Pagamento</label>
+          <label className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-2">Forma de Pagamento</label>
           <select
-            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 text-sm"
+            className="w-full px-4 py-2.5 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 text-sm"
             value={formData.payment_method}
             onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
           >
@@ -191,10 +191,10 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
 
       {/* Observações / Descrição Geral */}
       <div>
-        <label className="block text-sm font-semibold text-neutral-800 mb-2 font-medium">Observações do Serviço</label>
+        <label className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-2 font-medium">Observações do Serviço</label>
         <textarea
           placeholder="Detalhes adicionais, recomendações ou observações gerais..."
-          className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 min-h-[96px] text-sm"
+          className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 min-h-[96px] text-sm"
           rows={3}
           value={formData.description_notes}
           onChange={(e) => setFormData({ ...formData, description_notes: e.target.value })}
@@ -202,9 +202,9 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
       </div>
 
       {/* Card de Itens */}
-      <Card gradient="subtle" shadow="sm" className="border border-neutral-100/60 overflow-hidden">
-        <CardHeader className="bg-neutral-50/50 border-b border-neutral-100 py-4">
-          <CardTitle className="text-base font-bold text-neutral-800">Itens e Serviços Mapeados</CardTitle>
+      <Card gradient="subtle" shadow="sm" className="border border-neutral-100/60 dark:border-neutral-700/60 overflow-hidden">
+        <CardHeader className="bg-neutral-50/50 dark:bg-neutral-700/50 border-b border-neutral-100 dark:border-neutral-700 py-4">
+          <CardTitle className="text-base font-bold text-neutral-800 dark:text-neutral-200">Itens e Serviços Mapeados</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-4">
@@ -265,7 +265,7 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
       </Card>
 
       {/* Desconto e Totais */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-6 border-t border-neutral-100 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-6 border-t border-neutral-100 dark:border-neutral-700 gap-6">
         <div className="w-full md:w-48">
           <Input
             label="Conceder Desconto (R$)"
@@ -279,8 +279,8 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
 
         <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end">
           <div className="text-right">
-            <p className="text-xs text-neutral-500 font-medium">Subtotal: R$ {calculateSubtotal().toFixed(2)}</p>
-            <p className="text-sm text-neutral-500 font-semibold mb-1">Total com Desconto</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Subtotal: R$ {calculateSubtotal().toFixed(2)}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 font-semibold mb-1">Total com Desconto</p>
             <p className="text-3xl font-extrabold bg-gradient-hero bg-clip-text text-transparent">
               R$ {calculateTotal().toFixed(2)}
             </p>

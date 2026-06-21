@@ -82,26 +82,26 @@ export function CreatePaymentForm({ onSuccess, onCancel }: CreatePaymentFormProp
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in text-neutral-800">
+    <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in text-neutral-800 dark:text-neutral-200">
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-xs font-semibold border border-red-150">
+        <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-150 dark:border-red-800">
           ⚠️ {error}
         </div>
       )}
 
       <div>
-        <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
           Cliente
         </label>
         {loadingCustomers ? (
-          <div className="h-10 bg-neutral-100 animate-pulse rounded-lg" />
+          <div className="h-10 bg-neutral-100 dark:bg-neutral-700 animate-pulse rounded-lg" />
         ) : customers.length === 0 ? (
-          <div className="text-sm text-neutral-500 py-2">
+          <div className="text-sm text-neutral-500 dark:text-neutral-400 py-2">
             Nenhum cliente cadastrado. Crie um cliente antes de lançar recebimentos.
           </div>
         ) : (
           <select
-            className="w-full px-4 py-2.5 bg-white border border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 shadow-sm"
+            className="w-full px-4 py-2.5 bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 dark:text-neutral-200 shadow-sm"
             value={formData.customerId}
             onChange={e => setFormData({ ...formData, customerId: e.target.value })}
           >
@@ -135,11 +135,11 @@ export function CreatePaymentForm({ onSuccess, onCancel }: CreatePaymentFormProp
         />
 
         <div>
-          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
             Status do Pagamento
           </label>
           <select
-            className="w-full px-4 py-2.5 bg-white border border-neutral-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 shadow-sm"
+            className="w-full px-4 py-2.5 bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 focus:border-primary-500 focus:ring-4 focus:ring-primary-50 focus:outline-none transition-all duration-200 rounded-lg text-sm font-semibold text-neutral-800 dark:text-neutral-200 shadow-sm"
             value={formData.status}
             onChange={e => setFormData({ ...formData, status: e.target.value })}
           >
@@ -149,7 +149,7 @@ export function CreatePaymentForm({ onSuccess, onCancel }: CreatePaymentFormProp
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100">
+      <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-700">
         <Button variant="outline" onClick={onCancel} type="button">
           Cancelar
         </Button>

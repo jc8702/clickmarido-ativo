@@ -4,9 +4,9 @@ interface ShimmerProps {
   className?: string;
 }
 
-export function Shimmer({ className = 'h-4 w-full bg-neutral-200' }: ShimmerProps) {
+export function Shimmer({ className = 'h-4 w-full bg-neutral-200 dark:bg-neutral-700' }: ShimmerProps) {
   return (
-    <div className={`animate-shimmer bg-gradient-to-r from-neutral-200 via-neutral-100 to-neutral-200 bg-[length:1000px_100%] rounded-md ${className}`} />
+    <div className={`animate-shimmer bg-gradient-to-r from-neutral-200 dark:from-neutral-700 via-neutral-100 dark:via-neutral-600 to-neutral-200 dark:to-neutral-700 bg-[length:1000px_100%] rounded-md ${className}`} />
   );
 }
 
@@ -15,13 +15,13 @@ export function TableShimmer({ rows = 5, cols = 4 }: { rows?: number; cols?: num
     <div className="space-y-4 w-full animate-pulse-subtle">
       <div className="flex gap-4">
         {Array.from({ length: cols }).map((_, i) => (
-          <Shimmer key={i} className="h-6 flex-1 bg-neutral-200" />
+          <Shimmer key={i} className="h-6 flex-1 bg-neutral-200 dark:bg-neutral-700" />
         ))}
       </div>
       {Array.from({ length: rows }).map((_, r) => (
-        <div key={r} className="flex gap-4 items-center py-2 border-b border-neutral-100 last:border-0">
+        <div key={r} className="flex gap-4 items-center py-2 border-b border-neutral-100 dark:border-neutral-700 last:border-0">
           {Array.from({ length: cols }).map((_, c) => (
-            <Shimmer key={c} className="h-5 flex-1 bg-neutral-100" />
+            <Shimmer key={c} className="h-5 flex-1 bg-neutral-100 dark:bg-neutral-700" />
           ))}
         </div>
       ))}
@@ -31,7 +31,7 @@ export function TableShimmer({ rows = 5, cols = 4 }: { rows?: number; cols?: num
 
 export function CardShimmer() {
   return (
-    <div className="border border-neutral-100 rounded-xl p-6 bg-white shadow-sm space-y-4">
+    <div className="border border-neutral-100 dark:border-neutral-700 rounded-xl p-6 bg-white dark:bg-neutral-800 shadow-sm space-y-4">
       <Shimmer className="h-6 w-1/3" />
       <div className="space-y-2">
         <Shimmer className="h-4 w-full" />

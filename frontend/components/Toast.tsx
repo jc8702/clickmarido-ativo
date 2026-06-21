@@ -16,10 +16,10 @@ export function Toast({ type, title, message, onClose }: ToastProps) {
   }, [onClose]);
 
   const colorMap = {
-    success: 'bg-success-50 border-success-200 text-success-900',
-    error: 'bg-red-50 border-red-200 text-red-900',
-    warning: 'bg-warning-50 border-warning-200 text-warning-900',
-    info: 'bg-primary-50 border-primary-200 text-primary-900',
+    success: 'bg-success-50 dark:bg-success-900/30 border-success-200 dark:border-success-800 text-success-900 dark:text-success-100',
+    error: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100',
+    warning: 'bg-warning-50 dark:bg-warning-900/30 border-warning-200 dark:border-warning-800 text-warning-900 dark:text-warning-100',
+    info: 'bg-primary-50 dark:bg-primary-900/30 border-primary-200 dark:border-primary-800 text-primary-900 dark:text-primary-100',
   };
 
   const iconMap = {

@@ -27,7 +27,7 @@ const buttonVariants = cva(
         `,
         outline: `
           border-2 border-primary-600 text-primary-600
-          hover:bg-primary-50
+          hover:bg-primary-50 dark:hover:bg-primary-900/30
           active:bg-primary-100
           focus-visible:ring-primary-600
         `,
@@ -37,8 +37,8 @@ const buttonVariants = cva(
           focus-visible:ring-warning-600
         `,
         ghost: `
-          text-primary-600
-          hover:bg-primary-50
+          text-primary-600 dark:text-primary-400
+          hover:bg-primary-50 dark:hover:bg-primary-900/30
           focus-visible:ring-primary-600
         `,
       },

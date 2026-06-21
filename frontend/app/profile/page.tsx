@@ -27,7 +27,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -44,8 +44,8 @@ export default function ProfilePage() {
 
       <main className="max-w-2xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Meu Perfil</h1>
-          <p className="text-neutral-600">Suas informações pessoais e da empresa</p>
+          <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Meu Perfil</h1>
+          <p className="text-neutral-600 dark:text-neutral-400">Suas informações pessoais e da empresa</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
@@ -97,7 +97,7 @@ export default function ProfilePage() {
 
         {saved && (
           <div className="mt-4 animate-slide-down">
-            <div className="p-3 bg-success-50 border-l-4 border-success-600 text-success-900 rounded-md text-sm">
+            <div className="p-3 bg-success-50 dark:bg-success-900/30 border-l-4 border-success-600 text-success-900 dark:text-success-200 rounded-md text-sm">
               Informações salvas com sucesso!
             </div>
           </div>

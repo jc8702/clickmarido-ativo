@@ -65,12 +65,12 @@ export function FormBuilder({
     <Card className="animate-fade-in">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        {description && <p className="text-sm text-neutral-600 mt-1">{description}</p>}
+        {description && <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{description}</p>}
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {errors.general && (
-            <div className="p-4 bg-warning-50 border-l-4 border-warning-600 text-warning-900 rounded-md animate-slide-down">
+            <div className="p-4 bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-600 text-warning-900 dark:text-warning-200 rounded-md animate-slide-down">
               {errors.general}
             </div>
           )}
@@ -83,7 +83,7 @@ export function FormBuilder({
                   placeholder={field.placeholder}
                   value={formData[field.name]}
                   onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border-2 border-neutral-300 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200 min-h-[128px]"
+                  className="w-full px-4 py-2 rounded-md border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 min-h-[128px]"
                   required={field.required}
                 />
               ) : field.type === 'select' ? (
@@ -91,7 +91,7 @@ export function FormBuilder({
                   name={field.name}
                   value={formData[field.name]}
                   onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border-2 border-neutral-300 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 focus:outline-none transition-all duration-200"
+                  className="w-full px-4 py-2 rounded-md border-2 border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-600 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200"
                   required={field.required}
                 >
                   <option value="">{field.label}</option>
