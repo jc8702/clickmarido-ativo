@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { CustomerSchema } from '@/lib/schemas';
+import { customerSchema } from '@/lib/validations/customer.schema';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
@@ -61,11 +61,14 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const parsed = CustomerSchema.partial().parse(body);
+    const parsed = customerSchema.partial().parse(body);
 
     const customer = await prisma.customer.update({
       where: { id },
-      data: parsed,
+      data: {
+        ...parsed,
+        addresses: parsed.addresses || undefined,
+      },
     });
 
     return NextResponse.json(customer);

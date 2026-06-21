@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 
 export function useCustomers(page = 1, search = '') {
@@ -6,8 +6,10 @@ export function useCustomers(page = 1, search = '') {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
+  const prevPageRef = useRef(page);
+  const prevSearchRef = useRef(search);
 
-  const mutate = useCallback(async () => {
+  const fetchCustomers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -31,10 +33,18 @@ export function useCustomers(page = 1, search = '') {
   }, [page, search, getToken]);
 
   useEffect(() => {
-    mutate();
-  }, [mutate]);
+    if (prevPageRef.current !== page || prevSearchRef.current !== search) {
+      prevPageRef.current = page;
+      prevSearchRef.current = search;
+      fetchCustomers();
+    }
+  }, [page, search, fetchCustomers]);
 
-  return { data, isLoading, error, mutate };
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  return { data, isLoading, error, mutate: fetchCustomers };
 }
 
 export function useCreateCustomer() {

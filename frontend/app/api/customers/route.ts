@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { CustomerSchema } from '@/lib/schemas';
+import { customerSchema } from '@/lib/validations/customer.schema';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
@@ -90,25 +90,27 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const parsed = CustomerSchema.parse(body);
+    const parsed = customerSchema.parse(body);
 
-    const existing = await prisma.customer.findUnique({
-      where: { email: parsed.email },
-    });
+    if (parsed.email) {
+      const existing = await prisma.customer.findFirst({
+        where: { email: parsed.email },
+      });
 
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Email já cadastrado' },
-        { status: 400 }
-      );
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Email já cadastrado' },
+          { status: 400 }
+        );
+      }
     }
 
     const customer = await prisma.customer.create({
       data: {
         name: parsed.name,
-        email: parsed.email,
+        email: parsed.email || '',
         phone: parsed.phone,
-        addresses: [],
+        addresses: parsed.addresses || [],
       },
     });
 
