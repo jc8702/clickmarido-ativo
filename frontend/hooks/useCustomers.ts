@@ -1,73 +1,131 @@
-// Mock hooks to simulate data fetching (e.g., SWR / React Query)
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from './useAuth';
 
-// Simulated API calls for the MVP
 export function useCustomers(page = 1, search = '') {
   const [data, setData] = useState({ data: [], meta: { total: 0, page, limit: 10 } });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const mutate = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `/api/customers?page=${page}&limit=20&search=${search}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) throw new Error('Erro ao carregar clientes');
+      const result = await response.json();
+      setData(result);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, search, getToken]);
 
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate fetch delay
-    const timer = setTimeout(() => {
-      setData({
-        data: [
-          { id: '1', name: 'João Silva', phone: '+5511999999999', email: 'joao@example.com', total_orders: 2, total_spent: 1500, average_rating: 5 }
-        ],
-        meta: { total: 1, page, limit: 10, totalPages: 1 }
-      } as any);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [page, search]);
+    mutate();
+  }, [mutate]);
 
-  return { data, isLoading, mutate: () => {} };
-}
-
-export function useCustomer(id: string) {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!id || id === 'new') return;
-    setIsLoading(true);
-    // Simulate fetch delay
-    const timer = setTimeout(() => {
-      setData({
-        id,
-        name: 'João Silva',
-        phone: '+5511999999999',
-        addresses: [{ id: 'a1', street: 'Rua A', number: '123', neighborhood: 'Centro', city: 'São Paulo', state: 'SP', postal_code: '01000000' }]
-      });
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [id]);
-
-  return { data, isLoading };
+  return { data, isLoading, error, mutate };
 }
 
 export function useCreateCustomer() {
   const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
-  const mutateAsync = async (data: any) => {
+  const mutateAsync = async (formData: any) => {
     setIsPending(true);
-    await new Promise(r => setTimeout(r, 500));
-    setIsPending(false);
-    return { id: 'new-id', ...data };
+    setError(null);
+
+    try {
+      const token = getToken();
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao criar cliente');
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsPending(false);
+    }
   };
 
-  return { mutateAsync, isPending };
+  return { mutateAsync, isPending, error };
 }
 
 export function useUpdateCustomer(id: string) {
   const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
 
-  const mutateAsync = async (data: any) => {
+  const mutateAsync = async (formData: any) => {
     setIsPending(true);
-    await new Promise(r => setTimeout(r, 500));
-    setIsPending(false);
-    return { id, ...data };
+    setError(null);
+
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/customers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Erro ao atualizar cliente');
+      return await response.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending, error };
+}
+
+export function useDeleteCustomer(id: string) {
+  const [isPending, setIsPending] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async () => {
+    setIsPending(true);
+
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/customers/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Erro ao deletar cliente');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
   };
 
   return { mutateAsync, isPending };
