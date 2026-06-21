@@ -107,6 +107,31 @@ export function useUpdateCustomer(id: string) {
   return { mutateAsync, isPending, error };
 }
 
+export function useCustomer(id: string) {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      try {
+        const token = getToken();
+        const response = await fetch(`/api/customers/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) setData(await response.json());
+      } catch (err) {
+        console.error('Error fetching customer:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCustomer();
+  }, [id, getToken]);
+
+  return { data, isLoading };
+}
+
 export function useDeleteCustomer(id: string) {
   const [isPending, setIsPending] = useState(false);
   const { getToken } = useAuth();

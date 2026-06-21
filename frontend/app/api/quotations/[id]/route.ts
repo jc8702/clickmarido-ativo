@@ -18,17 +18,20 @@ function validateToken(request: NextRequest) {
   }
 }
 
+type RouteParams = { params: Promise<{ id: string }> };
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const quotation = await prisma.quotation.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { customer: true, warranties: true },
     });
 
@@ -48,8 +51,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -70,7 +74,7 @@ export async function PUT(
     }
 
     const quotation = await prisma.quotation.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: { customer: true },
     });
@@ -92,16 +96,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    await prisma.quotation.delete({
-      where: { id: params.id },
-    });
+    await prisma.quotation.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
 

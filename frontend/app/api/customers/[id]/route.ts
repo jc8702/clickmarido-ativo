@@ -19,20 +19,21 @@ function validateToken(request: NextRequest) {
   }
 }
 
+type RouteParams = { params: Promise<{ id: string }> };
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const customer = await prisma.customer.findUnique({
-      where: { id: params.id },
-      include: {
-        quotations: true,
-      },
+      where: { id },
+      include: { quotations: true },
     });
 
     if (!customer) {
@@ -51,8 +52,9 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -62,7 +64,7 @@ export async function PUT(
     const parsed = CustomerSchema.partial().parse(body);
 
     const customer = await prisma.customer.update({
-      where: { id: params.id },
+      where: { id },
       data: parsed,
     });
 
@@ -90,16 +92,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    await prisma.customer.delete({
-      where: { id: params.id },
-    });
+    await prisma.customer.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
 
