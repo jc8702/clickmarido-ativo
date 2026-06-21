@@ -47,7 +47,10 @@ export async function GET(request: NextRequest) {
 
       return {
         id: q.id,
+        customerId: q.customerId,
         customer_name: q.customer?.name || 'Cliente',
+        customer_phone: q.customer?.phone || '',
+        customer_email: q.customer?.email || '',
         scheduled_date: q.createdAt.toISOString(),
         status: serviceStatus,
         amount: q.total,
@@ -69,3 +72,63 @@ export async function GET(request: NextRequest) {
     await prisma.$disconnect();
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { customerId, description, amount, scheduled_date, notes } = body;
+
+    if (!customerId || !description || amount === undefined || !scheduled_date) {
+      return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
+    }
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
+    }
+
+    // Criamos um Quotation com status 'agendada' (representando a OS)
+    const quotation = await prisma.quotation.create({
+      data: {
+        customerId,
+        items: [
+          {
+            description,
+            quantity: 1,
+            price: Number(amount),
+          },
+        ],
+        total: Number(amount),
+        status: 'agendada',
+        notes: notes || 'OS criada manualmente',
+        createdAt: new Date(scheduled_date),
+      },
+      include: { customer: true },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: quotation.id,
+        customer_name: customer.name,
+        scheduled_date: quotation.createdAt.toISOString(),
+        status: 'agendada',
+        amount: quotation.total,
+      },
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('POST /api/service-orders error:', error);
+    return NextResponse.json({ error: 'Erro ao criar ordem de serviço' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+

@@ -23,6 +23,7 @@ export type { NavigationProps, NavLink } from '@/components/Navigation';
 export { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 
 export { FormBuilder } from '@/components/FormBuilder';
+export { Shimmer, TableShimmer, CardShimmer } from '@/components/Shimmer';
 
 // Design Tokens
 export { designTokens } from '@/lib/design-tokens';

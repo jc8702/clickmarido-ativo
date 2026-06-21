@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function useAuth() {
@@ -47,7 +47,7 @@ export function useAuth() {
     verifyAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -78,15 +78,15 @@ export function useAuth() {
       console.error('Login error:', error);
       throw error;
     }
-  };
+  }, [router]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     setUser(null);
     router.push('/login');
-  };
+  }, [router]);
 
-  const getToken = () => localStorage.getItem('token');
+  const getToken = useCallback(() => localStorage.getItem('token'), []);
 
   return {
     user,

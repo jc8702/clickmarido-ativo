@@ -49,6 +49,7 @@ export async function GET(
         qr_code: pixCode,
         amount: quotation.total,
         customer_name: quotation.customer?.name || 'Cliente',
+        customer_phone: quotation.customer?.phone || '',
       },
     });
 

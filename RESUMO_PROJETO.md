@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Evolução Concluída (Navegação & Módulos)
+- **Status Atual:** Revitalizado & Integrado (Concluído com Sucesso)
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 21/06/2026 - 17:35
+- **Última Atualização:** 21/06/2026 - 18:14
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -35,17 +35,36 @@ Vercel (Deploy)
 - [x] R(ead) Warranties (garantias)
 - [x] Validações com Zod
 - [x] Banco de dados persistente
+- [x] Ordens de Serviço manuais e links dinâmicos
+- [x] Pagamentos avulsos e cobrança via WhatsApp
+- [x] Fluxo completo de acionamento de garantias gerando reparo de R$ 0,00
 
 ## Funcionalidades Futuras (Roadmap)
 
 - [ ] PDF generation
-- [ ] WhatsApp API
+- [ ] WhatsApp API automatizada
 - [ ] Dashboard analytics
 - [ ] Multi-user
 - [ ] File uploads
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 21/06/2026 - 18:14
+- Conclusão da Revitalização UX/UI e Integração Diamante de todos os módulos operacionais:
+  - **Ordens de Serviço:** Adicionado botão de criação manual de OS (POST backend e modal frontend) e links inteligentes direcionando para Clientes e Orçamentos originais com gavetas automáticas.
+  - **Pagamentos:** Criada rota POST e modal de recebimentos manuais avulsos. Integrado botão dinâmico **Cobrar via WhatsApp** no modal de PIX que carrega dados do cliente e envia mensagem pré-formatada.
+  - **Garantias:** Criada rota de acionamento `/api/warranties/[id]/claim` no backend e implementado modal frontend que coleta notas de falha e gera uma OS automática de R$ 0,00 agendada.
+  - **Build Estático:** Rodado `npm run build` com sucesso absoluto e sem erros de tipagem/compilação TypeScript.
+- Arquivos modificados/criados: `CreateServiceOrderForm.tsx`, `CreatePaymentForm.tsx`, `warranties/page.tsx`, `service-orders/page.tsx`, `payments/page.tsx`, `PaymentForm.tsx`, `api/service-orders/route.ts`, `api/payments/route.ts`, `api/warranties/[id]/claim/route.ts` e `tareas.md`.
+
+### 21/06/2026 - 17:55
+- Inicialização da Fase de Revitalização Visual e Integração Funcional de todos os Módulos:
+  - Diagnóstico de falha de loop de render (piscamento) nas páginas de Clientes e Orçamentos devido a referências instáveis do `getToken` e requisições concorrentes de `mutate()`.
+  - Mapeamento de melhorias visuais com foco em estética premium, glassmorphism e micro-animações (eliminando visual "de IA").
+  - Planejamento de novas integrações de ações e botões: criação de OS automática no acionamento de garantias, registro de recebimentos avulsos em pagamentos e criação rápida de ordens manuais.
+  - Planejamento de novos campos e informações adicionais para o cadastro de clientes e orçamentos (garantia, prazos, descontos, forma de pagamento).
+  - Arquivos modificados/criados: `plan_implementacion.md` (local), `tareas.md` (local) e `implementation_plan.md` (oficial da conversa).
 
 ### 21/06/2026 - 17:35
 - Integração dinâmica de dados e autenticação funcional no Dashboard:
@@ -125,8 +144,13 @@ npm run dev
 
 ## Próximos Passos
 
-1. **Testar e validar em produção na Vercel** após deploy contínuo automático.
-2. **Avaliar a viabilidade de geração de PDF para faturamento e orçamentos** (próximo item no roadmap de evolução).
+1. **Obter aprovação do usuário** sobre o plano de revitalização e a gaveta lateral de detalhes (Drawer).
+2. **Estabilizar o hook `useAuth.js`** e remover as concorrências de `mutate()` para cessar o piscamento em Clientes e Orçamentos.
+3. **Revitalizar o Dashboard** com layout em Bento Grid e estatísticas premium.
+4. **Implementar a gaveta lateral de detalhes (Drawer) e as novas informações de Clientes**.
+5. **Enriquecer o formulário de Orçamentos** e corrigir a tipagem/chave do Zod.
+6. **Integrar os módulos** de Ordens de Serviço, Pagamentos e Garantias com novos fluxos e botões de ação rápidos.
+7. **Compilar e validar estática de tipos** (`npm run build`).
 
 ---
 

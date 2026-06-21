@@ -1,51 +1,53 @@
-# Plano de Rota Técnica: Correção de Navegação e Integração dos Módulos Ocultos (Click Marido CRM)
+# Plano de Rota Técnica: Revitalização e Integração dos Módulos (Click Marido CRM)
 
-Este plano descreve as etapas técnicas para integrar todos os módulos ocultos (Ordens de Serviço, Pagamentos, Garantias e Perfil) à navegação principal e corrigir os erros de API da tela de Pagamentos.
+Este plano detalha as melhorias estéticas e funcionais que o Squad de Especialistas executará para transformar a interface do CRM (eliminando o visual genérico) e integrar todos os módulos operacionais com interações e botões dinâmicos.
 
 ---
 
-## 🎨 SQUAD DE ESPECIALISTAS (Mapeamento de Skills)
+## 🎨 DIRETRIZ VISUAL PREMIUM
 
-- **`@web-design-guidelines` (Auditor Visual e Temas)**: Validará a paleta de cores e o visual das novas páginas TypeScript (`service-orders/page.tsx` e `payments/page.tsx`) mantendo a harmonia do Design System.
-- **`@code-reviewer` (Auditor de Componentes)**: Validará a migração de JSX para TSX das páginas de ordens e pagamentos, além da injeção consistente do componente `<Navigation>`.
-- **`@webapp-testing` (Auditor de Rotas e Build)**: Responsável por testar a comunicação das APIs de pagamentos criadas e validar que o build do Next.js compila perfeitamente sem falhas.
+- **Cores Tailored:** Tons de roxo profundo (`#6347F9`) como marca principal, verde esmeralda (`#1FAA63`) para status de sucesso/aprovado, e laranja vibrante (`#FB8500`) para alertas.
+- **Glassmorphism e Sombras:** Aplicação de fundos translúcidos (`backdrop-blur-md bg-white/80`), bordas finas com baixo contraste e sombras suaves tridimensionais.
+- **Animações de Transição:** Movimentos suaves de elevação ao passar o mouse em botões e cartões.
+- **Shimmer Effects:** Indicadores visuais de carregamento em esqueleto para evitar telas piscando.
 
 ---
 
 ## 📅 CRONOGRAMA E PASSOS DE EXECUÇÃO
 
-### PASSO 1: Integração e Unificação da Barra de Navegação
-1. Atualizar o array de links passado para o componente `<Navigation>` em todas as páginas principais (`dashboard`, `customers`, `quotations`, `profile`) para incluir:
-   - Dashboard (`/dashboard`)
-   - Clientes (`/customers`)
-   - Orçamentos (`/quotations`)
-   - Ordens de Serviço (`/service-orders`)
-   - Pagamentos (`/payments`)
-2. Atualizar o componente `<Navigation>` para tornar o bloco do usuário (nome e email) um link clicável direcionando para `/profile`.
+### PASSO 1: Resolução de Loops de Render (Telas Piscando)
+1. Atualizar o hook `useAuth.js` utilizando `useCallback` para retornar referências estáveis de `getToken`, `login` e `logout`.
+2. Remover os disparos concorrentes de `mutate()` nos `useEffect` da página de Clientes (`customers/page.tsx`) e Orçamentos (`quotations/page.tsx`).
+3. Adicionar estados visuais de esqueleto de carregamento (*shimmers*).
 
-### PASSO 2: Modernização do Módulo de Ordens de Serviço (`/service-orders`)
-1. Remover o arquivo `.jsx` legado `app/(dashboard)/service-orders/page.jsx`.
-2. Criar `app/(dashboard)/service-orders/page.tsx` totalmente tipado em TypeScript.
-3. Importar e instanciar o componente `<Navigation>` com os links de navegação globais.
-4. Aplicar os cards, tabelas e botões modernos baseados no Design System.
+### PASSO 2: Revitalização Estética do Dashboard
+1. Redesenhar os cartões de estatísticas principais usando ícones dinâmicos em SVG e micro-animações de elevação.
+2. Adicionar layout do tipo Bento Grid com agrupamento sofisticado para "Últimas Ordens" e "Top Serviços".
 
-### PASSO 3: Resolução e Ativação do Módulo de Pagamentos (`/payments`)
-1. Remover o arquivo `.jsx` legado `app/(dashboard)/payments/page.jsx`.
-2. Criar `app/(dashboard)/payments/page.tsx` tipado em TypeScript, injetando `<Navigation>` e estilizando de acordo com o Design System.
-3. Criar a rota de API `/api/payments/route.ts` para retornar os dados dos pagamentos (mapeados a partir dos orçamentos aprovados de forma dinâmica para evitar modificações complexas de DB caso escolhido pelo usuário).
-4. Criar o endpoint PATCH `/api/payments/[id]/approve/route.ts` para aprovar o pagamento (atualizar status do orçamento relacionado).
+### PASSO 3: Revitalização e Expansão de Clientes e Orçamentos
+1. **Clientes:** Exibir contatos, telefone e resumo do endereço cadastrado. Adicionar gaveta de detalhes lateral (Drawer).
+2. **Orçamentos:** Adicionar no formulário de criação: Prazo de Execução, Tipo de Garantia (30 dias a 1 ano), Desconto/Acréscimo e Forma de Pagamento sugerida. Mudar chave do item de `name` para `description` no envio para a API passar no Zod.
 
-### PASSO 4: Ajuste do Módulo de Garantias (`/warranties`)
-1. Redesenhar `app/warranties/page.tsx` aplicando as cores roxo, verde e laranja do Design System.
-2. Remover estilos inline antigos substituindo por classes de espaçamento e layout do Tailwind.
-3. Adicionar o cabeçalho de navegação padrão.
+### PASSO 4: Integração de Ações em Ordens de Serviço (OS)
+1. Adicionar o botão "Criar Ordem Manual" que gera automaticamente um orçamento aprovado na API por baixo dos panos.
+2. Adicionar links direcionando o usuário para o Cliente associado e para o Orçamento de origem.
 
-### PASSO 5: Validação do Build
-1. Acessar a pasta `frontend` e rodar o comando de compilação estática (`npm run build`).
+### PASSO 5: Integração de Ações em Pagamentos
+1. Adicionar botão "Registrar Recebimento Manual".
+2. Integrar links na tabela de pagamentos para visualizar Cliente e Ordens de Serviço.
+3. Adicionar botão para compartilhar PIX rapidamente via WhatsApp Web do cliente.
+
+### PASSO 6: Integração de Ações em Garantias
+1. Adicionar botão de acionamento de garantia.
+2. Ao acionar a garantia, criar de forma automática no backend uma nova Ordem de Serviço de reparo sem custo (R$ 0,00) associada ao cliente.
+3. Adicionar links para Clientes e Orçamentos.
+
+### PASSO 7: Validação e Compilação
+1. Executar `npm run build` na pasta `frontend/`.
 
 ---
 
-## 💎 ESTÁNDAR DE DIAMANTE (Critérios de Aceitação)
-- **Acessibilidade de Navegação**: Todos os 5 módulos principais devem ser acessíveis diretamente do menu de cabeçalho global.
-- **Zero Erros 404**: Clicar em qualquer tela ou interagir (como gerar PIX / aprovar pagamento) não deve produzir erros de rede.
-- **TypeScript Estrito**: Todas as páginas de visualização de rotas migradas de `.jsx` para `.tsx`.
+## 💎 CRITÉRIOS DE ACEITAÇÃO (Estilo Diamante)
+- **Zero oscilações:** As páginas de Clientes e Orçamentos devem carregar sem loops de re-render.
+- **Fidelidade Visual Premium:** O visual deve ser impactante e moderno.
+- **Fluxo Integrado:** Ações em Garantias e OS devem atualizar e criar registros dinâmicos correspondentes sem quebras.

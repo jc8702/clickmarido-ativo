@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useCustomers } from '@/hooks/useCustomers';
+import { useCustomers, useDeleteCustomer } from '@/hooks/useCustomers';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -10,14 +10,37 @@ import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components
 import { Badge } from '@/components/Badge';
 import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { TableShimmer } from '@/components/Shimmer';
+
+interface CustomerAddress {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood?: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  addresses: string | CustomerAddress[]; // Pode ser string JSON ou array
+}
 
 export default function CustomersPage() {
   const { user, logout } = useAuth();
   const authUser = user as { email: string } | null;
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  
   const { data, isLoading, mutate } = useCustomers(1, debouncedSearch);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
+  // Efeito para debounce da busca
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -25,14 +48,77 @@ export default function CustomersPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  useEffect(() => {
-    mutate();
-  }, [debouncedSearch, mutate]);
+  const customers = (data?.data || []) as Customer[];
 
-  const customers = data?.data || [];
+  useEffect(() => {
+    if (typeof window !== 'undefined' && customers.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (id) {
+        const found = customers.find(c => c.id === id);
+        if (found) {
+          setSelectedCustomer(found);
+        }
+      }
+    }
+  }, [customers]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este cliente?')) return;
+    setIsDeletingId(id);
+    try {
+      const response = await fetch(`/api/customers/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        mutate();
+        if (selectedCustomer?.id === id) {
+          setSelectedCustomer(null);
+        }
+      } else {
+        alert('Erro ao excluir cliente.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir cliente.');
+    } finally {
+      setIsDeletingId(null);
+    }
+  };
+
+  // Helper para formatar o endereço principal da listagem
+  const getPrimaryAddress = (addressesField: string | CustomerAddress[]): string => {
+    try {
+      const list = typeof addressesField === 'string' 
+        ? JSON.parse(addressesField) 
+        : addressesField;
+      
+      if (Array.isArray(list) && list.length > 0) {
+        const addr = list[0] as CustomerAddress;
+        return `${addr.street || ''}, ${addr.number || ''} - ${addr.city || ''}/${addr.state || ''}`;
+      }
+      return 'Sem endereço cadastrado';
+    } catch {
+      return 'Sem endereço cadastrado';
+    }
+  };
+
+  // Helper para obter a lista completa de endereços
+  const getAddressesList = (addressesField: string | CustomerAddress[]): CustomerAddress[] => {
+    try {
+      return typeof addressesField === 'string' 
+        ? JSON.parse(addressesField) 
+        : addressesField || [];
+    } catch {
+      return [];
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 flex flex-col relative overflow-x-hidden">
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
@@ -47,53 +133,91 @@ export default function CustomersPage() {
         onLogout={logout}
       />
 
-      <main className="max-w-7xl mx-auto px-6 py-10">
+      <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Clientes</h1>
-            <p className="text-neutral-600">{customers.length} clientes cadastrados</p>
+            <p className="text-neutral-600">
+              {isLoading ? 'Carregando clientes...' : `${customers.length} clientes cadastrados`}
+            </p>
           </div>
           <Link href="/customers/new">
-            <Button>Novo Cliente</Button>
+            <Button className="shadow-md hover:shadow-lg transition-all duration-300">
+              + Novo Cliente
+            </Button>
           </Link>
         </div>
 
         <div className="mb-6">
           <Input
-            placeholder="Buscar por nome ou email..."
+            placeholder="Buscar por nome, email ou telefone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="shadow-sm border-neutral-200"
           />
         </div>
 
         {isLoading ? (
-          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+          <Card className="p-6">
+            <TableShimmer rows={5} cols={4} />
+          </Card>
         ) : customers.length === 0 ? (
-          <Card gradient="none" shadow="md">
-            <div className="text-center py-12 text-neutral-500">Nenhum cliente encontrado</div>
+          <Card gradient="none" shadow="md" className="border border-neutral-200/60">
+            <div className="text-center py-16 text-neutral-500">
+              <span className="text-4xl block mb-4">👥</span>
+              Nenhum cliente encontrado
+            </div>
           </Card>
         ) : (
-          <Card shadow="lg">
+          <Card shadow="lg" className="border border-neutral-100 overflow-hidden">
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableHeader>Nome</TableHeader>
-                  <TableHeader>Email</TableHeader>
+                  <TableHeader>Cliente</TableHeader>
                   <TableHeader>Telefone</TableHeader>
+                  <TableHeader>Endereço Principal</TableHeader>
                   <TableHeader>Ações</TableHeader>
                 </TableRow>
               </TableHead>
               <tbody>
-                {customers.map((customer: any) => (
-                  <TableRow key={customer.id}>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.email}</TableCell>
+                {customers.map((customer) => (
+                  <TableRow key={customer.id} className="group hover:bg-neutral-50/80 transition-colors">
+                    <TableCell className="font-medium">
+                      <button
+                        onClick={() => setSelectedCustomer(customer)}
+                        className="text-left hover:text-primary-600 focus:outline-none transition-colors"
+                      >
+                        <div className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors">
+                          {customer.name}
+                        </div>
+                        <div className="text-xs text-neutral-500 font-normal">{customer.email}</div>
+                      </button>
+                    </TableCell>
                     <TableCell>{customer.phone}</TableCell>
+                    <TableCell className="max-w-xs truncate text-neutral-600" title={getPrimaryAddress(customer.addresses)}>
+                      {getPrimaryAddress(customer.addresses)}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setSelectedCustomer(customer)}
+                          className="px-3 py-1.5 rounded-md text-xs font-semibold bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors"
+                        >
+                          Detalhes
+                        </button>
                         <Link href={`/customers/${customer.id}`}>
-                          <Button size="xs" variant="outline">Editar</Button>
+                          <Button size="xs" variant="outline">
+                            Editar
+                          </Button>
                         </Link>
+                        <Button 
+                          size="xs" 
+                          variant="danger" 
+                          onClick={() => handleDelete(customer.id)}
+                          isLoading={isDeletingId === customer.id}
+                        >
+                          Excluir
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -103,6 +227,103 @@ export default function CustomersPage() {
           </Card>
         )}
       </main>
+
+      {/* Backdrop do Drawer */}
+      {selectedCustomer && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1040] animate-fade-in"
+          onClick={() => setSelectedCustomer(null)}
+        />
+      )}
+
+      {/* Gaveta Lateral (Drawer) de Detalhes do Cliente */}
+      <div 
+        className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col ${
+          selectedCustomer ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {selectedCustomer && (
+          <>
+            <div className="p-6 border-b border-neutral-100 flex items-center justify-between bg-gradient-to-r from-neutral-50 to-white">
+              <div>
+                <h3 className="text-xl font-bold text-neutral-900">Ficha do Cliente</h3>
+                <p className="text-xs text-neutral-500">ID: {selectedCustomer.id}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedCustomer(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+              {/* Informações Básicas */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Informações Básicas</h4>
+                <div className="bg-neutral-50 p-4 rounded-xl space-y-3">
+                  <div>
+                    <label className="text-xs text-neutral-500 font-medium">Nome</label>
+                    <div className="text-base font-bold text-neutral-900">{selectedCustomer.name}</div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-neutral-500 font-medium">E-mail</label>
+                    <div className="text-sm text-neutral-800">{selectedCustomer.email || 'Não informado'}</div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-neutral-500 font-medium">Telefone</label>
+                    <div className="text-sm text-neutral-800">{selectedCustomer.phone}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Endereços */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">Endereços Cadastrados</h4>
+                  <Badge variant="primary" size="sm">
+                    {getAddressesList(selectedCustomer.addresses).length}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-3">
+                  {getAddressesList(selectedCustomer.addresses).map((addr, index) => (
+                    <div key={index} className="border border-neutral-150 p-4 rounded-xl bg-white shadow-sm hover:border-neutral-300 transition-colors relative">
+                      <span className="absolute top-3 right-3 text-xs bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full font-bold">
+                        {index === 0 ? 'Principal' : `Local ${index + 1}`}
+                      </span>
+                      <div className="text-sm font-semibold text-neutral-900">
+                        {addr.street}, {addr.number}
+                      </div>
+                      {addr.complement && (
+                        <div className="text-xs text-neutral-600 mt-0.5">Compl: {addr.complement}</div>
+                      )}
+                      <div className="text-xs text-neutral-500 mt-1">
+                        Bairro: {addr.neighborhood || 'N/A'} • {addr.city}/{addr.state}
+                      </div>
+                      <div className="text-xs text-neutral-400 mt-0.5">CEP: {addr.zip}</div>
+                    </div>
+                  ))}
+                  {getAddressesList(selectedCustomer.addresses).length === 0 && (
+                    <p className="text-sm text-neutral-400 text-center py-4 bg-neutral-50 rounded-xl">
+                      Nenhum endereço associado.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-neutral-100 bg-neutral-50 flex gap-3">
+              <Link href={`/customers/${selectedCustomer.id}`} className="flex-1">
+                <Button fullWidth>Editar Cadastro</Button>
+              </Link>
+              <Link href={`/quotations/new?customerId=${selectedCustomer.id}`} className="flex-1">
+                <Button variant="secondary" fullWidth>Novo Orçamento</Button>
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

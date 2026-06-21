@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
       return {
         id: q.id,
         service_order_id: q.id,
+        customerId: q.customerId,
+        customer_name: q.customer?.name || 'Cliente',
+        customer_phone: q.customer?.phone || '',
         amount: q.total,
         status: isApproved ? 'aprovado' : 'pendente',
       };
@@ -60,3 +63,65 @@ export async function GET(request: NextRequest) {
     await prisma.$disconnect();
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { customerId, description, amount, status } = body;
+
+    if (!customerId || !description || amount === undefined || !status) {
+      return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
+    }
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
+    }
+
+    const quotationStatus = status === 'aprovado' ? 'aceito' : 'enviado';
+
+    const quotation = await prisma.quotation.create({
+      data: {
+        customerId,
+        items: [
+          {
+            description,
+            quantity: 1,
+            price: Number(amount),
+          },
+        ],
+        total: Number(amount),
+        status: quotationStatus,
+        notes: 'Lançamento de pagamento manual avulso',
+      },
+      include: { customer: true },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: quotation.id,
+        service_order_id: quotation.id,
+        customerId: quotation.customerId,
+        customer_name: customer.name,
+        customer_phone: customer.phone,
+        amount: quotation.total,
+        status: status,
+      },
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('POST /api/payments error:', error);
+    return NextResponse.json({ error: 'Erro ao criar pagamento' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+

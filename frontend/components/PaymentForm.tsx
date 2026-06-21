@@ -13,12 +13,14 @@ export function PaymentForm({ paymentId, onClose }: PaymentFormProps) {
   const [qrCode, setQrCode] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [paymentData, setPaymentData] = useState<any>(null);
 
   useEffect(() => {
     const fetchPix = async () => {
       try {
         const res = await api.get(`/payments/${paymentId}/generate-pix`);
         setQrCode(res.data.data.qr_code);
+        setPaymentData(res.data.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -32,6 +34,17 @@ export function PaymentForm({ paymentId, onClose }: PaymentFormProps) {
     navigator.clipboard.writeText(qrCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!paymentData) return;
+    const phone = paymentData.customer_phone.replace(/\D/g, '');
+    const cleanPhone = phone.startsWith('55') ? phone : `55${phone}`;
+    const amountFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(paymentData.amount);
+    
+    const text = `Olá, ${paymentData.customer_name}! 🛠️\n\nSegue o código PIX para o pagamento do serviço Click Marido no valor de *${amountFormatted}*:\n\n${qrCode}\n\nBasta copiar o código acima e colar no aplicativo do seu banco na opção PIX Copia e Cola. Obrigado!`;
+    
+    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`, '_blank');
   };
 
   if (loading) {
@@ -65,6 +78,11 @@ export function PaymentForm({ paymentId, onClose }: PaymentFormProps) {
         <Button onClick={copyToClipboard} variant="secondary" className="w-full">
           {copied ? '✔ Copiado!' : 'Copiar Código PIX'}
         </Button>
+        {paymentData?.customer_phone && (
+          <Button onClick={handleWhatsAppShare} variant="primary" className="w-full bg-emerald-600 hover:bg-emerald-700 border-none text-white">
+            💬 Cobrar via WhatsApp
+          </Button>
+        )}
         <Button onClick={onClose} variant="outline" className="w-full">
           Fechar
         </Button>

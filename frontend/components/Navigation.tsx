@@ -18,42 +18,87 @@ export interface NavigationProps {
   onMenuClick?: () => void;
 }
 
+const defaultIcons: Record<string, React.ReactNode> = {
+  'Dashboard': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+    </svg>
+  ),
+  'Clientes': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  'Orçamentos': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  'Ordens de Serviço': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  'Pagamentos': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  'Garantias': (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  ),
+};
+
 export function Navigation({ links, logo, user, onLogout, onMenuClick }: NavigationProps) {
   const pathname = usePathname() ?? '/';
 
   return (
-    <nav className="bg-gradient-dark text-white sticky top-0 z-[1030] shadow-lg">
+    <nav className="bg-white/80 backdrop-blur-md border-b border-neutral-200/60 text-neutral-800 sticky top-0 z-[1030] shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             {onMenuClick && (
               <button
                 onClick={onMenuClick}
-                className="md:hidden text-white hover:opacity-80"
+                className="md:hidden text-neutral-600 hover:text-neutral-900 focus:outline-none"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
             )}
-            {logo}
+            <div className="flex items-center">
+              {logo || (
+                <div className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+                  Click Marido
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="hidden md:flex gap-4">
+          <div className="hidden md:flex gap-1.5 items-center">
             {links.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              const icon = link.icon || defaultIcons[link.label] || null;
+              
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-md
-                    transition-all duration-300
-                    ${isActive ? 'bg-white/20 shadow-sm' : 'hover:bg-white/10'}
+                    flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold
+                    transition-all duration-300 select-none
+                    ${isActive 
+                      ? 'bg-primary-50/60 text-primary-700 shadow-sm border border-primary-100/50' 
+                      : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
+                    }
                   `}
                 >
-                  {link.icon && <span>{link.icon}</span>}
-                  <span className="font-medium">{link.label}</span>
+                  {icon && <span className={`${isActive ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'}`}>{icon}</span>}
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
@@ -63,15 +108,15 @@ export function Navigation({ links, logo, user, onLogout, onMenuClick }: Navigat
             <div className="flex items-center gap-4">
               <Link
                 href="/profile"
-                className="text-sm text-right hover:opacity-80 transition-opacity focus:outline-none"
+                className="text-xs text-right hover:opacity-80 transition-opacity focus:outline-none"
               >
-                <div className="font-semibold">{user.name}</div>
-                <div className="opacity-75 text-xs">{user.email}</div>
+                <div className="font-bold text-neutral-800">{user.name}</div>
+                <div className="opacity-60 text-[10px] font-mono leading-none">{user.email}</div>
               </Link>
               {onLogout && (
                 <button
                   onClick={onLogout}
-                  className="px-4 py-2 rounded-md bg-white/20 hover:bg-white/30 transition-colors text-sm"
+                  className="px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-600 hover:text-neutral-900 transition-all text-xs font-bold"
                 >
                   Sair
                 </button>
