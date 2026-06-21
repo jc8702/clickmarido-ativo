@@ -33,7 +33,7 @@ export default function CustomersPage() {
       <Navigation
         logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
         links={[
-          { href: '/', label: 'Dashboard' },
+          { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
         ]}

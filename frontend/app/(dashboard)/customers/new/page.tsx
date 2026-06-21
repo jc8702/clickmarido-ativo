@@ -19,7 +19,7 @@ export default function NewCustomerPage() {
     try {
       setError('');
       await mutateAsync(data);
-      router.push('/dashboard/customers');
+      router.push('/customers');
     } catch (err: any) {
       setError(err.message);
     }

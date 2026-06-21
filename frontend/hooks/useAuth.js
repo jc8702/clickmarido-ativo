@@ -71,7 +71,7 @@ export function useAuth() {
         role: data.user.role,
       });
 
-      router.push('/dashboard/customers');
+      router.push('/dashboard');
 
       return data;
     } catch (error) {
