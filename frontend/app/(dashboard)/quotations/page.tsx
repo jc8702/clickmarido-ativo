@@ -68,12 +68,10 @@ export default function QuotationsPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
-
   const quotations = (data?.data || []) as Quotation[];
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && quotations.length > 0) {
+    if (mounted && typeof window !== 'undefined' && quotations.length > 0) {
       const params = new URLSearchParams(window.location.search);
       const id = params.get('id');
       if (id) {
@@ -83,7 +81,9 @@ export default function QuotationsPage() {
         }
       }
     }
-  }, [quotations]);
+  }, [mounted, quotations]);
+
+  if (!mounted) return null;
 
   const getQuotationsByStatus = (status: string) =>
     quotations.filter((q: any) => q.status === status);

@@ -50,3 +50,18 @@ body {
     border-color: var(--card-border);
   }
 }
+
+/* Force dark backgrounds to override gradient background-images */
+.dark .bg-gradient-subtle {
+  background-image: none !important;
+  background-color: #1F2937 !important;
+}
+.dark .bg-white {
+  background-color: #1F2937 !important;
+}
+.dark .bg-neutral-50 {
+  background-color: #1F2937 !important;
+}
+.dark .bg-neutral-100 {
+  background-color: #374151 !important;
+}
