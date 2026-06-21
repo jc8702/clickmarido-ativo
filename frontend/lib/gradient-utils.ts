@@ -1,6 +1,6 @@
 export const gradients = {
   hero: 'bg-gradient-hero',
-  subtle: 'bg-gradient-subtle',
+  subtle: 'bg-gradient-subtle dark:bg-neutral-800',
   accent: 'bg-gradient-accent',
   dark: 'bg-gradient-dark',
   warning: 'bg-gradient-warning',

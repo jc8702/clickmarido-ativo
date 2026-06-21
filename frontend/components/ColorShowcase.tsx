@@ -45,7 +45,7 @@ export function ColorShowcase() {
         <h2 className="text-2xl font-bold mb-4 text-neutral-900 dark:text-neutral-100">💎 Gradientes</h2>
         <div className="flex gap-4">
           <div className="w-40 h-32 bg-gradient-hero rounded-lg flex items-center justify-center text-white text-xs font-bold">Hero</div>
-          <div className="w-40 h-32 bg-gradient-subtle rounded-lg border border-neutral-200 dark:border-neutral-600 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-xs font-bold">Subtle</div>
+          <div className="w-40 h-32 bg-gradient-subtle dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-600 flex items-center justify-center text-neutral-700 dark:text-neutral-300 text-xs font-bold">Subtle</div>
           <div className="w-40 h-32 bg-gradient-accent rounded-lg flex items-center justify-center text-white text-xs font-bold">Accent</div>
           <div className="w-40 h-32 bg-gradient-dark rounded-lg flex items-center justify-center text-white text-xs font-bold">Dark</div>
           <div className="w-40 h-32 bg-gradient-warning rounded-lg flex items-center justify-center text-white text-xs font-bold">Warning</div>

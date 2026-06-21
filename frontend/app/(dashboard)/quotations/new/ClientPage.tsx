@@ -35,20 +35,20 @@ export default function NewQuotationPage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-4xl mx-auto bg-neutral-50 dark:bg-neutral-900 min-h-screen">
       <div className="mb-8 flex items-center gap-4">
-        <Link href="/quotations" className="text-blue-600 hover:underline">&larr; Voltar</Link>
-        <h1 className="text-2xl font-bold text-gray-900">Novo Orçamento</h1>
+        <Link href="/quotations" className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Voltar</Link>
+        <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Novo Orçamento</h1>
       </div>
 
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded shadow">
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
           <CustomerPicker />
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Válido até *</label>
-            <input type="date" {...methods.register('valid_until')} className="p-2 border rounded" />
-            {methods.formState.errors.valid_until && <p className="text-red-500 text-xs mt-1">{methods.formState.errors.valid_until.message}</p>}
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Válido até *</label>
+            <input type="date" {...methods.register('valid_until')} className="p-2 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100" />
+            {methods.formState.errors.valid_until && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{methods.formState.errors.valid_until.message}</p>}
           </div>
 
           <ItemsBuilder />

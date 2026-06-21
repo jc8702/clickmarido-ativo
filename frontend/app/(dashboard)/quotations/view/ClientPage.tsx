@@ -14,19 +14,19 @@ function QuotationContent() {
   const [approved, setApproved] = React.useState(false);
 
   if (!token) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Token inválido ou não fornecido.</p></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"><p>Token inválido ou não fornecido.</p></div>;
   }
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50"><p className="text-gray-500">Carregando orçamento...</p></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900"><p className="text-neutral-500 dark:text-neutral-400">Carregando orçamento...</p></div>;
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded shadow text-center max-w-sm">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Ops!</h2>
-          <p className="text-gray-600">{error || 'Orçamento não encontrado.'}</p>
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+        <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-sm border border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">Ops!</h2>
+          <p className="text-neutral-600 dark:text-neutral-400">{error || 'Orçamento não encontrado.'}</p>
         </div>
       </div>
     );
@@ -34,10 +34,10 @@ function QuotationContent() {
 
   if (approved || data.status === 'approved') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
-        <div className="bg-white p-8 rounded shadow text-center max-w-md w-full border-t-4 border-green-500">
-          <h2 className="text-2xl font-bold text-green-700 mb-4">Orçamento Aprovado! ✅</h2>
-          <p className="text-gray-600 mb-6">Obrigado pela confiança, {data.customer_name}. Uma Ordem de Serviço foi gerada e nossa equipe entrará em contato em breve.</p>
+      <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-green-900/20 p-4">
+        <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-md w-full border-t-4 border-green-500 border border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">Orçamento Aprovado! ✅</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">Obrigado pela confiança, {data.customer_name}. Uma Ordem de Serviço foi gerada e nossa equipe entrará em contato em breve.</p>
         </div>
       </div>
     );
@@ -53,8 +53,8 @@ function QuotationContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-900 py-12 px-4">
+      <div className="max-w-2xl mx-auto bg-white dark:bg-neutral-800 rounded-xl shadow-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
         <div className="bg-blue-600 p-6 text-white text-center">
           <h1 className="text-2xl font-bold">Proposta de Serviço</h1>
           <p className="opacity-90 mt-1">Orçamento nº {data.number}</p>
@@ -62,26 +62,26 @@ function QuotationContent() {
 
         <div className="p-6 md:p-8 space-y-8">
           <div>
-            <p className="text-gray-600 text-sm">Olá,</p>
-            <p className="text-lg font-medium text-gray-900">{data.customer_name}</p>
-            <p className="mt-2 text-gray-600 text-sm">Segue abaixo o detalhamento dos serviços propostos. Esta proposta é válida até <strong>{new Date(data.valid_until).toLocaleDateString()}</strong>.</p>
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm">Olá,</p>
+            <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{data.customer_name}</p>
+            <p className="mt-2 text-neutral-600 dark:text-neutral-400 text-sm">Segue abaixo o detalhamento dos serviços propostos. Esta proposta é válida até <strong>{new Date(data.valid_until).toLocaleDateString()}</strong>.</p>
           </div>
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-600">
                 <tr>
-                  <th className="p-3 font-medium text-gray-600">Serviço</th>
-                  <th className="p-3 font-medium text-gray-600 text-center">Qtd</th>
-                  <th className="p-3 font-medium text-gray-600 text-right">Preço Un.</th>
+                  <th className="p-3 font-medium text-neutral-600 dark:text-neutral-300">Serviço</th>
+                  <th className="p-3 font-medium text-neutral-600 dark:text-neutral-300 text-center">Qtd</th>
+                  <th className="p-3 font-medium text-neutral-600 dark:text-neutral-300 text-right">Preço Un.</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                 {data.items.map((i: any, idx: number) => (
                   <tr key={idx}>
-                    <td className="p-3 text-gray-800">{i.name}</td>
-                    <td className="p-3 text-center text-gray-600">{i.quantity}</td>
-                    <td className="p-3 text-right text-gray-800">R$ {i.unit_price.toFixed(2)}</td>
+                    <td className="p-3 text-neutral-800 dark:text-neutral-200">{i.name}</td>
+                    <td className="p-3 text-center text-neutral-600 dark:text-neutral-400">{i.quantity}</td>
+                    <td className="p-3 text-right text-neutral-800 dark:text-neutral-200">R$ {i.unit_price.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -89,12 +89,12 @@ function QuotationContent() {
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            <p className="text-gray-600">Subtotal: R$ {data.subtotal.toFixed(2)}</p>
-            {data.discount > 0 && <p className="text-red-500">Desconto: - R$ {data.discount.toFixed(2)}</p>}
-            <p className="text-2xl font-bold text-gray-900 mt-2">Total: R$ {data.total.toFixed(2)}</p>
+            <p className="text-neutral-600 dark:text-neutral-400">Subtotal: R$ {data.subtotal.toFixed(2)}</p>
+            {data.discount > 0 && <p className="text-red-500 dark:text-red-400">Desconto: - R$ {data.discount.toFixed(2)}</p>}
+            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">Total: R$ {data.total.toFixed(2)}</p>
           </div>
 
-          <div className="border-t pt-6">
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6">
             <button 
               onClick={handleApprove}
               disabled={isPending}
@@ -102,7 +102,7 @@ function QuotationContent() {
             >
               {isPending ? 'Processando...' : 'Aceitar Orçamento'}
             </button>
-            <p className="text-center text-xs text-gray-500 mt-3">Ao aceitar, você concorda com a realização dos serviços listados acima.</p>
+            <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mt-3">Ao aceitar, você concorda com a realização dos serviços listados acima.</p>
           </div>
         </div>
       </div>
@@ -112,7 +112,7 @@ function QuotationContent() {
 
 export default function PublicQuotationView() {
   return (
-    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Carregando...</p></div>}>
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"><p>Carregando...</p></div>}>
       <QuotationContent />
     </React.Suspense>
   );

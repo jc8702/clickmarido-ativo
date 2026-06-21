@@ -25,7 +25,7 @@ export default function TestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <Navigation
         logo={<span className="text-lg font-bold text-white">Test Components</span>}
         links={[
@@ -46,7 +46,7 @@ export default function TestPage() {
 
         {/* Colors */}
         <section id="colors">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Cores</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Cores</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {['primary', 'success', 'warning'].map((palette) =>
               [50, 100, 200, 400, 500, 600, 700, 800, 900].map((shade) => (
@@ -64,7 +64,7 @@ export default function TestPage() {
 
         {/* Buttons */}
         <section id="buttons">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Botões</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Botões</h2>
           <Card>
             <CardContent>
               <div className="space-y-6">
@@ -94,7 +94,7 @@ export default function TestPage() {
 
         {/* Cards */}
         <section id="cards">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Cards</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Cards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
@@ -134,7 +134,7 @@ export default function TestPage() {
 
         {/* Inputs */}
         <section id="inputs">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Inputs</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Inputs</h2>
           <Card>
             <CardContent className="space-y-4">
               <Input label="Texto Normal" placeholder="Digite algo..." />
@@ -148,7 +148,7 @@ export default function TestPage() {
 
         {/* Badges */}
         <section id="badges">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Badges</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Badges</h2>
           <Card>
             <CardContent>
               <div className="flex flex-wrap gap-3">
@@ -168,7 +168,7 @@ export default function TestPage() {
 
         {/* Modal + Toast */}
         <section id="interactions">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Modal & Toast</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Modal & Toast</h2>
           <Card>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
@@ -192,7 +192,7 @@ export default function TestPage() {
 
         {/* Table */}
         <section id="table">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Tabela</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Tabela</h2>
           <Card shadow="lg">
             <Table>
               <TableHead>
@@ -226,7 +226,7 @@ export default function TestPage() {
 
         {/* FormBuilder */}
         <section id="form">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">FormBuilder</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">FormBuilder</h2>
           <div className="max-w-lg">
             <FormBuilder
               title="Formulário de Teste"
@@ -248,17 +248,17 @@ export default function TestPage() {
 
         {/* Animações */}
         <section id="animations">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-6">Animações</h2>
+          <h2 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Animações</h2>
           <Card>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-6 bg-white rounded-lg shadow-md animate-fade-in text-center">fade-in</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-slide-down text-center">slide-down</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-slide-up text-center">slide-up</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-scale-in text-center">scale-in</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-bounce-subtle text-center">bounce-subtle</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-pulse-subtle text-center">pulse</div>
-                <div className="p-6 bg-white rounded-lg shadow-md animate-float text-center">float</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-fade-in text-center text-neutral-900 dark:text-neutral-100">fade-in</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-slide-down text-center text-neutral-900 dark:text-neutral-100">slide-down</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-slide-up text-center text-neutral-900 dark:text-neutral-100">slide-up</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-scale-in text-center text-neutral-900 dark:text-neutral-100">scale-in</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-bounce-subtle text-center text-neutral-900 dark:text-neutral-100">bounce-subtle</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-pulse-subtle text-center text-neutral-900 dark:text-neutral-100">pulse</div>
+                <div className="p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-md border border-neutral-200 dark:border-neutral-700 animate-float text-center text-neutral-900 dark:text-neutral-100">float</div>
                 <div className="p-6 bg-gradient-hero text-white rounded-lg shadow-md animate-shimmer text-center bg-gradient-animated">
                   gradient anim
                 </div>
