@@ -3,7 +3,7 @@
 ## Informações Gerais
 
 - **Status:** MVP v1.0.0 - Production Ready
-- **Última atualização:** 20/06/2026 - 23:00
+- **Última atualização:** 21/06/2026 - 16:45
 - **Objetivo:** CRM para serviços residenciais (1 usuário solo)
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
@@ -46,6 +46,18 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 21/06/2026 - 16:45
+- Resolução dos pontos de atenção identificados na auditoria:
+  - Remoção de duplicidade de layouts de raiz (`layout.jsx` removido e unificado em `layout.tsx`).
+  - Remoção de componentes legados não utilizados (`Navbar.jsx` e `Sidebar.jsx`).
+  - Migração para TypeScript e redesign visual de `ServiceOrderForm` e `PaymentForm` (agora `.tsx` alinhados ao Design System).
+- Validação completa do build de produção com sucesso (`npm run build`).
+
+### 21/06/2026 - 16:30
+- Inicialização do plano de auditoria do redesign UX/UI.
+- Mapeamento de Skills necessárias e criação do Squad de Experts.
+- Criação dos artefatos locais `tareas.md` e `plan_implementacion.md`.
 
 ### v1.0.0 (20/06/2026) - Launch
 - Next.js 15 + Prisma setup
