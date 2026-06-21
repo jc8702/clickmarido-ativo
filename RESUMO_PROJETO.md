@@ -3,7 +3,7 @@
 ## Informações Gerais
 
 - **Status:** MVP v1.0.0 - Production Ready
-- **Última atualização:** 21/06/2026 - 16:45
+- **Última atualização:** 21/06/2026 - 16:50
 - **Objetivo:** CRM para serviços residenciais (1 usuário solo)
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
@@ -47,7 +47,11 @@ Vercel (Deploy)
 
 ## Histórico de Evolução
 
-### 21/06/2026 - 16:45
+### 21/06/2026 - 16:50
+- Correção do erro 404 ao tentar acessar rotas inexistentes `/dashboard/customers`:
+  - Corrigidos os redirecionamentos pós-login em `useAuth.js` e `page.tsx` (redirecionando agora para `/dashboard`).
+  - Ajustados os links de navegação da barra global de `/` para `/dashboard` (evitando loops e conflitos).
+  - Corrigido o redirecionamento pós-cadastro de cliente em `new/page.tsx` para `/customers`.
 - Resolução dos pontos de atenção identificados na auditoria:
   - Remoção de duplicidade de layouts de raiz (`layout.jsx` removido e unificado em `layout.tsx`).
   - Remoção de componentes legados não utilizados (`Navbar.jsx` e `Sidebar.jsx`).
