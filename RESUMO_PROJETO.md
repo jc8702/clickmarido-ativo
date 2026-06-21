@@ -4,7 +4,7 @@
 
 - **Status Atual:** Evolução Concluída (Navegação & Módulos)
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 21/06/2026 - 17:25
+- **Última Atualização:** 21/06/2026 - 17:35
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -46,6 +46,13 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 21/06/2026 - 17:35
+- Integração dinâmica de dados e autenticação funcional no Dashboard:
+  - Criação da rota de API `/api/dashboard/route.ts` que calcula dados reais da base (faturamentos, quantidade de clientes, taxa de conversão baseada em orçamentos, últimas ordens e ranking de serviços requisitados).
+  - Substituição do e-mail de teste fixo `admin@clickmarido.local` por dados reais do usuário autenticado (`jose@clickmarido.local`) e ativação da função de logout funcional (`onLogout={logout}`) na barra de navegação superior global de todas as 6 páginas da dashboard.
+  - Ajuste de tipagem do TypeScript com casts de segurança (`user as { email: string }`) nas páginas `.tsx` para garantir compilação bem-sucedida do compilador estático do Next.js.
+  - Testes do fluxo completo (login, painel integrado de dados e logout funcional) executados com sucesso em produção na Vercel.
 
 ### 21/06/2026 - 17:25
 - Evolução de módulos ocultos e unificação da navegação global:
