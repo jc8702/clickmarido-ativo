@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "dom.iterable", "esnext"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "dom.iterable",
+      "esnext"
+    ],
     "declaration": true,
     "strict": true,
     "esModuleInterop": true,
@@ -10,7 +15,7 @@
     "composite": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "module": "esnext",
     "moduleResolution": "bundler",
     "allowJs": true,
@@ -20,7 +25,9 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "plugins": [
       {
@@ -32,7 +39,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
