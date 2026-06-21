@@ -1,0 +1,170 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import api from '../../../lib/api';
+import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
+import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
+import { Badge } from '@/components/Badge';
+import { Modal } from '@/components/Modal';
+import { Navigation } from '@/components/Navigation';
+import ServiceOrderForm from '../../../components/ServiceOrderForm';
+import { useAuth } from '@/hooks/useAuth';
+
+interface ServiceOrder {
+  id: string;
+  customer_name: string;
+  scheduled_date: string;
+  status: 'agendada' | 'em_progresso' | 'concluida' | 'cancelada';
+  amount: number;
+}
+
+const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
+  agendada: 'primary',
+  em_progresso: 'warning',
+  concluida: 'success',
+  cancelada: 'danger',
+};
+
+const statusLabels: Record<string, string> = {
+  agendada: 'Agendada',
+  em_progresso: 'Em Progresso',
+  concluida: 'Concluída',
+  cancelada: 'Cancelada',
+};
+
+export default function ServiceOrdersPage() {
+  const { user, logout } = useAuth();
+  const authUser = user as { email: string } | null;
+  const [orders, setOrders] = useState<ServiceOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeModalId, setActiveModalId] = useState<string | null>(null);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/service-orders');
+      setOrders(res.data.data);
+    } catch (err) {
+      console.error('Erro ao buscar ordens de serviço:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleStart = async (id: string) => {
+    try {
+      await api.patch(`/service-orders/${id}/start`);
+      fetchOrders();
+    } catch (err) {
+      alert('Erro ao iniciar a OS.');
+    }
+  };
+
+  const selectedOrder = orders.find(o => o.id === activeModalId);
+
+  return (
+    <div className="min-h-screen bg-neutral-50">
+      <Navigation
+        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
+        links={[
+          { href: '/dashboard', label: 'Dashboard' },
+          { href: '/customers', label: 'Clientes' },
+          { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+          { href: '/warranties', label: 'Garantias' },
+        ]}
+        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        onLogout={logout}
+      />
+
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Ordens de Serviço</h1>
+          <p className="text-neutral-600">Gerenciamento e execução dos serviços agendados</p>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+        ) : orders.length === 0 ? (
+          <Card gradient="none" shadow="md">
+            <div className="text-center py-12 text-neutral-500">Nenhuma ordem de serviço encontrada</div>
+          </Card>
+        ) : (
+          <Card shadow="lg">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>ID (Ref)</TableHeader>
+                  <TableHeader>Cliente</TableHeader>
+                  <TableHeader>Data Prevista</TableHeader>
+                  <TableHeader>Valor (R$)</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                  <TableHeader>Ações</TableHeader>
+                </TableRow>
+              </TableHead>
+              <tbody>
+                {orders.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium">{row.id}</TableCell>
+                    <TableCell>{row.customer_name}</TableCell>
+                    <TableCell>
+                      {row.scheduled_date ? new Date(row.scheduled_date).toLocaleDateString('pt-BR') : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      {row.amount ? `R$ ${Number(row.amount).toFixed(2)}` : 'R$ 0,00'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={statusBadgeVariant[row.status] || 'neutral'} size="sm">
+                        {statusLabels[row.status] || row.status.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {row.status === 'agendada' && (
+                          <Button variant="primary" size="sm" onClick={() => handleStart(row.id)}>
+                            Iniciar
+                          </Button>
+                        )}
+                        {row.status === 'em_progresso' && (
+                          <Button variant="secondary" size="sm" onClick={() => setActiveModalId(row.id)}>
+                            Concluir
+                          </Button>
+                        )}
+                        {row.status !== 'agendada' && row.status !== 'em_progresso' && (
+                          <span className="text-neutral-400 text-sm">—</span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+        )}
+      </main>
+
+      <Modal
+        isOpen={activeModalId !== null}
+        onClose={() => setActiveModalId(null)}
+        title="Concluir Ordem de Serviço"
+      >
+        {selectedOrder && (
+          <ServiceOrderForm
+            so={selectedOrder}
+            onCancel={() => setActiveModalId(null)}
+            onSuccess={() => {
+              setActiveModalId(null);
+              fetchOrders();
+            }}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}

@@ -1,48 +1,51 @@
-# Plano de Rota Técnica: Auditoria do Redesign UX/UI (Click Marido CRM)
+# Plano de Rota Técnica: Correção de Navegação e Integração dos Módulos Ocultos (Click Marido CRM)
 
-Este plano descreve a rota técnica que o Squad de Especialistas seguirá para verificar se o sistema Click Marido CRM está em conformidade com as regras e planos de redesign definidos.
+Este plano descreve as etapas técnicas para integrar todos os módulos ocultos (Ordens de Serviço, Pagamentos, Garantias e Perfil) à navegação principal e corrigir os erros de API da tela de Pagamentos.
 
 ---
 
 ## 🎨 SQUAD DE ESPECIALISTAS (Mapeamento de Skills)
 
-- **`@web-design-guidelines` (Auditor Visual e Temas)**: Validará a paleta de cores (Roxo, Verde, Laranja), os 5 gradientes assinaturas (`gradient-hero`, `gradient-subtle`, `gradient-accent`, `gradient-dark`, `gradient-warning`), animações CSS e aplicação de fontes modernas (Inter / Plus Jakarta Sans).
-- **`@code-reviewer` (Auditor de Componentes React/TS)**: Validará a estruturação dos 8 componentes reutilizáveis e do `FormBuilder`, verificando se contêm as variantes, tamanhos, estados e propriedades de forma semântica e sem cores hardcoded.
-- **`@wcag-audit-patterns` (Auditor de Acessibilidade)**: Validará o contraste mínimo (WCAG AA 4.5:1), comportamento de foco, usabilidade do teclado nos modais e semântica HTML.
-- **`@webapp-testing` (Auditor de Rotas e Build)**: Responsável por subir o servidor, validar a navegação e garantir que o build da Vercel / Next.js (`npm run build`) execute perfeitamente sem erros de compilação ou console.
+- **`@web-design-guidelines` (Auditor Visual e Temas)**: Validará a paleta de cores e o visual das novas páginas TypeScript (`service-orders/page.tsx` e `payments/page.tsx`) mantendo a harmonia do Design System.
+- **`@code-reviewer` (Auditor de Componentes)**: Validará a migração de JSX para TSX das páginas de ordens e pagamentos, além da injeção consistente do componente `<Navigation>`.
+- **`@webapp-testing` (Auditor de Rotas e Build)**: Responsável por testar a comunicação das APIs de pagamentos criadas e validar que o build do Next.js compila perfeitamente sem falhas.
 
 ---
 
 ## 📅 CRONOGRAMA E PASSOS DE EXECUÇÃO
 
-### PASSO 1: Auditoria do Design System (Tokens e Tailwind Config)
-1. Analisar se `frontend/tailwind.config.js` implementa todas as cores primárias, secundárias, alerta, neutros e gradientes especificados no ultraprompt 1.
-2. Verificar se `frontend/lib/design-tokens.ts` e `frontend/lib/gradient-utils.ts` contêm os tokens de espaçamento, tipografia, bordas, sombras e as funções utilitárias de transição e gradiente.
-3. Verificar a presença e consistência da documentação local em `frontend/DESIGN_SYSTEM.md`.
+### PASSO 1: Integração e Unificação da Barra de Navegação
+1. Atualizar o array de links passado para o componente `<Navigation>` em todas as páginas principais (`dashboard`, `customers`, `quotations`, `profile`) para incluir:
+   - Dashboard (`/dashboard`)
+   - Clientes (`/customers`)
+   - Orçamentos (`/quotations`)
+   - Ordens de Serviço (`/service-orders`)
+   - Pagamentos (`/payments`)
+2. Atualizar o componente `<Navigation>` para tornar o bloco do usuário (nome e email) um link clicável direcionando para `/profile`.
 
-### PASSO 2: Auditoria dos Componentes Reutilizáveis (Foco no Ultra-Prompt 2)
-1. Inspecionar `Button.tsx` (5 variantes, 5 tamanhos, loading spinner, fullWidth, suporte a ícone).
-2. Inspecionar `Card.tsx` (shadows, gradients, compound components).
-3. Inspecionar `Input.tsx` (error, helperText, icon, required badge).
-4. Inspecionar `Badge.tsx` (variants, sizes, remove icon option).
-5. Inspecionar `Modal.tsx` (backdrop dismiss, anims, scroll lock, dynamic footer).
-6. Inspecionar `Toast.tsx` (success/error/warning/info states, timeout, entrance animation).
-7. Inspecionar `Navigation.tsx` (gradient-dark background, active class active link).
-8. Inspecionar `Table.tsx` (responsividade, head com subtle gradient, hover em row).
-9. Inspecionar `FormBuilder.tsx` (renderização dinâmica, validações e animações em cascata).
+### PASSO 2: Modernização do Módulo de Ordens de Serviço (`/service-orders`)
+1. Remover o arquivo `.jsx` legado `app/(dashboard)/service-orders/page.jsx`.
+2. Criar `app/(dashboard)/service-orders/page.tsx` totalmente tipado em TypeScript.
+3. Importar e instanciar o componente `<Navigation>` com os links de navegação globais.
+4. Aplicar os cards, tabelas e botões modernos baseados no Design System.
 
-### PASSO 3: Auditoria de Layouts e Rotas (Foco no Ultra-Prompt 3)
-1. Analisar `frontend/app/(dashboard)/dashboard/page.tsx`: se os cartões de estatísticas usam os gradientes corretos, a lista de ordens de serviço usa Badges corretos, e se o componente de navegação está integrado.
-2. Analisar `frontend/app/(dashboard)/customers/page.tsx`: se a tabela utiliza os componentes semânticos, a barra de busca funciona e as ações de editar/deletar estão integradas.
-3. Analisar `frontend/app/(dashboard)/quotations/page.tsx`: se a visualização em Kanban de 4 colunas está renderizando com os badges e animações fade-in.
+### PASSO 3: Resolução e Ativação do Módulo de Pagamentos (`/payments`)
+1. Remover o arquivo `.jsx` legado `app/(dashboard)/payments/page.jsx`.
+2. Criar `app/(dashboard)/payments/page.tsx` tipado em TypeScript, injetando `<Navigation>` e estilizando de acordo com o Design System.
+3. Criar a rota de API `/api/payments/route.ts` para retornar os dados dos pagamentos (mapeados a partir dos orçamentos aprovados de forma dinâmica para evitar modificações complexas de DB caso escolhido pelo usuário).
+4. Criar o endpoint PATCH `/api/payments/[id]/approve/route.ts` para aprovar o pagamento (atualizar status do orçamento relacionado).
 
-### PASSO 4: Teste de Build & Compilação Final
-1. Acessar a pasta `frontend` e rodar o comando de verificação e build estático do Next.js.
-2. Compilar os dados no relatório de auditoria e sugerir correções se necessário.
+### PASSO 4: Ajuste do Módulo de Garantias (`/warranties`)
+1. Redesenhar `app/warranties/page.tsx` aplicando as cores roxo, verde e laranja do Design System.
+2. Remover estilos inline antigos substituindo por classes de espaçamento e layout do Tailwind.
+3. Adicionar o cabeçalho de navegação padrão.
+
+### PASSO 5: Validação do Build
+1. Acessar a pasta `frontend` e rodar o comando de compilação estática (`npm run build`).
 
 ---
 
 ## 💎 ESTÁNDAR DE DIAMANTE (Critérios de Aceitação)
-- **Zero cores hardcoded**: todas as cores devem usar as classes Tailwind ou tokens do Design System.
-- **Build limpo**: `npm run build` deve rodar com 100% de sucesso.
-- **Fidelidade visual**: conformidade total com os ultraprompts fornecidos.
+- **Acessibilidade de Navegação**: Todos os 5 módulos principais devem ser acessíveis diretamente do menu de cabeçalho global.
+- **Zero Erros 404**: Clicar em qualquer tela ou interagir (como gerar PIX / aprovar pagamento) não deve produzir erros de rede.
+- **TypeScript Estrito**: Todas as páginas de visualização de rotas migradas de `.jsx` para `.tsx`.

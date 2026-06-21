@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status:** MVP v1.0.0 - Production Ready
-- **Última atualização:** 21/06/2026 - 16:50
-- **Objetivo:** CRM para serviços residenciais (1 usuário solo)
+- **Status Atual:** Evolução Concluída (Navegação & Módulos)
+- **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
+- **Última Atualização:** 21/06/2026 - 17:25
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -46,6 +46,24 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 21/06/2026 - 17:25
+- Evolução de módulos ocultos e unificação da navegação global:
+  - Adicionado suporte a todos os 6 módulos do CRM (Dashboard, Clientes, Orçamentos, Ordens de Serviço, Pagamentos, Garantias) no menu superior global `<Navigation>`.
+  - Adicionado redirecionamento no cabeçalho clicável do usuário para a tela de Perfil (`/profile`).
+  - Criação da página `/service-orders/page.tsx` em TypeScript e remoção de arquivo legado `.jsx`.
+  - Criação da página `/payments/page.tsx` em TypeScript e remoção do arquivo legado `.jsx`.
+  - Correção de erro 404 no faturamento implementando os endpoints `/api/payments`, `/api/payments/[id]/generate-pix` e `/api/payments/[id]/approve`.
+  - Ajuste visual e integração ao Design System no módulo `/warranties/page.tsx` consumindo dados da API de garantias.
+  - Correção de bugs de tipagem do TypeScript expostos no compilador do Next.js (como tipagem de ID cuid de string para o form de OS).
+  - Sucesso 100% no build estático final do Next.js (`npm run build`).
+
+### 21/06/2026 - 17:20
+- Realização de auditoria de navegabilidade e integridade dos módulos do CRM:
+  - Identificação de módulos ocultos na barra de navegação principal (Ordens de Serviço, Pagamentos, Garantias, Perfil).
+  - Diagnóstico de falha crítica (Erro 404) no módulo de Pagamentos devido à falta do endpoint de API correspondente e ausência de tabela no Prisma.
+  - Proposta de plano de ação para integrar todos os módulos na navegação, migrar componentes de visualização legados de `.jsx` para `.tsx` e criar APIs dinâmicas para permitir o funcionamento completo da tela de Pagamentos.
+  - Arquivos modificados/criados: `plan_implementacion.md` (local), `tareas.md` (local) e `implementation_plan.md` (oficial da sessão).
 
 ### 21/06/2026 - 16:50
 - Correção do erro 404 ao tentar acessar rotas inexistentes `/dashboard/customers`:
@@ -100,10 +118,8 @@ npm run dev
 
 ## Próximos Passos
 
-1. **Usar por 1 mês** - testar se atende necessidade
-2. **Coletar feedback** - o que está faltando?
-3. **Iterar** - adicionar features mais solicitadas
-4. **Escalar** - quando tiver 10+ usuários, refatorar
+1. **Testar e validar em produção na Vercel** após deploy contínuo automático.
+2. **Avaliar a viabilidade de geração de PDF para faturamento e orçamentos** (próximo item no roadmap de evolução).
 
 ---
 

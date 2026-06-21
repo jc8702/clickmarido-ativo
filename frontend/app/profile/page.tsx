@@ -8,10 +8,11 @@ import { Button } from '@/components/Button';
 import { Navigation } from '@/components/Navigation';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const authUser = user as { email?: string } | null;
   const [saved, setSaved] = useState(false);
 
-  const defaultEmail = (user as { email?: string } | null)?.email || 'jose@clickmarido.local';
+  const defaultEmail = authUser?.email || 'jose@clickmarido.local';
   const [formData, setFormData] = useState({
     name: 'José',
     email: defaultEmail,
@@ -33,7 +34,12 @@ export default function ProfilePage() {
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+          { href: '/warranties', label: 'Garantias' },
         ]}
+        user={authUser ? { name: 'Admin', email: authUser.email || 'admin@clickmarido.local' } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        onLogout={logout}
       />
 
       <main className="max-w-2xl mx-auto px-6 py-10">

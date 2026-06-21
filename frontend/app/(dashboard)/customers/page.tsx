@@ -9,8 +9,11 @@ import { Input } from '@/components/Input';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
 import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function CustomersPage() {
+  const { user, logout } = useAuth();
+  const authUser = user as { email: string } | null;
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const { data, isLoading, mutate } = useCustomers(1, debouncedSearch);
@@ -36,7 +39,12 @@ export default function CustomersPage() {
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+          { href: '/warranties', label: 'Garantias' },
         ]}
+        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        onLogout={logout}
       />
 
       <main className="max-w-7xl mx-auto px-6 py-10">

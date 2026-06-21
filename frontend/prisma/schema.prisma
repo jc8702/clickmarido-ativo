@@ -8,56 +8,46 @@ datasource db {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
-  name      String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  phone     String   @db.VarChar(20)
-
-  addresses Json     @default("[]")
-
+  id         String      @id @default(cuid())
+  name       String      @db.VarChar(255)
+  email      String      @unique @db.VarChar(255)
+  phone      String      @db.VarChar(20)
+  addresses  Json        @default("[]")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   quotations Quotation[]
   warranties Warranty[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@map("customers")
 }
 
 model Quotation {
-  id          String   @id @default(cuid())
-  customerId  String
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id         String     @id @default(cuid())
+  customerId String
+  items      Json       @default("[]")
+  total      Float      @default(0)
+  status     String     @default("rascunho")
+  notes      String     @default("")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  warranties Warranty[]
 
-  items       Json     @default("[]")
-
-  total       Float    @default(0)
-  status      String   @default("rascunho")
-  notes       String   @db.Text @default("")
-
-  warranties  Warranty[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("quotations")
   @@index([customerId])
+  @@map("quotations")
 }
 
 model Warranty {
-  id                String   @id @default(cuid())
-  quotationId       String
-  quotation         Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  quotationId         String
+  customerId          String
+  service_description String
+  expiry_date         DateTime
+  createdAt           DateTime  @default(now())
+  customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quotation           Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
-  customerId        String
-  customer          Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  service_description String @db.Text
-  expiry_date       DateTime
-
-  createdAt         DateTime @default(now())
-
-  @@map("warranties")
   @@index([quotationId])
   @@index([customerId])
+  @@map("warranties")
 }

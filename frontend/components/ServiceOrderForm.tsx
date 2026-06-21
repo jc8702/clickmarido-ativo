@@ -7,8 +7,9 @@ import api from '../lib/api';
 
 interface ServiceOrderFormProps {
   so: {
-    id: number;
+    id: string;
     final_total?: number;
+    amount?: number;
   };
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -16,7 +17,7 @@ interface ServiceOrderFormProps {
 
 export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormProps) {
   const [formData, setFormData] = useState({
-    final_total: so.final_total || 0,
+    final_total: so.final_total || so.amount || 0,
     technician_notes: ''
   });
   const [photos, setPhotos] = useState<{ before: File | null; after: File | null }>({

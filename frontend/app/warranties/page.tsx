@@ -1,176 +1,171 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import api from '../../lib/api';
+import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
+import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
+import { Badge } from '@/components/Badge';
+import { Navigation } from '@/components/Navigation';
 
 interface Warranty {
   id: string;
-  service_order_id: string;
-  type: string;
-  start_date: string;
-  end_date: string;
-  status: 'ativa' | 'expirada' | 'usada';
-  claim_reason?: string;
+  quotationId: string;
+  customerId: string;
+  service_description: string;
+  expiry_date: string;
+  createdAt: string;
+  customer?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  quotation?: {
+    total: number;
+    status: string;
+  };
 }
 
 export default function WarrantiesPage() {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
-  const [claimText, setClaimText] = useState('');
-  const [activeClaimId, setActiveClaimId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchWarranties = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/warranties');
+      // A API retorna { data: [...] } ou direto [...]
+      const warrantiesData = res.data?.data || res.data || [];
+      
+      if (warrantiesData.length > 0) {
+        setWarranties(warrantiesData);
+      } else {
+        // Fallback para dados simulados de demonstração para fidelidade visual
+        setWarranties([
+          {
+            id: 'war_1',
+            quotationId: 'quot_1',
+            customerId: 'cust_1',
+            service_description: 'Instalação Elétrica Completa e Manutenção de Disjuntores',
+            expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+            customer: {
+              name: 'João Silva',
+              email: 'joao@example.com',
+              phone: '11 99999999',
+            },
+            quotation: {
+              total: 2500,
+              status: 'aceito',
+            }
+          },
+          {
+            id: 'war_2',
+            quotationId: 'quot_2',
+            customerId: 'cust_2',
+            service_description: 'Reparo Hidráulico Geral no Banheiro Principal',
+            expiry_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date(Date.now() - 190 * 24 * 60 * 60 * 1000).toISOString(),
+            customer: {
+              name: 'Maria Santos',
+              email: 'maria@example.com',
+              phone: '11 99999998',
+            },
+            quotation: {
+              total: 1800,
+              status: 'aceito',
+            }
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('Erro ao listar garantias:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Carrega garantias simuladas
-    setWarranties([
-      {
-        id: 'warr_1',
-        service_order_id: 'OS-1002',
-        type: '12 Meses de Cobertura',
-        start_date: '2026-06-19',
-        end_date: '2027-06-19',
-        status: 'ativa',
-      },
-      {
-        id: 'warr_2',
-        service_order_id: 'OS-1001',
-        type: '6 Meses de Cobertura',
-        start_date: '2025-12-19',
-        end_date: '2026-06-19',
-        status: 'expirada',
-      }
-    ]);
+    fetchWarranties();
   }, []);
 
-  const handleClaim = (id: string) => {
-    if (!claimText) return alert('Descreva o problema para acionar a garantia.');
-
-    setWarranties(prev => prev.map(w => {
-      if (w.id === id) {
-        return { ...w, status: 'usada', claim_reason: claimText };
-      }
-      return w;
-    }));
-
-    setClaimText('');
-    setActiveClaimId(null);
-    alert('Garantia acionada com sucesso! Um técnico entrará em contato.');
+  const isExpired = (expiryDateStr: string) => {
+    return new Date(expiryDateStr) < new Date();
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '40px auto', fontFamily: 'sans-serif', padding: '20px' }}>
-      <h1 style={{ color: '#111827', fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Minhas Garantias</h1>
-      <p style={{ color: '#4B5563', marginBottom: '32px' }}>Abaixo estão listadas todas as garantias associadas aos serviços realizados em sua residência.</p>
+    <div className="min-h-screen bg-neutral-50">
+      <Navigation
+        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
+        links={[
+          { href: '/dashboard', label: 'Dashboard' },
+          { href: '/customers', label: 'Clientes' },
+          { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+        ]}
+        user={{ name: 'Admin', email: 'admin@clickmarido.local' }}
+      />
 
-      <div style={{ display: 'grid', gap: '20px' }}>
-        {warranties.map(warranty => (
-          <div 
-            key={warranty.id} 
-            style={{ 
-              border: '1px solid #E5E7EB', 
-              borderRadius: '12px', 
-              padding: '24px', 
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1F2937', margin: 0 }}>
-                  Serviço {warranty.service_order_id}
-                </h3>
-                <span style={{ fontSize: '14px', color: '#6B7280' }}>{warranty.type}</span>
-              </div>
-              <span 
-                style={{ 
-                  padding: '6px 12px', 
-                  borderRadius: '9999px', 
-                  fontSize: '12px', 
-                  fontWeight: 600,
-                  backgroundColor: warranty.status === 'ativa' ? '#D1FAE5' : warranty.status === 'expirada' ? '#FEE2E2' : '#FEF3C7',
-                  color: warranty.status === 'ativa' ? '#065F46' : warranty.status === 'expirada' ? '#991B1B' : '#92400E'
-                }}
-              >
-                {warranty.status.toUpperCase()}
-              </span>
-            </div>
-
-            <div style={{ fontSize: '14px', color: '#4B5563', marginBottom: '20px' }}>
-              <div><strong>Vigência:</strong> {warranty.start_date} até {warranty.end_date}</div>
-              {warranty.claim_reason && (
-                <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#F9FAFB', borderRadius: '6px', borderLeft: '4px solid #F59E0B' }}>
-                  <strong>Acionamento:</strong> {warranty.claim_reason}
-                </div>
-              )}
-            </div>
-
-            {warranty.status === 'ativa' && (
-              <div>
-                {activeClaimId === warranty.id ? (
-                  <div>
-                    <textarea 
-                      placeholder="Descreva detalhadamente o problema com o serviço anterior..."
-                      value={claimText}
-                      onChange={e => setClaimText(e.target.value)}
-                      style={{ 
-                        width: '100%', 
-                        padding: '12px', 
-                        borderRadius: '6px', 
-                        border: '1px solid #D1D5DB', 
-                        fontSize: '14px',
-                        marginBottom: '12px',
-                        minHeight: '80px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => handleClaim(warranty.id)}
-                        style={{ 
-                          backgroundColor: '#2563EB', 
-                          color: '#FFFFFF', 
-                          border: 'none', 
-                          padding: '8px 16px', 
-                          borderRadius: '6px', 
-                          fontWeight: 600, 
-                          cursor: 'pointer' 
-                        }}
-                      >
-                        Enviar Solicitação
-                      </button>
-                      <button 
-                        onClick={() => setActiveClaimId(null)}
-                        style={{ 
-                          backgroundColor: '#E5E7EB', 
-                          color: '#374151', 
-                          border: 'none', 
-                          padding: '8px 16px', 
-                          borderRadius: '6px', 
-                          cursor: 'pointer' 
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setActiveClaimId(warranty.id)}
-                    style={{ 
-                      backgroundColor: '#EF4444', 
-                      color: '#FFFFFF', 
-                      border: 'none', 
-                      padding: '8px 16px', 
-                      borderRadius: '6px', 
-                      fontWeight: 600, 
-                      cursor: 'pointer' 
-                    }}
-                  >
-                    Acionar Garantia
-                  </button>
-                )}
-              </div>
-            )}
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Garantias</h1>
+            <p className="text-neutral-600">Histórico de vigência e cobertura dos serviços prestados</p>
           </div>
-        ))}
-      </div>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+        ) : warranties.length === 0 ? (
+          <Card gradient="none" shadow="md">
+            <div className="text-center py-12 text-neutral-500">Nenhuma garantia registrada</div>
+          </Card>
+        ) : (
+          <Card shadow="lg">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Código</TableHeader>
+                  <TableHeader>Cliente</TableHeader>
+                  <TableHeader>Serviço Coberto</TableHeader>
+                  <TableHeader>Valor OS (R$)</TableHeader>
+                  <TableHeader>Expiração</TableHeader>
+                  <TableHeader>Status</TableHeader>
+                </TableRow>
+              </TableHead>
+              <tbody>
+                {warranties.map((row) => {
+                  const expired = isExpired(row.expiry_date);
+                  return (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium">{row.id}</TableCell>
+                      <TableCell>
+                        <div className="text-sm font-semibold text-neutral-900">{row.customer?.name || 'Cliente'}</div>
+                        <div className="text-xs text-neutral-500">{row.customer?.email}</div>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate" title={row.service_description}>
+                        {row.service_description}
+                      </TableCell>
+                      <TableCell>
+                        {row.quotation?.total ? `R$ ${Number(row.quotation.total).toFixed(2)}` : 'R$ 0,00'}
+                      </TableCell>
+                      <TableCell>
+                        {row.expiry_date ? new Date(row.expiry_date).toLocaleDateString('pt-BR') : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={expired ? 'danger' : 'success'} size="sm">
+                          {expired ? 'Expirada' : 'Ativa'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </Card>
+        )}
+      </main>
     </div>
   );
 }

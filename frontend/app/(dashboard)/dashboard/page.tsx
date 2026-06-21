@@ -5,8 +5,11 @@ import api from '../../../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const authUser = user as { email: string } | null;
   const [stats, setStats] = useState({
     receivedThisMonth: 0,
     pendingAmount: 0,
@@ -31,6 +34,7 @@ export default function Dashboard() {
     };
     fetchDashboard();
   }, []);
+
 
   if (loading) {
     return (
@@ -82,8 +86,12 @@ export default function Dashboard() {
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+          { href: '/warranties', label: 'Garantias' },
         ]}
-        user={{ name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        onLogout={logout}
       />
 
       <main className="max-w-7xl mx-auto px-6 py-10">

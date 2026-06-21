@@ -7,6 +7,7 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { Navigation } from '@/components/Navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const statusColors: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
   rascunho: 'neutral',
@@ -37,6 +38,8 @@ const statusLabels: Record<string, string> = {
 const columns = ['pendente', 'enviado', 'aceito', 'rejeitado'];
 
 export default function QuotationsPage() {
+  const { user, logout } = useAuth();
+  const authUser = user as { email: string } | null;
   const { data, isLoading, mutate } = useQuotations(undefined, 1);
   const [mounted, setMounted] = useState(false);
 
@@ -60,7 +63,12 @@ export default function QuotationsPage() {
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
+          { href: '/service-orders', label: 'Ordens de Serviço' },
+          { href: '/payments', label: 'Pagamentos' },
+          { href: '/warranties', label: 'Garantias' },
         ]}
+        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        onLogout={logout}
       />
 
       <main className="max-w-7xl mx-auto px-6 py-10">

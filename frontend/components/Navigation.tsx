@@ -61,10 +61,13 @@ export function Navigation({ links, logo, user, onLogout, onMenuClick }: Navigat
 
           {user && (
             <div className="flex items-center gap-4">
-              <div className="text-sm text-right">
+              <Link
+                href="/profile"
+                className="text-sm text-right hover:opacity-80 transition-opacity focus:outline-none"
+              >
                 <div className="font-semibold">{user.name}</div>
                 <div className="opacity-75 text-xs">{user.email}</div>
-              </div>
+              </Link>
               {onLogout && (
                 <button
                   onClick={onLogout}
