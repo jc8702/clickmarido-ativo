@@ -1,85 +1,100 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useAuth } from '@/hooks/useAuth';
+import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
+import { Input } from '@/components/Input';
+import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
+import { Badge } from '@/components/Badge';
+import { Navigation } from '@/components/Navigation';
 
 export default function CustomersPage() {
-  const { data, isLoading, mutate } = useCustomers(1, '');
-  const { user } = useAuth();
-  const [mounted, setMounted] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const { data, isLoading, mutate } = useCustomers(1, debouncedSearch);
 
   useEffect(() => {
-    setMounted(true);
-    mutate();
-  }, [mutate]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    mutate();
+  }, [debouncedSearch, mutate]);
+
+  const customers = data?.data || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
-        <Link
-          href="/dashboard/customers/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Novo Cliente
-        </Link>
-      </div>
+    <div className="min-h-screen bg-neutral-50">
+      <Navigation
+        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
+        links={[
+          { href: '/', label: 'Dashboard' },
+          { href: '/customers', label: 'Clientes' },
+          { href: '/quotations', label: 'Orçamentos' },
+        ]}
+      />
 
-      {isLoading && <p className="text-gray-600">Carregando...</p>}
-
-      {!isLoading && data.data.length === 0 && (
-        <p className="text-gray-600">Nenhum cliente cadastrado</p>
-      )}
-
-      {data.data.length > 0 && (
-        <div className="bg-white rounded-lg shadow">
-          <table className="min-w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
-                  Nome
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
-                  Telefone
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
-                  Ações
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((customer: any) => (
-                <tr key={customer.id} className="border-b">
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {customer.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {customer.email}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {customer.phone}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <Link
-                      href={`/dashboard/customers/${customer.id}`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Editar
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 mb-1">Clientes</h1>
+            <p className="text-neutral-600">{customers.length} clientes cadastrados</p>
+          </div>
+          <Link href="/customers/new">
+            <Button>Novo Cliente</Button>
+          </Link>
         </div>
-      )}
+
+        <div className="mb-6">
+          <Input
+            placeholder="Buscar por nome ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-12 text-neutral-600 animate-fade-in">Carregando...</div>
+        ) : customers.length === 0 ? (
+          <Card gradient="none" shadow="md">
+            <div className="text-center py-12 text-neutral-500">Nenhum cliente encontrado</div>
+          </Card>
+        ) : (
+          <Card shadow="lg">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeader>Nome</TableHeader>
+                  <TableHeader>Email</TableHeader>
+                  <TableHeader>Telefone</TableHeader>
+                  <TableHeader>Ações</TableHeader>
+                </TableRow>
+              </TableHead>
+              <tbody>
+                {customers.map((customer: any) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Link href={`/customers/${customer.id}`}>
+                          <Button size="xs" variant="outline">Editar</Button>
+                        </Link>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+          </Card>
+        )}
+      </main>
     </div>
   );
 }

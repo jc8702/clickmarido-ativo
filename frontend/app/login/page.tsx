@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { Card } from '@/components/Card';
+import { Input } from '@/components/Input';
+import { Button } from '@/components/Button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('jose@clickmarido.local');
@@ -19,6 +22,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
@@ -27,80 +31,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Click Marido CRM
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-animated opacity-10" />
+
+      <div className="w-full max-w-md animate-fade-in">
+        <div className="text-center mb-8 animate-slide-down">
+          <h1 className="text-4xl font-bold text-white tracking-tight">
+            Click<span className="text-warning-400">Marido</span>
+          </h1>
+          <p className="text-white/80 mt-2">
             Sistema de Gestão de Serviços Residenciais
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="jose@clickmarido.local"
-              disabled={isLoading}
-              required
-            />
-          </div>
+        <Card gradient="none" shadow="lg" className="animate-scale-in">
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-neutral-900 mb-6 text-center">
+              Entrar
+            </h2>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Sua senha"
-              disabled={isLoading}
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    {error}
-                  </h3>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div className="p-3 bg-warning-50 border-l-4 border-warning-600 text-warning-900 rounded-md text-sm animate-slide-down">
+                  {error}
                 </div>
-              </div>
+              )}
+
+              <Input
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                disabled={isLoading}
+                required
+              />
+
+              <Input
+                label="Senha"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Sua senha"
+                disabled={isLoading}
+                required
+              />
+
+              <Button fullWidth isLoading={isLoading} type="submit">
+                {isLoading ? 'Autenticando...' : 'Entrar'}
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-4 border-t border-neutral-200 text-center">
+              <p className="text-xs text-neutral-500">
+                <strong className="text-neutral-700">Credenciais de teste:</strong>
+                <br />
+                jose@clickmarido.local / 123456
+              </p>
             </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {isLoading ? 'Autenticando...' : 'Entrar'}
-          </button>
-        </form>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            <strong>Credenciais de teste:</strong>
-            <br />
-            Email: jose@clickmarido.local
-            <br />
-            Senha: 123456
-          </p>
-        </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

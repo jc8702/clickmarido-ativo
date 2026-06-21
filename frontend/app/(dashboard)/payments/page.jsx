@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import api from '../../../lib/api';
-import Table from '../../../components/Table';
+import { Table, TableHead, TableRow, TableCell, TableHeader } from '../../../components/Table';
 import Button from '../../../components/Button';
 import Modal from '../../../components/Modal';
+import { Badge } from '../../../components/Badge';
 import PaymentForm from '../../../components/PaymentForm';
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pixModalId, setPixModalId] = useState(null); // id do payment para o PIX
+  const [pixModalId, setPixModalId] = useState(null);
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -38,11 +39,11 @@ export default function PaymentsPage() {
   };
 
   const getStatusBadge = (status) => {
-    const styles = {
-      pendente: 'bg-red-100 text-red-800',
-      aprovado: 'bg-green-100 text-green-800'
+    const variantMap = {
+      pendente: 'warning',
+      aprovado: 'success'
     };
-    return <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${styles[status]}`}>{status.toUpperCase()}</span>;
+    return <Badge variant={variantMap[status] || 'neutral'}>{status.toUpperCase()}</Badge>;
   };
 
   const columns = [
@@ -50,15 +51,15 @@ export default function PaymentsPage() {
     { header: 'OS (Ref)', accessor: 'service_order_id' },
     { header: 'Valor (R$)', render: (row) => Number(row.amount).toFixed(2) },
     { header: 'Status', render: (row) => getStatusBadge(row.status) },
-    { 
-      header: 'Ações', 
+    {
+      header: 'Ações',
       render: (row) => (
         row.status === 'pendente' ? (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setPixModalId(row.id)} className="text-xs py-1 px-2">Gerar PIX</Button>
-            <Button variant="secondary" onClick={() => handleApprove(row.id)} className="text-xs py-1 px-2">Marcar Pago</Button>
+            <Button variant="outline" size="sm" onClick={() => setPixModalId(row.id)}>Gerar PIX</Button>
+            <Button variant="secondary" size="sm" onClick={() => handleApprove(row.id)}>Marcar Pago</Button>
           </div>
-        ) : <span className="text-gray-400 text-sm">Nenhuma</span>
+        ) : <span className="text-neutral-400 text-sm">—</span>
       )
     }
   ];
@@ -72,17 +73,33 @@ export default function PaymentsPage() {
       {loading ? (
         <div>Carregando...</div>
       ) : (
-        <Table columns={columns} data={payments} />
+        <Table>
+          <TableHead>
+            <tr>
+              {columns.map((col) => (
+                <TableHeader key={col.header}>{col.header}</TableHeader>
+              ))}
+            </tr>
+          </TableHead>
+          <tbody>
+            {payments.map((row) => (
+              <TableRow key={row.id}>
+                {columns.map((col) => (
+                  <TableCell key={col.header}>{col.render ? col.render(row) : row[col.accessor]}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
       )}
 
-      {/* Modal para gerar PIX */}
-      <Modal 
-        isOpen={pixModalId !== null} 
-        onClose={() => setPixModalId(null)} 
+      <Modal
+        isOpen={pixModalId !== null}
+        onClose={() => setPixModalId(null)}
         title="Cobrança PIX"
       >
         {pixModalId && (
-          <PaymentForm 
+          <PaymentForm
             paymentId={pixModalId}
             onClose={() => setPixModalId(null)}
           />

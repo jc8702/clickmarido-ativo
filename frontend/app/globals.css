@@ -14,3 +14,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@layer components {
+  .h3 {
+    @apply text-2xl font-semibold;
+  }
+  .h4 {
+    @apply text-xl font-semibold;
+  }
+}
