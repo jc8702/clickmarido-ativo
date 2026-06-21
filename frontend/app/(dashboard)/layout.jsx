@@ -11,11 +11,9 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Se não estiver carregando e não tiver usuário, a própria API via axios costuma chutar pro login
-  // Mas vamos garantir aqui no layout do lado do cliente
   if (!loading && !user) {
     if (typeof window !== 'undefined') {
-      window.location.href = '/';
+      window.location.href = '/login';
     }
     return null;
   }

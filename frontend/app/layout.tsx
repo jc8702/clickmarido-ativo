@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "CRM Serviços Residenciais",
-  description: "Sistema de gerenciamento para serviços residenciais.",
+  title: "Click Marido CRM",
+  description: "Sistema de Gestão para Serviços Residenciais",
 };
 
 export default function RootLayout({
