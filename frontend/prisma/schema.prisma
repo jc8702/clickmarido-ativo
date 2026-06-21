@@ -51,3 +51,22 @@ model Warranty {
   @@index([customerId])
   @@map("warranties")
 }
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(255)
+  sku         String   @unique @db.VarChar(50)
+  type        String   @db.VarChar(20) // "SERVICO" ou "PECA"
+  description String   @default("")
+  price       Float    @default(0)
+  unit        String   @default("un") @db.VarChar(10) // un, m², h, kg, etc
+  category    String   @default("") @db.VarChar(100)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sku])
+  @@index([type])
+  @@index([active])
+  @@map("products")
+}

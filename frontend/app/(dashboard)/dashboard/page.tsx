@@ -151,6 +151,7 @@ export default function Dashboard() {
           { href: '/dashboard', label: 'Dashboard' },
           { href: '/customers', label: 'Clientes' },
           { href: '/quotations', label: 'Orçamentos' },
+          { href: '/products', label: 'Serviços e Peças' },
           { href: '/service-orders', label: 'Ordens de Serviço' },
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
