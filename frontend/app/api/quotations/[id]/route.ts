@@ -163,17 +163,31 @@ export async function PUT(
         const addresses = (customer as any)?.addresses;
         const firstAddress = Array.isArray(addresses) && addresses.length > 0 ? addresses[0] : null;
         const address = firstAddress
-          ? [firstAddress.street, firstAddress.number, firstAddress.city, firstAddress.state].filter(Boolean).join(', ')
+          ? [firstAddress.street, firstAddress.number, firstAddress.neighborhood, firstAddress.city, firstAddress.state].filter(Boolean).join(', ')
           : '';
+
+        // Generate sequential OS number
+        const lastOS = await prisma.serviceOrder.findFirst({
+          orderBy: { number: 'desc' },
+          select: { number: true },
+        });
+        let osNumber = 'OS-0001';
+        if (lastOS) {
+          const match = lastOS.number.match(/(\d+)$/);
+          if (match) {
+            osNumber = `OS-${String(parseInt(match[1], 10) + 1).padStart(4, '0')}`;
+          }
+        }
 
         await prisma.serviceOrder.create({
           data: {
-            number: `OS-${Date.now()}`,
+            number: osNumber,
             quotationId: id,
             customerId: quotation.customerId,
             status: 'agendada',
             address,
             finalTotal: quotation.total,
+            notes: `Orçamento ${id.slice(-6).toUpperCase()} aprovado`,
           },
         });
       }

@@ -15,11 +15,19 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ServiceOrder {
   id: string;
+  number: string;
   customerId: string;
-  customer_name: string;
-  scheduled_date: string;
-  status: 'agendada' | 'em_progresso' | 'concluida' | 'cancelada';
-  amount: number;
+  quotationId: string;
+  customer?: { name: string; email: string; phone: string };
+  technician?: { name: string };
+  quotation?: { total: number; status: string };
+  scheduledTime: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  status: string;
+  address: string;
+  finalTotal: number;
+  createdAt: string;
 }
 
 const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -121,7 +129,7 @@ export default function ServiceOrdersPage() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableHeader>ID (Ref)</TableHeader>
+                  <TableHeader>Nº OS</TableHeader>
                   <TableHeader>Cliente</TableHeader>
                   <TableHeader>Data Prevista</TableHeader>
                   <TableHeader>Valor (R$)</TableHeader>
@@ -133,26 +141,26 @@ export default function ServiceOrdersPage() {
                 {orders.map((row) => (
                   <TableRow key={row.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                     <TableCell className="font-medium">
-                      <Link 
-                        href={`/quotations?id=${row.id}`} 
+                      <Link
+                        href={`/service-orders/${row.id}`}
                         className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline bg-neutral-100/80 dark:bg-neutral-700/80 px-2 py-1 rounded font-bold"
                       >
-                        {row.id.slice(-6).toUpperCase()}
+                        {row.number || row.id.slice(-6).toUpperCase()}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link 
-                        href={`/customers?id=${row.customerId}`} 
-                        className="font-semibold text-neutral-800 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
-                      >
-                        {row.customer_name}
-                      </Link>
+                      <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                        {row.customer?.name || 'Cliente não informado'}
+                      </span>
+                      {row.customer?.phone && (
+                        <span className="block text-xs text-neutral-500 dark:text-neutral-400">{row.customer.phone}</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-neutral-600 dark:text-neutral-400">
-                      {row.scheduled_date ? new Date(row.scheduled_date).toLocaleDateString('pt-BR') : 'N/A'}
+                      {row.scheduledTime ? new Date(row.scheduledTime).toLocaleDateString('pt-BR') : 'A definir'}
                     </TableCell>
                     <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
-                      {row.amount ? `R$ ${Number(row.amount).toFixed(2)}` : 'R$ 0,00'}
+                      R$ {(row.finalTotal || row.quotation?.total || 0).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusBadgeVariant[row.status] || 'neutral'} size="sm" className="shadow-sm">
@@ -191,7 +199,7 @@ export default function ServiceOrdersPage() {
       >
         {selectedOrder && (
           <ServiceOrderForm
-            so={selectedOrder}
+            so={selectedOrder as any}
             onCancel={() => setActiveModalId(null)}
             onSuccess={() => {
               setActiveModalId(null);
