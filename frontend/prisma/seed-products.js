@@ -2,6 +2,25 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+const FAMILY_CODES = {
+  'Hidráulica': 'HID',
+  'Elétrica': 'ELE',
+  'Marcenaria': 'MAR',
+  'Instalação': 'INS',
+  'Montagem de Móveis': 'MON',
+  'Limpeza': 'LIM',
+};
+
+function getFamilyCode(category) {
+  const normalized = (category || '').trim();
+  return FAMILY_CODES[normalized] || 'GER';
+}
+
+function generateSku(familyCode, sequence) {
+  const seq = String(sequence).padStart(3, '0');
+  return `SRV-${familyCode}-${seq}`;
+}
+
 const servicos = [
   { nome: "Ajuste porta de madeira (Unidade)", slug: "ajuste-porta-de-madeira-unidade", descricao: "Execução profissional do serviço: Ajuste porta de madeira (Unidade).", categoria: "Marcenaria", preco: 60.0 },
   { nome: "Consertar Vazamentos Janelas/Pias/Banheiros", slug: "consertar-vazamentos-janelas-pias-banheiros", descricao: "Execução profissional do serviço: Consertar Vazamentos Janelas/Pias/Banheiros.", categoria: "Hidráulica", preco: 70.0 },
@@ -88,29 +107,41 @@ const servicos = [
   { nome: "Vedação com silicone (pia ou banheira ou box)", slug: "vedacao-com-silicone-pia-ou-banheira-ou-box", descricao: "Execução profissional do serviço: Vedação com silicone (pia ou banheira ou box).", categoria: "Instalação", preco: 90.0 },
 ];
 
-function generateSku(nome) {
-  const prefixo = 'SRV';
-  const slug = nome
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-  
-  const partes = slug.split('-').filter(Boolean);
-  const abreviado = partes.slice(0, 4).map(p => p.substring(0, 3).toUpperCase()).join('');
-  return `${prefixo}-${abreviado}`;
-}
-
 async function main() {
-  console.log('Iniciando cadastro de serviços...\n');
+  console.log('Iniciando cadastro de serviços com novo formato de SKU...\n');
+
+  // Agrupar por família para gerar SKUs sequenciais
+  const byFamily = {};
+  for (const s of servicos) {
+    const fam = getFamilyCode(s.categoria);
+    if (!byFamily[fam]) byFamily[fam] = [];
+    byFamily[fam].push(s);
+  }
+
+  // Obter último SKU de cada família no banco
+  const familyCounters = {};
+  for (const fam of Object.keys(byFamily)) {
+    const prefix = `SRV-${fam}-`;
+    const last = await prisma.product.findFirst({
+      where: { sku: { startsWith: prefix } },
+      orderBy: { sku: 'desc' },
+      select: { sku: true },
+    });
+    if (last) {
+      const match = last.sku.match(/(\d{3})$/);
+      familyCounters[fam] = match ? parseInt(match[1], 10) : 0;
+    } else {
+      familyCounters[fam] = 0;
+    }
+  }
 
   let cadastrados = 0;
   let erros = 0;
 
   for (const s of servicos) {
-    const sku = generateSku(s.nome);
+    const fam = getFamilyCode(s.categoria);
+    familyCounters[fam]++;
+    const sku = generateSku(fam, familyCounters[fam]);
 
     try {
       const existing = await prisma.product.findFirst({ where: { sku } });

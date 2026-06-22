@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { productSchema } from '@/lib/validations/product.schema';
+import { getFamilyCode, generateSkuFromFamily } from '@/lib/sku';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
@@ -22,6 +23,26 @@ function validateToken(request: NextRequest) {
   }
 }
 
+async function getNextSkuSequence(category: string): Promise<number> {
+  const fam = getFamilyCode(category);
+  const prefix = `SRV-${fam}-`;
+
+  const lastProduct = await prisma.product.findFirst({
+    where: {
+      sku: { startsWith: prefix },
+    },
+    orderBy: { sku: 'desc' },
+    select: { sku: true },
+  });
+
+  if (!lastProduct) return 1;
+
+  const match = lastProduct.sku.match(/(\d{3})$/);
+  if (!match) return 1;
+
+  return parseInt(match[1], 10) + 1;
+}
+
 export async function GET(request: NextRequest) {
   try {
     if (!validateToken(request)) {
@@ -36,6 +57,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type') || '';
+    const family = searchParams.get('family') || '';
 
     const skip = (page - 1) * limit;
 
@@ -46,6 +68,7 @@ export async function GET(request: NextRequest) {
         { name: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } },
         { category: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -53,12 +76,16 @@ export async function GET(request: NextRequest) {
       where.type = type;
     }
 
+    if (family) {
+      where.sku = { startsWith: `SRV-${family}-` };
+    }
+
     const [data, total] = await Promise.all([
       prisma.product.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { name: 'asc' },
+        orderBy: { sku: 'asc' },
       }),
       prisma.product.count({ where }),
     ]);
@@ -96,8 +123,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = productSchema.parse(body);
 
+    // Auto-gerar SKU se vazio
+    let sku = parsed.sku?.trim() || '';
+    if (!sku && parsed.type === 'SERVICO' && parsed.category) {
+      const nextSeq = await getNextSkuSequence(parsed.category);
+      sku = generateSkuFromFamily(parsed.category, nextSeq);
+    }
+
+    if (!sku) {
+      return NextResponse.json(
+        { error: 'SKU é obrigatório para peças ou serviços sem categoria' },
+        { status: 400 }
+      );
+    }
+
     const existing = await prisma.product.findFirst({
-      where: { sku: parsed.sku },
+      where: { sku },
     });
 
     if (existing) {
@@ -110,7 +151,7 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         name: parsed.name,
-        sku: parsed.sku,
+        sku,
         type: parsed.type,
         description: parsed.description || '',
         price: parsed.price,

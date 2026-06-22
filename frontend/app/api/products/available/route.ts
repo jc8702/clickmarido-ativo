@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type') || '';
     const category = searchParams.get('category') || '';
+    const family = searchParams.get('family') || '';
     const limit = parseInt(searchParams.get('limit') || '50');
 
     const where: any = {
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
         { name: { contains: search, mode: 'insensitive' } },
         { sku: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
+        { category: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -35,10 +37,14 @@ export async function GET(request: NextRequest) {
       where.category = { contains: category, mode: 'insensitive' };
     }
 
+    if (family) {
+      where.sku = { startsWith: `SRV-${family}-` };
+    }
+
     const products = await prisma.product.findMany({
       where,
       take: Math.min(limit, 100),
-      orderBy: { name: 'asc' },
+      orderBy: { sku: 'asc' },
       select: {
         id: true,
         name: true,

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, ProductFormValues } from '../../lib/validations/product.schema';
@@ -11,8 +11,17 @@ type Props = {
   isLoading: boolean;
 };
 
+const FAMILY_OPTIONS = [
+  { value: 'Hidráulica', label: 'HID - Hidráulica' },
+  { value: 'Elétrica', label: 'ELE - Elétrica' },
+  { value: 'Marcenaria', label: 'MAR - Marcenaria' },
+  { value: 'Instalação', label: 'INS - Instalação' },
+  { value: 'Montagem de Móveis', label: 'MON - Montagem de Móveis' },
+  { value: 'Limpeza', label: 'LIM - Limpeza' },
+];
+
 export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
-  const { register, handleSubmit, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData || {
       name: '',
@@ -26,6 +35,33 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
     }
   });
 
+  const category = watch('category');
+  const [nextSku, setNextSku] = useState<any>(null);
+
+  useEffect(() => {
+    if (!category || initialData) {
+      setNextSku(null);
+      return;
+    }
+
+    const fetchNextSku = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/products/next-sku?category=${encodeURIComponent(category)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNextSku(data);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar próximo SKU:', err);
+      }
+    };
+
+    fetchNextSku();
+  }, [category, initialData]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -34,18 +70,40 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
           <input
             {...register('name')}
             className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-            placeholder="Ex: Serviço de Instalação de Chuveiro"
+            placeholder="Ex: Instalar Torneira Simples"
           />
           {errors.name && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">SKU *</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Categoria / Família *</label>
+          <select
+            {...register('category')}
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+          >
+            <option value="">Selecione a família...</option>
+            {FAMILY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {errors.category && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.category.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">SKU</label>
           <input
             {...register('sku')}
             className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 uppercase font-mono"
-            placeholder="Ex: SRV-CHUV-INST"
+            placeholder={nextSku ? nextSku.sku : "Deixe vazio para auto-gerar"}
           />
+          {nextSku && !initialData && (
+            <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+              Próximo SKU disponível: <span className="font-mono font-bold">{nextSku.sku}</span>
+              {nextSku.lastProduct && (
+                <span className="text-neutral-500 dark:text-neutral-400"> (após: {nextSku.lastProduct.sku})</span>
+              )}
+            </p>
+          )}
           {errors.sku && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.sku.message}</p>}
         </div>
 
@@ -59,16 +117,6 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
             <option value="PECA">Peça / Produto</option>
           </select>
           {errors.type && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.type.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Categoria</label>
-          <input
-            {...register('category')}
-            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-            placeholder="Ex: Hidráulica, Elétrica"
-          />
-          {errors.category && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.category.message}</p>}
         </div>
 
         <div>

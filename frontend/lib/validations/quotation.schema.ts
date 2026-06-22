@@ -5,6 +5,8 @@ export const quotationItemSchema = z.object({
   name: z.string().min(1, 'Nome do item é obrigatório'),
   quantity: z.number().min(1, 'Mínimo 1'),
   unit_price: z.number().min(0, 'Não pode ser negativo'),
+  sku: z.string().optional(),
+  product_id: z.string().optional(),
 });
 
 export const quotationSchema = z.object({

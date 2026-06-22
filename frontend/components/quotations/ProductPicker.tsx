@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/Button';
-import { Input } from '@/components/Input';
 
 interface Product {
   id: string;
@@ -22,12 +21,24 @@ interface ProductPickerProps {
   onClose: () => void;
 }
 
+const FAMILIES = [
+  { code: '', name: 'Todas as Famílias' },
+  { code: 'HID', name: 'Hidráulica' },
+  { code: 'ELE', name: 'Elétrica' },
+  { code: 'MAR', name: 'Marcenaria' },
+  { code: 'INS', name: 'Instalação' },
+  { code: 'MON', name: 'Montagem de Móveis' },
+  { code: 'LIM', name: 'Limpeza' },
+  { code: 'GER', name: 'Geral' },
+];
+
 export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
   const { getToken } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [familyFilter, setFamilyFilter] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +50,8 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (typeFilter) params.set('type', typeFilter);
-      params.set('limit', '50');
+      if (familyFilter) params.set('family', familyFilter);
+      params.set('limit', '100');
 
       const response = await fetch(`/api/products/available?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -54,7 +66,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [search, typeFilter, getToken]);
+  }, [search, typeFilter, familyFilter, getToken]);
 
   useEffect(() => {
     fetchProducts();
@@ -91,12 +103,36 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
 
   const subtotal = selectedProduct ? selectedProduct.price * quantity : 0;
 
+  const getFamilyBadge = (sku: string) => {
+    const match = sku?.match(/^SRV-([A-Z]{3})-/);
+    if (!match) return null;
+    const code = match[1];
+    const family = FAMILIES.find(f => f.code === code);
+    if (!family || !code) return null;
+
+    const colors: Record<string, string> = {
+      HID: 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300',
+      ELE: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300',
+      MAR: 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-300',
+      INS: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300',
+      MON: 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300',
+      LIM: 'bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-300',
+      GER: 'bg-gray-100 dark:bg-gray-900/50 text-gray-800 dark:text-gray-300',
+    };
+
+    return (
+      <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-bold rounded ${colors[code] || colors.GER}`}>
+        {code}
+      </span>
+    );
+  };
+
   return (
     <Modal isOpen={true} onClose={onClose}>
       <div className="p-6" onKeyDown={handleKeyDown}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-            Selecionar Produto/Serviço
+            Selecionar Serviço/Peça
           </h2>
           <button
             onClick={onClose}
@@ -106,60 +142,83 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
           </button>
         </div>
 
-        <div className="space-y-4 mb-4">
+        <div className="space-y-3 mb-4">
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Buscar
+              Buscar por nome, SKU ou descrição
             </label>
             <input
               ref={searchInputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Nome, SKU ou descrição..."
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="Digite para buscar... (ex: SRV-HID, Hidráulica, Instalar torneira)"
+              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono text-sm"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              Tipo
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              <option value="">Todos</option>
-              <option value="SERVICO">Serviços</option>
-              <option value="PECA">Peças</option>
-            </select>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Família (SKU)
+              </label>
+              <select
+                value={familyFilter}
+                onChange={(e) => setFamilyFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+              >
+                {FAMILIES.map((f) => (
+                  <option key={f.code} value={f.code}>
+                    {f.code ? `${f.code} - ${f.name}` : f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Tipo
+              </label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+              >
+                <option value="">Todos</option>
+                <option value="SERVICO">Serviços</option>
+                <option value="PECA">Peças</option>
+              </select>
+            </div>
           </div>
+        </div>
+
+        <div className="mb-2 text-xs text-neutral-500 dark:text-neutral-400">
+          {products.length} resultado(s) encontrado(s)
         </div>
 
         <div className="max-h-80 overflow-y-auto border border-neutral-200 dark:border-neutral-700 rounded-lg">
           {isLoading ? (
             <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
-              Carregando produtos...
+              Carregando...
             </div>
           ) : products.length === 0 ? (
             <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
-              Nenhum produto encontrado
+              Nenhum serviço/peça encontrado
             </div>
           ) : (
             <table className="w-full">
               <thead className="bg-neutral-50 dark:bg-neutral-800 sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
-                    Nome
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
                     SKU
                   </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+                    Nome
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
                     Tipo
                   </th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+                  <th className="px-3 py-2 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
                     Preço
                   </th>
                 </tr>
@@ -175,20 +234,25 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
                         : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'
                     }`}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-mono font-bold text-neutral-700 dark:text-neutral-300">
+                          {product.sku}
+                        </span>
+                        {getFamilyBadge(product.sku)}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2">
                       <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {product.name}
                       </div>
                       {product.description && (
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 truncate max-w-xs">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate max-w-xs">
                           {product.description}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-400">
-                      {product.sku}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         product.type === 'SERVICO'
                           ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300'
@@ -197,7 +261,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
                         {product.type === 'SERVICO' ? 'Serviço' : 'Peça'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <td className="px-3 py-2 text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
                       R$ {product.price.toFixed(2)}
                     </td>
                   </tr>
@@ -214,7 +278,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
                 <p className="font-medium text-neutral-900 dark:text-neutral-100">
                   {selectedProduct.name}
                 </p>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
                   {selectedProduct.sku} • R$ {selectedProduct.price.toFixed(2)}/{selectedProduct.unit}
                 </p>
               </div>
