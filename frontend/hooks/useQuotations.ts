@@ -11,8 +11,10 @@ export function useQuotations(customerId?: string, page = 1) {
 
     try {
       const token = getToken();
-      const query = customerId ? `?customerId=${customerId}` : '';
-      const response = await fetch(`/api/quotations${query}&page=${page}`, {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      if (customerId) params.set('customerId', customerId);
+      const response = await fetch(`/api/quotations?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
