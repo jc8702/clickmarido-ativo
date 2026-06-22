@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import api from '../../../lib/api';
 import { Card } from '@/components/Card';
@@ -56,6 +56,18 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, []);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setPixModalId(null);
+      setIsCreateOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const handleApprove = async (id: string) => {
     try {

@@ -38,6 +38,16 @@ export default function WarrantiesPage() {
   const [notes, setNotes] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveWarrantyId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const fetchWarranties = async () => {
     setLoading(true);
     try {

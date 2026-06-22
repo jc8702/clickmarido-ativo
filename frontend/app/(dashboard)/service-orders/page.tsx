@@ -44,6 +44,17 @@ export default function ServiceOrdersPage() {
   const [activeModalId, setActiveModalId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveModalId(null);
+        setIsCreateOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {

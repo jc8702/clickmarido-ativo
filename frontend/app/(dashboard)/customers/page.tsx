@@ -63,6 +63,16 @@ export default function CustomersPage() {
     }
   }, [customers]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedCustomer(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir este cliente?')) return;
     setIsDeletingId(id);

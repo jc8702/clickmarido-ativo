@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useQuotations, useSendQuotation, useApproveQuotation } from '@/hooks/useQuotations';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/Card';
+import { useQuotations } from '@/hooks/useQuotations';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { Navigation } from '@/components/Navigation';
@@ -57,12 +56,13 @@ const columns = ['rascunho', 'pendente', 'enviado', 'aceito', 'rejeitado'];
 export default function QuotationsPage() {
   const { user, logout } = useAuth();
   const authUser = user as { name?: string; email: string; role: string } | null;
-  
+
   const { data, isLoading, mutate } = useQuotations(undefined, 1);
   const [mounted, setMounted] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
-  
   const [actionLoading, setActionLoading] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -83,6 +83,20 @@ export default function QuotationsPage() {
     }
   }, [mounted, quotations]);
 
+  const closeDrawer = useCallback(() => {
+    setSelectedQuotation(null);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeDrawer();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeDrawer]);
+
   if (!mounted) return null;
 
   const getQuotationsByStatus = (status: string) =>
@@ -90,16 +104,15 @@ export default function QuotationsPage() {
 
   const getQuotationItems = (itemsField: string | QuotationItem[]): QuotationItem[] => {
     try {
-      return typeof itemsField === 'string' 
-        ? JSON.parse(itemsField) 
+      return typeof itemsField === 'string'
+        ? JSON.parse(itemsField)
         : itemsField || [];
     } catch {
       return [];
     }
   };
 
-  const handleSend = async (id: string) => {
-    setActionLoading(true);
+  const updateStatus = async (id: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/quotations/${id}`, {
         method: 'PUT',
@@ -107,18 +120,67 @@ export default function QuotationsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ status: 'enviado' }),
+        body: JSON.stringify({ status: newStatus }),
       });
       if (response.ok) {
         mutate();
-        // Atualiza drawer
-        const updated = quotations.find(q => q.id === id);
-        if (updated) setSelectedQuotation({ ...updated, status: 'enviado' });
-      } else {
-        alert('Erro ao enviar orçamento.');
+        if (selectedQuotation?.id === id) {
+          setSelectedQuotation(prev => prev ? { ...prev, status: newStatus } : null);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Erro ao atualizar status:', err);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, quotationId: string) => {
+    e.dataTransfer.setData('text/plain', quotationId);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedId(quotationId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverStatus(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent, status: string) => {
+    e.preventDefault();
+    setDragOverStatus(status);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const { clientX, clientY } = e;
+    if (
+      clientX < rect.left ||
+      clientX > rect.right ||
+      clientY < rect.top ||
+      clientY > rect.bottom
+    ) {
+      setDragOverStatus(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetStatus: string) => {
+    e.preventDefault();
+    const quotationId = e.dataTransfer.getData('text/plain');
+    if (quotationId && targetStatus) {
+      updateStatus(quotationId, targetStatus);
+    }
+    setDraggedId(null);
+    setDragOverStatus(null);
+  };
+
+  const handleSend = async (id: string) => {
+    setActionLoading(true);
+    try {
+      await updateStatus(id, 'enviado');
     } finally {
       setActionLoading(false);
     }
@@ -127,23 +189,7 @@ export default function QuotationsPage() {
   const handleApprove = async (id: string) => {
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/quotations/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ status: 'aceito' }),
-      });
-      if (response.ok) {
-        mutate();
-        const updated = quotations.find(q => q.id === id);
-        if (updated) setSelectedQuotation({ ...updated, status: 'aceito' });
-      } else {
-        alert('Erro ao aprovar orçamento.');
-      }
-    } catch (err) {
-      console.error(err);
+      await updateStatus(id, 'aceito');
     } finally {
       setActionLoading(false);
     }
@@ -153,23 +199,7 @@ export default function QuotationsPage() {
     if (!confirm('Deseja realmente rejeitar este orçamento?')) return;
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/quotations/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ status: 'rejeitado' }),
-      });
-      if (response.ok) {
-        mutate();
-        const updated = quotations.find(q => q.id === id);
-        if (updated) setSelectedQuotation({ ...updated, status: 'rejeitado' });
-      } else {
-        alert('Erro ao rejeitar orçamento.');
-      }
-    } catch (err) {
-      console.error(err);
+      await updateStatus(id, 'rejeitado');
     } finally {
       setActionLoading(false);
     }
@@ -218,65 +248,84 @@ export default function QuotationsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
-            {columns.map((status) => (
-              <div key={status} className="bg-neutral-100/60 dark:bg-neutral-800/60 p-4 rounded-2xl border border-neutral-200/40 dark:border-neutral-700/40 min-h-[500px]">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-neutral-800 dark:text-neutral-200 text-sm tracking-wide uppercase">
-                    {statusLabels[status] || status}
-                  </h3>
-                  <Badge variant={statusColors[status] || 'neutral'} size="sm">
-                    {getQuotationsByStatus(status).length}
-                  </Badge>
-                </div>
+            {columns.map((status) => {
+              const items = getQuotationsByStatus(status);
+              const isDragOver = dragOverStatus === status;
 
-                <div className="space-y-3">
-                  {getQuotationsByStatus(status).map((quotation) => (
-                    <div 
-                      key={quotation.id} 
-                      onClick={() => setSelectedQuotation(quotation)}
-                      className="cursor-pointer bg-white dark:bg-neutral-800 border border-neutral-200/70 dark:border-neutral-700/70 p-4 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 hover:border-primary-300 dark:hover:border-primary-600"
-                    >
-                      <div className="mb-3">
-                        <p className="font-bold text-neutral-900 dark:text-neutral-100 text-sm leading-tight mb-1 truncate">
-                          {quotation.customer?.name || 'Cliente'}
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                          ID: {quotation.id.slice(-6).toUpperCase()}
-                        </p>
-                      </div>
+              return (
+                <div
+                  key={status}
+                  onDragOver={handleDragOver}
+                  onDragEnter={(e) => handleDragEnter(e, status)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, status)}
+                  className={`bg-neutral-100/60 dark:bg-neutral-800/60 p-4 rounded-2xl border transition-colors duration-200 min-h-[500px] ${
+                    isDragOver
+                      ? 'border-primary-400 dark:border-primary-500 bg-primary-50/40 dark:bg-primary-900/20'
+                      : 'border-neutral-200/40 dark:border-neutral-700/40'
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-neutral-800 dark:text-neutral-200 text-sm tracking-wide uppercase">
+                      {statusLabels[status] || status}
+                    </h3>
+                    <Badge variant={statusColors[status] || 'neutral'} size="sm">
+                      {items.length}
+                    </Badge>
+                  </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {quotation.createdAt ? new Date(quotation.createdAt).toLocaleDateString('pt-BR') : ''}
-                        </span>
-                        <span className="text-sm font-extrabold text-neutral-800 dark:text-neutral-200">
-                          R$ {quotation.total?.toFixed(2) || '0,00'}
-                        </span>
+                  <div className="space-y-3">
+                    {items.map((quotation) => (
+                      <div
+                        key={quotation.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, quotation.id)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => setSelectedQuotation(quotation)}
+                        className={`cursor-grab active:cursor-grabbing bg-white dark:bg-neutral-800 border border-neutral-200/70 dark:border-neutral-700/70 p-4 rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-600 select-none ${
+                          draggedId === quotation.id ? 'opacity-50 scale-95' : ''
+                        }`}
+                      >
+                        <div className="mb-3">
+                          <p className="font-bold text-neutral-900 dark:text-neutral-100 text-sm leading-tight mb-1 truncate">
+                            {quotation.customer?.name || 'Cliente'}
+                          </p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                            ID: {quotation.id.slice(-6).toUpperCase()}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {quotation.createdAt ? new Date(quotation.createdAt).toLocaleDateString('pt-BR') : ''}
+                          </span>
+                          <span className="text-sm font-extrabold text-neutral-800 dark:text-neutral-200">
+                            R$ {quotation.total?.toFixed(2) || '0,00'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {getQuotationsByStatus(status).length === 0 && (
-                    <div className="text-center py-8 text-neutral-400 dark:text-neutral-500 text-xs border border-dashed border-neutral-300/60 dark:border-neutral-600/60 rounded-xl">
-                      Sem orçamentos
-                    </div>
-                  )}
+                    ))}
+                    {items.length === 0 && (
+                      <div className="text-center py-8 text-neutral-400 dark:text-neutral-500 text-xs border border-dashed border-neutral-300/60 dark:border-neutral-600/60 rounded-xl">
+                        Sem orçamentos
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
 
-      {/* Backdrop do Drawer */}
       {selectedQuotation && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1040] animate-fade-in"
-          onClick={() => setSelectedQuotation(null)}
+          onClick={closeDrawer}
         />
       )}
 
-      {/* Gaveta de Detalhes do Orçamento */}
-      <div 
+      <div
         className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white dark:bg-neutral-800 shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col ${
           selectedQuotation ? 'translate-x-0' : 'translate-x-full'
         }`}
@@ -288,8 +337,8 @@ export default function QuotationsPage() {
                 <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Detalhes do Orçamento</h3>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">ID: {selectedQuotation.id}</p>
               </div>
-              <button 
-                onClick={() => setSelectedQuotation(null)}
+              <button
+                onClick={closeDrawer}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
               >
                 ✕
@@ -297,7 +346,6 @@ export default function QuotationsPage() {
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
-              {/* Cliente */}
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Cliente</h4>
                 <div className="bg-neutral-50 dark:bg-neutral-700/50 p-4 rounded-xl flex justify-between items-center">
@@ -312,7 +360,6 @@ export default function QuotationsPage() {
                 </div>
               </div>
 
-              {/* Status e Infos */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">Status Atual</h4>
@@ -328,7 +375,6 @@ export default function QuotationsPage() {
                 </div>
               </div>
 
-              {/* Itens */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Itens do Serviço</h4>
                 <div className="border border-neutral-100 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm bg-white dark:bg-neutral-800">
@@ -355,7 +401,6 @@ export default function QuotationsPage() {
                 </div>
               </div>
 
-              {/* Notas */}
               {selectedQuotation.notes && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Observações</h4>
@@ -376,8 +421,8 @@ export default function QuotationsPage() {
 
               <div className="flex gap-2">
                 {selectedQuotation.status === 'rascunho' && (
-                  <Button 
-                    className="flex-1" 
+                  <Button
+                    className="flex-1"
                     onClick={() => handleSend(selectedQuotation.id)}
                     isLoading={actionLoading}
                   >
@@ -386,17 +431,17 @@ export default function QuotationsPage() {
                 )}
                 {(selectedQuotation.status === 'rascunho' || selectedQuotation.status === 'enviado' || selectedQuotation.status === 'pendente') && (
                   <>
-                    <Button 
-                      variant="secondary" 
-                      className="flex-1" 
+                    <Button
+                      variant="secondary"
+                      className="flex-1"
                       onClick={() => handleApprove(selectedQuotation.id)}
                       isLoading={actionLoading}
                     >
                       Aprovar (Gerar OS)
                     </Button>
-                    <Button 
-                      variant="danger" 
-                      className="px-4" 
+                    <Button
+                      variant="danger"
+                      className="px-4"
                       onClick={() => handleReject(selectedQuotation.id)}
                       isLoading={actionLoading}
                     >

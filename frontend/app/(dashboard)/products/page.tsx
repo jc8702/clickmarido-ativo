@@ -33,6 +33,17 @@ export default function ProductsPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForm) {
+        setShowForm(false);
+        setEditingProduct(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showForm]);
+
   const products = (data?.data || []) as any[];
 
   const handleEdit = (product: any) => {
