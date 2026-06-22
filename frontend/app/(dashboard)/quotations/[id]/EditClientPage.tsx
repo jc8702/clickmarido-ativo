@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useParams } from 'next/navigation';
@@ -29,6 +29,20 @@ export default function EditClientPage() {
     }
   });
 
+  const goBack = useCallback(() => {
+    router.push('/quotations');
+  }, [router]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        goBack();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goBack]);
+
   useEffect(() => {
     const fetchQuotation = async () => {
       try {
@@ -39,20 +53,25 @@ export default function EditClientPage() {
         if (!res.ok) throw new Error('Erro ao carregar orçamento');
         const data = await res.json();
 
-        const parsedItems = typeof data.items === 'string' ? JSON.parse(data.items) : (data.items || []);
+        // API returns items as QuotationItem[] from DB with product relation
+        const dbItems = data.items || [];
+
+        const mappedItems = dbItems.map((item: any) => ({
+          name: item.product?.name || item.name || item.description || '',
+          quantity: item.quantity || 1,
+          unit_price: item.unitPrice || item.unit_price || item.price || 0,
+          sku: item.product?.sku || item.sku || '',
+          product_id: item.productId || item.product_id || '',
+          type: item.product?.type || item.type || 'SERVICO',
+        }));
 
         methods.reset({
           customer_id: data.customerId,
-          items: parsedItems.map((item: any) => ({
-            name: item.name || item.description || '',
-            quantity: item.quantity || 1,
-            unit_price: item.unit_price || item.price || 0,
-            sku: item.sku || '',
-            product_id: item.product_id || '',
-            type: item.type || 'SERVICO',
-          })),
+          items: mappedItems.length > 0 ? mappedItems : [{ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' as const }],
           discount: data.discount || 0,
-          valid_until: data.validUntil ? new Date(data.validUntil).toISOString().split('T')[0] : '',
+          valid_until: data.validUntil
+            ? new Date(data.validUntil).toISOString().split('T')[0]
+            : new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
         });
       } catch (e) {
         setError('Erro ao carregar orçamento');
@@ -67,6 +86,13 @@ export default function EditClientPage() {
     setSaving(true);
     try {
       const token = getToken();
+
+      // Recalculate total from items
+      const total = data.items.reduce(
+        (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
+        0
+      ) - (data.discount || 0);
+
       const res = await fetch(`/api/quotations/${id}`, {
         method: 'PUT',
         headers: {
@@ -74,7 +100,15 @@ export default function EditClientPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          items: data.items,
+          items: data.items.map((item: any) => ({
+            name: item.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            sku: item.sku || '',
+            product_id: item.product_id || '',
+            type: item.type || 'SERVICO',
+          })),
+          total,
           notes: data.discount ? `Desconto: R$ ${data.discount}` : '',
         }),
       });
@@ -106,7 +140,7 @@ export default function EditClientPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto bg-neutral-50 dark:bg-neutral-900 min-h-screen">
       <div className="mb-8 flex items-center gap-4">
-        <Link href="/quotations" className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Voltar</Link>
+        <button onClick={goBack} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Voltar</button>
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Editar Orçamento</h1>
       </div>
 
