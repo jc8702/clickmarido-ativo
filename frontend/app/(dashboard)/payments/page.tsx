@@ -8,7 +8,6 @@ import { Button } from '@/components/Button';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/Modal';
-import { Navigation } from '@/components/Navigation';
 import PaymentForm from '../../../components/PaymentForm';
 import CreatePaymentForm from '../../../components/CreatePaymentForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -80,21 +79,6 @@ export default function PaymentsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/products', label: 'Serviços e Peças' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

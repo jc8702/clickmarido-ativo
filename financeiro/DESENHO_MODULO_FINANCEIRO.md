@@ -2,8 +2,9 @@
 
 **Click Marido CRM - Subsistema Financeiro**  
 **Status:** 🔵 Design Phase (Pronto para Build)  
-**Versão:** 1.0.0  
+**Versão:** 2.0.0  
 **Data:** 21/06/2026  
+**Atualizado:** Integração Mercado Pago → Mercado Pago  
 
 ---
 
@@ -20,7 +21,7 @@ Sistema financeiro integrado que gerencia **fluxo de caixa, faturamento, pagamen
 │  ┌──────────────────────────────────────────────────┐  │
 │  │  Faturamento (Invoices/RPA)                      │  │
 │  │  - Geração automática de NF-e/RPA                │  │
-│  │  - Integração Asaas                              │  │
+│  │  - Integração Mercado Pago                              │  │
 │  │  - Cálculo de impostos                           │  │
 │  └──────────────────────────────────────────────────┘  │
 │           ↓                                              │
@@ -150,9 +151,9 @@ model Payment {
   cardLast4         String?   // Últimos 4 dígitos
   installments      Int?      // Número de parcelas
   
-  // Integração Asaas
-  asaasPaymentId    String?   @unique  // ID do pagamento no Asaas
-  asaasStatus       String?   // Status retornado pelo Asaas
+  // Integração Mercado Pago
+  asaasPaymentId    String?   @unique  // ID do pagamento no Mercado Pago
+  asaasStatus       String?   // Status retornado pelo Mercado Pago
   
   // Metadados
   description       String?   @default("")
@@ -398,7 +399,7 @@ model Quotation {
 - Deletar/cancelar invoice
 
 #### POST `/api/invoices/[id]/emit`
-- Emitir NF-e via Asaas
+- Emitir NF-e via Mercado Pago
 - Gera arquivo XML + PDF
 
 #### GET `/api/invoices/[id]/pdf`
@@ -446,11 +447,11 @@ model Quotation {
 ```
 
 #### POST `/api/payments/[invoiceId]/create-boleto`
-- Gerar boleto via Asaas
+- Gerar boleto via Mercado Pago
 - **Response:** URL do boleto
 
 #### POST `/api/payments/webhook-asaas`
-- Webhook Asaas para confirmar pagamentos
+- Webhook Mercado Pago para confirmar pagamentos
 - Updates status em tempo real
 
 #### POST `/api/payments/manual`
@@ -572,7 +573,7 @@ model Quotation {
 
 ## 🔗 Integrações Externas
 
-### 1. **Asaas** (Pagamentos + NF-e)
+### 1. **Mercado Pago** (Pagamentos + NF-e)
 
 #### Funcionalidades
 
@@ -581,7 +582,7 @@ model Quotation {
 POST /api/invoices/[id]/emit
   ↓
 → Valida dados (CNPJ/CPF, endereço, etc)
-→ Chama Asaas API: POST /invoices
+→ Chama Mercado Pago API: POST /invoices
 → Retorna XML + PDF
 → Armazena nfeUrl no DB
 → Webhook retorna status
@@ -591,10 +592,10 @@ POST /api/invoices/[id]/emit
 ```
 POST /api/payments/[invoiceId]/create-pix
   ↓
-→ Chama Asaas API: POST /pix
+→ Chama Mercado Pago API: POST /pix
 → Retorna QR Code + chave
 → Exibe para cliente
-→ Webhook Asaas: payment.confirmed
+→ Webhook Mercado Pago: payment.confirmed
 → Updates DB automaticamente
 ```
 
@@ -602,10 +603,10 @@ POST /api/payments/[invoiceId]/create-pix
 ```
 POST /api/payments/[invoiceId]/create-boleto
   ↓
-→ Chama Asaas API: POST /boleto
+→ Chama Mercado Pago API: POST /boleto
 → Retorna link para download
 → Cliente imprime/paga
-→ Webhook Asaas: payment.confirmed
+→ Webhook Mercado Pago: payment.confirmed
 → Updates DB
 ```
 
@@ -618,7 +619,7 @@ ASAAS_WEBHOOK_URL=https://clickmarido.com/api/payments/webhook-asaas
 
 #### Fluxo de Webhook
 ```
-Asaas → POST /api/payments/webhook-asaas
+Mercado Pago → POST /api/payments/webhook-asaas
   ├─ Valida assinatura (HMAC-SHA256)
   ├─ Identifica tipo: payment.confirmed, payment.received, etc
   ├─ Atualiza payment.status no DB
@@ -642,7 +643,7 @@ Clique no link para ver o QR code PIX ↓
 
 **Quando pagamento é confirmado:**
 ```
-Webhook Asaas
+Webhook Mercado Pago
   ↓
 WhatsApp para usuário:
 "✅ Pagamento de R$ 1.500,00 recebido de João Silva"
@@ -813,17 +814,17 @@ Usuário pode:
                   ↓
 4. Usuário clica "Emitir NF-e"
                   ↓
-5. Asaas emite NF-e + retorna PDF
+5. Mercado Pago emite NF-e + retorna PDF
                   ↓
 6. Usuário clica "Gerar PIX"
                   ↓
-7. Asaas gera QR code + chave PIX
+7. Mercado Pago gera QR code + chave PIX
                   ↓
 8. Sistema envia WhatsApp para cliente com QR
                   ↓
 9. Cliente escaneia PIX e paga
                   ↓
-10. Asaas webhook confirma pagamento
+10. Mercado Pago webhook confirma pagamento
                   ↓
 11. Sistema atualiza Invoice status = "paga"
     Atualiza Quotation status = "aprovado"
@@ -932,16 +933,16 @@ Sistema registra FinancialTransaction
 
 ### LGPD Compliance
 - ✅ Dados financeiros criptografados em trânsito (HTTPS)
-- ✅ Senhas Asaas nunca armazenadas (API key apenas)
+- ✅ Senhas Mercado Pago nunca armazenadas (API key apenas)
 - ✅ Logs de acesso a dados financeiros
 - ✅ Direito ao esquecimento (soft delete)
 
 ### PCI Compliance
-- ✅ Nunca armazenar dados de cartão (Asaas faz)
+- ✅ Nunca armazenar dados de cartão (Mercado Pago faz)
 - ✅ Apenas últimos 4 dígitos armazenados
 - ✅ Encriptação de IPs de webhooks
 
-### Asaas Security
+### Mercado Pago Security
 - ✅ Validar assinatura HMAC de webhooks
 - ✅ IP whitelisting
 - ✅ Rate limiting em APIs
@@ -965,10 +966,10 @@ Sistema registra FinancialTransaction
 - ✅ Relatório DRE simples
 
 ### Fase 2 (Sprint 3-4, 3-4 semanas)
-- ✅ Integração Asaas (PIX + Boleto)
+- ✅ Integração Mercado Pago (PIX + Boleto)
 - ✅ NF-e automática
 - ✅ WhatsApp notifications
-- ✅ Webhook Asaas
+- ✅ Webhook Mercado Pago
 - ✅ Email comprovantes
 
 ### Fase 3+ (Sprint 5+)
@@ -997,7 +998,7 @@ Sistema registra FinancialTransaction
 1. **Design da UI** — Figma mockups das 5 páginas
 2. **Schema Prisma** — Criar modelos + migrations
 3. **APIs** — Implementar endpoints (4-5 sprints)
-4. **Integração Asaas** — PIX + Boleto + NF-e (3-4 sprints)
+4. **Integração Mercado Pago** — PIX + Boleto + NF-e (3-4 sprints)
 5. **Frontend** — Componentes React (2-3 sprints)
 6. **Testes** — 100+ testes + validação (ongoing)
 7. **Deploy** — Staging → Produção

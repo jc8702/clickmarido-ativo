@@ -71,7 +71,7 @@ Cada modelo com:
 
 #### ✅ 4. Integrações Externas (4 serviços)
 
-**Asaas** (Pagamentos + NF-e)
+**Mercado Pago** (Pagamentos + NF-e)
 - Emissão de NF-e com XML
 - Recebimento PIX em tempo real
 - Geração de boleto
@@ -105,7 +105,7 @@ Com wireframes ASCII detalhados:
 #### ✅ 6. Fluxos de Integração (3 principais)
 
 **Fluxo 1:** Criar e Cobrar Orçamento (12 passos)
-- Da criação da quotation até recebimento via Asaas
+- Da criação da quotation até recebimento via Mercado Pago
 
 **Fluxo 2:** Acompanhar Contas a Cobrar
 - Dashboard → Detalhes → Ações
@@ -126,13 +126,13 @@ Com wireframes ASCII detalhados:
 
 - LGPD compliance
 - PCI compliance
-- Asaas security
+- Mercado Pago security
 - NF-e security
 
 #### ✅ 9. Faseamento (MVP vs. Full)
 
 **MVP (2-3 semanas):** Invoices + Pagamentos manual + Dashboard
-**Fase 2 (3-4 semanas):** Asaas + NF-e + WhatsApp
+**Fase 2 (3-4 semanas):** Mercado Pago + NF-e + WhatsApp
 **Fase 3+:** Google Sheets + ML + Contabilidade
 
 #### ✅ 10. KPIs Monitorados
@@ -205,14 +205,14 @@ Com wireframes ASCII detalhados:
 
 ---
 
-### **SEMANA 4: Payments Base + Asaas Setup**
+### **SEMANA 4: Payments Base + Mercado Pago Setup**
 
-**Sprint Goal:** Integração com Asaas + Payment webhook
+**Sprint Goal:** Integração com Mercado Pago + Payment webhook
 
 ```
-[ ] 1. Configurar Asaas API credentials
+[ ] 1. Configurar Mercado Pago API credentials
 [ ] 2. POST /api/payments/[invoiceId]/create-pix
-      ├─ Chama Asaas API
+      ├─ Chama Mercado Pago API
       ├─ Retorna QR code base64
       └─ Armazena pixKey no DB
       
@@ -225,7 +225,7 @@ Com wireframes ASCII detalhados:
       └─ Cria FinancialTransaction
       
 [ ] 6. GET /api/payments (listar)
-[ ] 7. Testes de webhook com mocked Asaas
+[ ] 7. Testes de webhook com mocked Mercado Pago
 [ ] 8. Rate limiting em webhook
 [ ] 9. Retry logic para falhas
 ```
@@ -310,14 +310,14 @@ Com wireframes ASCII detalhados:
 
 ---
 
-### **SEMANA 7: Integrações (Asaas NF-e + WhatsApp)**
+### **SEMANA 7: Integrações (Mercado Pago NF-e + WhatsApp)**
 
 **Sprint Goal:** Emissão de NF-e e notificações
 
 ```
 [ ] 1. POST /api/invoices/[id]/emit
       ├─ Valida dados fiscais
-      ├─ Chama Asaas: POST /invoices
+      ├─ Chama Mercado Pago: POST /invoices
       ├─ Retorna XML + PDF
       ├─ Armazena nfeUrl
       └─ Muda status → emitida
@@ -337,7 +337,7 @@ Com wireframes ASCII detalhados:
       ├─ Envio de recibo
       └─ Relatório diário
       
-[ ] 5. Testes de integração (mock Asaas)
+[ ] 5. Testes de integração (mock Mercado Pago)
 [ ] 6. Tratamento de erros
 [ ] 7. Retry logic
 ```
@@ -393,13 +393,13 @@ Com wireframes ASCII detalhados:
       
 [ ] 8. Staging deployment
       ├─ Vercel staging
-      ├─ Asaas sandbox
+      ├─ Mercado Pago sandbox
       ├─ Smoke tests
       └─ Manual QA
       
 [ ] 9. Production deployment
       ├─ Database migration
-      ├─ Asaas API keys
+      ├─ Mercado Pago API keys
       ├─ WhatsApp tokens
       ├─ Email credentials
       └─ Health checks
@@ -486,10 +486,10 @@ frontend/
 │   ├── useExpenses.ts
 │   ├── useFinancialDashboard.ts
 │   ├── useCurrencyFormat.ts
-│   └── useAsaas.ts
+│   └── useMercado Pago.ts
 │
 ├── lib/
-│   ├── asaas.ts                        (Asaas API client)
+│   ├── asaas.ts                        (Mercado Pago API client)
 │   ├── financial.ts                    (Cálculos financeiros)
 │   ├── nfe.ts                          (Utilitários NF-e)
 │   ├── whatsapp.ts                     (WhatsApp client)
@@ -560,9 +560,9 @@ frontend/
 - [ ] Queries otimizadas
 
 ### Sprint 4
-- [ ] PIX funcionando (sandbox Asaas)
+- [ ] PIX funcionando (sandbox Mercado Pago)
 - [ ] Boleto funcionando
-- [ ] Webhook Asaas testado
+- [ ] Webhook Mercado Pago testado
 
 ### Sprint 5
 - [ ] Dashboard UI responsiva
@@ -610,7 +610,7 @@ frontend/
 - [ ] Suporte preparado
 
 ### 24h Antes
-- [ ] Asaas production keys configuradas
+- [ ] Mercado Pago production keys configuradas
 - [ ] WhatsApp business account ativo
 - [ ] Email delivery testado
 - [ ] Monitoring setup completo
@@ -679,20 +679,20 @@ frontend/
 
 ### Do Que Fazer
 ✅ Começar com MVP (invoices + pagamento manual)  
-✅ Integração Asaas assim que MVP estiver estável  
+✅ Integração Mercado Pago assim que MVP estiver estável  
 ✅ WhatsApp notifications depois de PIX funcionando  
 ✅ NF-e no final (complexo, mas menos urgente)  
 
 ### Do Que NÃO Fazer
 ❌ Tentar fazer NF-e desde o começo (muito complexo)  
 ❌ Integrar contabilidade antes de ter fluxo estável  
-❌ Usar Stripe antes de testar Asaas  
+❌ Usar Stripe antes de testar Mercado Pago  
 ❌ Ignorar testes/security (vai se arrepender)  
 
 ### Risks & Mitigation
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|-----------|
-| Asaas API delays | Medium | High | Cache + fallback manual |
+| Mercado Pago API delays | Medium | High | Cache + fallback manual |
 | NF-e validation errors | Medium | High | Mock tests + validation |
 | WhatsApp rate limits | Low | Medium | Queue system |
 | Payment webhook loss | Low | Critical | Database transaction log |

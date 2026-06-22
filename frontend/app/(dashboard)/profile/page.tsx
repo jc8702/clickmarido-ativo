@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
-import { Navigation } from '@/components/Navigation';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -27,20 +26,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email || '' } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-2xl mx-auto px-6 py-10">
         <div className="mb-8">
           <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Meu Perfil</h1>

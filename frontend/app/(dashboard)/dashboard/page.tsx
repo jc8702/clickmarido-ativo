@@ -6,7 +6,6 @@ import api from '../../../lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
-import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { CardShimmer } from '@/components/Shimmer';
 
@@ -145,21 +144,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/products', label: 'Serviços e Peças' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
         {/* Boas-vindas */}
         <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

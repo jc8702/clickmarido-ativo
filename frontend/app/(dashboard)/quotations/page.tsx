@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useQuotations } from '@/hooks/useQuotations';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
-import { Navigation } from '@/components/Navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { CardShimmer } from '@/components/Shimmer';
 
@@ -205,23 +204,32 @@ export default function QuotationsPage() {
     }
   };
 
+  const handleDeleteQuotation = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este orçamento definitivamente?')) return;
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/quotations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (response.ok) {
+        mutate();
+        closeDrawer();
+      } else {
+        alert('Erro ao excluir orçamento.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir orçamento.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/products', label: 'Serviços e Peças' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -467,6 +475,14 @@ export default function QuotationsPage() {
                   }}
                 >
                   Editar Itens
+                </Button>
+                <Button
+                  variant="danger"
+                  className="px-4"
+                  onClick={() => handleDeleteQuotation(selectedQuotation.id)}
+                  isLoading={actionLoading}
+                >
+                  Excluir
                 </Button>
               </div>
             </div>

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProducts, useDeleteProduct } from '@/hooks/useProducts';
 import { useAuth } from '@/hooks/useAuth';
-import { Navigation } from '@/components/Navigation';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
@@ -100,21 +99,6 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/products', label: 'Serviços e Peças' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
         <div className="flex items-center justify-between mb-8">
           <div>

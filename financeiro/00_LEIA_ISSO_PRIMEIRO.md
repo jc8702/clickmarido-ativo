@@ -31,7 +31,7 @@
 
 - ✅ **6 modelos Prisma** completos (Invoice, Payment, Expense, Vendor, etc)
 - ✅ **17 APIs** especificadas (invoices, payments, expenses, dashboard)
-- ✅ **4 integrações** detalhadas (Asaas, WhatsApp, Email, Google Sheets)
+- ✅ **4 integrações** detalhadas (Mercado Pago, WhatsApp, Email, Google Sheets)
 - ✅ **5 páginas** UI desenhadas (dashboard, invoices, payments, expenses, reports)
 - ✅ **3 fluxos** de integração mapeados
 - ✅ **6 relatórios** definidos (DRE, Fluxo, Contas a Cobrar, etc)
@@ -173,7 +173,7 @@ CÓDIGO PRONTO PARA USAR:
 [✅] Componentes React desenhados
 [✅] Hooks implementados
 [✅] Validações Zod
-[✅] Integrações Asaas mapeadas
+[✅] Integrações Mercado Pago mapeadas
 [✅] WhatsApp integration planejada
 [✅] Email templates definidos
 
@@ -208,7 +208,7 @@ PRONTO PARA:
 - [ ] Implementar módulo de serviços (30 min)
 - [ ] Setup do módulo financeiro:
   - [ ] Database migration scripts
-  - [ ] Asaas sandbox account
+  - [ ] Mercado Pago sandbox account
   - [ ] WhatsApp business account
 - [ ] Sprint planning para 8 semanas
 
@@ -224,7 +224,7 @@ PRONTO PARA:
 ### ✅ DO - Faça Isso
 
 1. **Começar pequeno:** MVP com invoices + pagamento manual
-2. **Testar com sandbox:** Asaas sandbox antes de produção
+2. **Testar com sandbox:** Mercado Pago sandbox antes de produção
 3. **Monitorar tudo:** Logs, erros, performance desde dia 1
 4. **Documentar decisões:** Architecture Decision Records
 5. **Code review:** 2 devs? Revise sempre
@@ -234,7 +234,7 @@ PRONTO PARA:
 
 1. **NF-e desde o começo:** Deixa para Fase 2
 2. **Ignorar testes:** Será um pesadelo depois
-3. **Salvar cartão no DB:** Nunca! Asaas faz isso
+3. **Salvar cartão no DB:** Nunca! Mercado Pago faz isso
 4. **Sem segurança:** LGPD + PCI são sérias
 5. **Deployment manual:** Use CI/CD desde o start
 6. **Sem monitoring:** Erro vai ficar invisível
@@ -249,8 +249,8 @@ R: Leia `LEIA_PRIMEIRO.md` na pasta `clickmarido-modulo-servicos/`
 **P: Quanto tempo leva tudo?**  
 R: Módulo serviços = 30 min. Financeiro = 6-8 semanas.
 
-**P: Preciso de Asaas pra começar?**  
-R: Não. MVP funciona com pagamento manual. Asaas vem na Sprint 4.
+**P: Preciso de Mercado Pago pra começar?**  
+R: Não. MVP funciona com pagamento manual. Mercado Pago vem na Sprint 4.
 
 **P: E se der erro?**  
 R: Consulte MODULO_SERVICOS_DOCUMENTACAO.md seção "Troubleshooting"
@@ -273,7 +273,7 @@ R: Sim, mas recomendo: Serviços primeiro, depois Financeiro.
    ├─ Design: 100% completo
    ├─ Schema: 100% especificado
    ├─ APIs: 17 endpoints desenhados
-   ├─ Integrações: Asaas + WhatsApp + Email
+   ├─ Integrações: Mercado Pago + WhatsApp + Email
    └─ Roadmap: 8 sprints detalhados
 
 ✅ DOCUMENTAÇÃO:

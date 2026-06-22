@@ -8,7 +8,6 @@ import { Button } from '@/components/Button';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/Modal';
-import { Navigation } from '@/components/Navigation';
 import ServiceOrderForm from '../../../components/ServiceOrderForm';
 import CreateServiceOrderForm from '../../../components/CreateServiceOrderForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -88,25 +87,21 @@ export default function ServiceOrdersPage() {
     }
   };
 
+  const handleDeleteOrder = async (id: string) => {
+    if (!confirm('Deseja realmente excluir esta ordem de serviço definitivamente?')) return;
+    try {
+      await api.delete(`/service-orders/${id}`);
+      fetchOrders();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir ordem de serviço.');
+    }
+  };
+
   const selectedOrder = orders.find(o => o.id === activeModalId);
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <Navigation
-        logo={<div className="text-2xl font-bold bg-gradient-hero bg-clip-text text-transparent">Click Marido</div>}
-        links={[
-          { href: '/dashboard', label: 'Dashboard' },
-          { href: '/customers', label: 'Clientes' },
-          { href: '/quotations', label: 'Orçamentos' },
-          { href: '/products', label: 'Serviços e Peças' },
-          { href: '/service-orders', label: 'Ordens de Serviço' },
-          { href: '/payments', label: 'Pagamentos' },
-          { href: '/warranties', label: 'Garantias' },
-        ]}
-        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
-        onLogout={logout}
-      />
-
       <main className="max-w-7xl mx-auto px-6 py-10">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -179,9 +174,9 @@ export default function ServiceOrdersPage() {
                             Concluir
                           </Button>
                         )}
-                        {row.status !== 'agendada' && row.status !== 'em_execucao' && (
-                          <span className="text-neutral-400 dark:text-neutral-500 text-sm">—</span>
-                        )}
+                        <Button variant="danger" size="sm" onClick={() => handleDeleteOrder(row.id)}>
+                          Excluir
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -46,6 +46,11 @@ model Customer {
   warranties Warranty[]
   payments   Payment[]
   serviceOrders ServiceOrder[]
+  invoices   Invoice[]
+
+  // Financeiro
+  creditLimit       Float?    @default(0)
+  taxDocNumber      String?   // CPF/CNPJ
 
   @@map("customers")
 }
@@ -63,6 +68,13 @@ model Quotation {
   warranties   Warranty[]
   payments     Payment[]
   serviceOrder ServiceOrder?
+  invoice      Invoice?
+
+  // Financeiro
+  paymentTerms String?   @default("A_VISTA")  // A_VISTA, 30_DIAS, 60_DIAS
+
+  // Automação
+  expiryNotificationSent Boolean @default(false)
 
   @@index([customerId])
   @@map("quotations")
@@ -95,6 +107,9 @@ model Warranty {
   createdAt           DateTime  @default(now())
   customer            Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   quotation           Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  // Automação
+  reminderSent        Boolean   @default(false)
 
   @@index([quotationId])
   @@index([customerId])
@@ -141,6 +156,10 @@ model ServiceOrder {
   technician     Technician?       @relation(fields: [technicianId], references: [id])
   photos         ServiceOrderPhoto[]
 
+  // Automação
+  automationLog     Json?
+  notificationsSent Json?
+
   @@index([quotationId])
   @@index([customerId])
   @@index([technicianId])
@@ -149,23 +168,61 @@ model ServiceOrder {
 }
 
 model Payment {
-  id           String    @id @default(cuid())
-  quotationId  String
-  customerId   String
-  amount       Float
-  method       String    @default("pix") @db.VarChar(20)
-  status       String    @default("pendente") @db.VarChar(20)
-  pixCode      String    @default("") @db.Text
-  description  String    @default("")
-  paidAt       DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  quotation    Quotation @relation(fields: [quotationId], references: [id])
-  customer     Customer  @relation(fields: [customerId], references: [id])
+  id                String    @id @default(cuid())
+  quotationId       String?
+  customerId        String
+  amount            Float     @default(0)
+  method            String    @default("pix") @db.VarChar(20)
+  status            String    @default("pendente") @db.VarChar(20)
+  pixCode           String    @default("") @db.Text
+  description       String    @default("")
+  paidAt            DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  invoiceId         String?
+  invoice           Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  quotation         Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Mercado Pago
+  mpPaymentId       String?   @unique
+  mpStatus          String?
+  mpPaymentMethodId String?
+  mpExternalReference String?
+
+  // Dados PIX expandidos
+  pixQrCode         String?   @db.Text
+  pixExpiration     DateTime?
+
+  // Dados Boleto
+  boletoNumber      String?
+  boletoBarcode     String?
+  boletoUrl         String?   @db.Text
+
+  // Dados Cartão
+  cardBrand         String?
+  cardLast4         String?
+  installments      Int?
+
+  // Nota Fiscal
+  nfeUrl            String?   @db.Text
+  nfeNumber         String?
+
+  // Controle
+  confirmedAt       DateTime?
+  dueDateAt         DateTime?
+
+  // Automação
+  remindersSent     Int       @default(0)
+  lastReminderAt    DateTime?
+  notificationLog   Json?
 
   @@index([quotationId])
   @@index([customerId])
+  @@index([invoiceId])
   @@index([status])
+  @@index([mpPaymentId])
+  @@index([confirmedAt])
   @@map("payments")
 }
 
@@ -180,4 +237,201 @@ model ServiceOrderPhoto {
 
   @@index([serviceOrderId])
   @@map("service_order_photos")
+}
+
+model Invoice {
+  id                String    @id @default(cuid())
+
+  // Referência
+  quotationId       String    @unique
+  customerId        String
+
+  // Dados da nota
+  invoiceNumber     String    @unique
+  seriesNumber      String?   @default("1")
+  issueDate         DateTime  @default(now())
+  dueDate           DateTime
+
+  // Valores
+  subtotal          Float     @default(0)
+  taxAmount         Float     @default(0)
+  totalAmount       Float     @default(0)
+  discountAmount    Float?    @default(0)
+
+  // Status
+  status            String    @default("rascunho")
+  nfeUrl            String?   @db.Text
+
+  // Fiscal
+  taxRegime         String    @default("SIMPLES")
+  issRate           Float?
+
+  // Metadados
+  description       String?   @default("")
+  notes             String?   @default("")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  quotation         Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments          Payment[]
+
+  @@unique([invoiceNumber, seriesNumber])
+  @@index([quotationId])
+  @@index([customerId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model Expense {
+  id                String    @id @default(cuid())
+
+  // Categoria
+  category          String    // MATERIAL, SERVICO, TRANSPORTE, ALUGUEL, UTILITIES, OUTROS
+
+  // Dados
+  description       String    @db.VarChar(255)
+  amount            Float     @default(0)
+
+  // Fornecedor (opcional)
+  vendorId          String?
+  vendorName        String?   @default("")
+
+  // Datas
+  expenseDate       DateTime  @default(now())
+  dueDate           DateTime?
+  paidAt            DateTime?
+
+  // Status
+  status            String    @default("pendente")
+
+  // Documento
+  documentType      String?   // NOTA_FISCAL, RECIBO, OUTRO
+  documentNumber    String?
+
+  // Vinculação com OS (CRÍTICO - integra com ServiceOrder)
+  serviceOrderId    String?   // FK para ServiceOrder
+
+  // Metadados
+  notes             String?   @default("")
+  attachmentUrl     String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  vendor            Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([vendorId])
+  @@index([status])
+  @@index([expenseDate])
+  @@index([dueDate])
+  @@index([serviceOrderId])
+  @@map("expenses")
+}
+
+model Vendor {
+  id                String    @id @default(cuid())
+
+  // Dados
+  name              String    @db.VarChar(255)
+  email             String?   @db.VarChar(255)
+  phone             String?   @db.VarChar(20)
+
+  // Fiscal
+  cnpjCpf           String?   @unique
+
+  // Endereço
+  address           String?   @default("")
+
+  // Relacionamento
+  expenses          Expense[]
+
+  // Metadados
+  isActive          Boolean   @default(true)
+  notes             String?   @default("")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([cnpjCpf])
+  @@index([isActive])
+  @@map("vendors")
+}
+
+model FinancialTransaction {
+  id                String    @id @default(cuid())
+
+  // Tipo
+  type              String    // INVOICE_ISSUED, PAYMENT_RECEIVED, EXPENSE_RECORDED, ADJUSTMENT, TRANSFER
+
+  // Referências
+  invoiceId         String?
+  paymentId         String?
+  expenseId         String?
+
+  // Valores
+  debit             Float?    @default(0)
+  credit            Float?    @default(0)
+  balance           Float?    @default(0)
+
+  // Descrição
+  description       String    @db.VarChar(500)
+  notes             String?   @default("")
+
+  // Data
+  transactionDate   DateTime  @default(now())
+
+  // Auditoria
+  userId            String?
+  userEmail         String?
+
+  createdAt         DateTime  @default(now())
+
+  @@index([type])
+  @@index([transactionDate])
+  @@index([invoiceId])
+  @@index([paymentId])
+  @@index([expenseId])
+  @@map("financial_transactions")
+}
+
+model AccountBalance {
+  id                String    @id @default(cuid())
+
+  // Data do saldo
+  balanceDate       DateTime
+
+  // Saldos
+  opening           Float     @default(0)
+  inflow            Float     @default(0)
+  outflow           Float     @default(0)
+  closing           Float     @default(0)
+
+  // Previsão
+  forecast30        Float?    @default(0)
+  forecast60        Float?    @default(0)
+  forecast90        Float?    @default(0)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([balanceDate])
+  @@index([balanceDate])
+  @@map("account_balances")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  entity    String   @db.VarChar(50)    // 'quotation', 'payment', 'service_order'
+  entityId  String   @db.VarChar(100)
+  action    String   @db.VarChar(100)   // 'created', 'updated', 'automation_triggered'
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+  createdBy String?  @db.VarChar(100)
+
+  @@index([entity])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

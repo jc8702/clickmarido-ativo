@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Revitalizado & Integrado (Concluído com Sucesso)
+- **Status Atual:** Automações, Cron Jobs e Faturamento Automático Implantados (MVP 2.0 Expandido)
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 21/06/2026 - 18:14
+- **Última Atualização:** 22/06/2026 - 15:20
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -38,6 +38,7 @@ Vercel (Deploy)
 - [x] Ordens de Serviço manuais e links dinâmicos
 - [x] Pagamentos avulsos e cobrança via WhatsApp
 - [x] Fluxo completo de acionamento de garantias gerando reparo de R$ 0,00
+- [x] Módulo Financeiro completo (Controle de saldos, faturas e despesas)
 
 ## Funcionalidades Futuras (Roadmap)
 
@@ -49,6 +50,44 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 22/06/2026 - 15:20
+- **Implantação de Cron Jobs Adicionais e Automações:**
+  - Criado o cron job de verificação de expiração de garantias (`/api/cron/warranty-expiry-check`).
+  - Criado o cron job de acompanhamento e expiração de orçamentos (`/api/cron/quotation-expiry-check`).
+  - Criado o cron job de fechamento de relatório diário (`/api/cron/daily-report`).
+  - Adicionado gatilho de notificação WhatsApp automática ao técnico quando associado a uma OS em `PUT /api/service-orders/[id]/route.ts`.
+  - Adicionado fluxo de faturamento automático (criação de `Invoice` e vínculo ao pagamento) ao webhook Asaas (`/api/webhooks/asaas/route.ts`).
+  - Sucesso 100% na compilação estática de tipos e build (`npm run build`).
+
+### 22/06/2026 - 15:10
+- **Implantação de Navegação Lateral (Sidebar) e Automações Backend:**
+  - Criado o componente `Sidebar.tsx` vertical e integrado globalmente no `layout.tsx` do dashboard.
+  - Movidas as pastas de `warranties` e `profile` para dentro de `(dashboard)` para compartilhar layout e proteção.
+  - Removidos imports e chamadas de `<Navigation />` redundantes em todas as 11 telas operacionais.
+  - Schema do Prisma atualizado (modelo `AuditLog` e campos de status/automações em `Payment`, `ServiceOrder`, `Quotation`, `Warranty`) e atualizado no banco Neon via `db push`.
+  - Criado singleton do Prisma Client em `lib/prisma.ts`.
+  - Desenvolvido utilitário de WhatsApp (`notifications/whatsapp.ts`).
+  - Implementada a automação para auto-criar pagamentos ao concluir ordens de serviço (`automations/service-order-completed.ts`).
+  - Desenvolvidos endpoints de Cron Job (`api/cron/payment-reminders`) e Webhook Asaas (`api/webhooks/asaas`).
+  - Criada configuração de cron-schedule em `vercel.json`.
+  - Validação estática completa e sucesso no build de produção (`npm run build`).
+
+### 22/06/2026 - 15:00
+- **Planejamento do Refactor de UI/UX e Automações:**
+  - Mapeamento das mudanças para migrar a barra superior (Navigation) para Sidebar lateral esquerda.
+  - Planejamento de automações (OS completa -> Payment automático, lembretes de cobrança via Cron da Vercel, webhook receptor do Asaas para PIX).
+  - Definição do novo schema do Prisma (AuditLog e campos de automações) e singleton do Prisma Client.
+  - Criação do plano de implementação oficial na conversa.
+
+### 22/06/2026 - 13:41
+- Implantação e integração do Módulo Financeiro:
+  - **Prisma Schema:** Adicionados os modelos `Invoice`, `Expense`, `Vendor`, `FinancialTransaction` e `AccountBalance`. Criada e sincronizada a estrutura no banco Neon.
+  - **Navegação Global:** Adicionados links e ícones para as páginas Financeiro, Faturamento e Despesas.
+  - **Frontend:** Desenvolvidas as interfaces `/financial`, `/invoices` e `/expenses` com suporte completo ao tema escuro e integradas ao Design System.
+  - **APIs:** Sincronizadas as rotas de faturamento, despesas, fornecedores e relatórios financeiros.
+  - **Build Estático:** Validação e build estático do Next.js compilados com sucesso.
+- Arquivos modificados/criados: `schema.prisma`, `Navigation.tsx`, `financial/page.tsx`, `invoices/page.tsx`, `expenses/page.tsx` e `webhook-mp/route.ts`.
 
 ### 21/06/2026 - 18:14
 - Conclusão da Revitalização UX/UI e Integração Diamante de todos os módulos operacionais:
