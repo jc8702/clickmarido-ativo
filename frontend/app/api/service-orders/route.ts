@@ -98,13 +98,6 @@ export async function POST(request: NextRequest) {
     const quotation = await prisma.quotation.create({
       data: {
         customerId,
-        items: [
-          {
-            description,
-            quantity: 1,
-            price: Number(amount),
-          },
-        ],
         total: Number(amount),
         status: 'agendada',
         notes: notes || 'OS criada manualmente',
@@ -112,6 +105,36 @@ export async function POST(request: NextRequest) {
       },
       include: { customer: true },
     });
+
+    // Criar item do orçamento
+    if (description) {
+      let product = await prisma.product.findFirst({
+        where: { name: description, type: 'SERVICO' },
+      });
+
+      if (!product) {
+        product = await prisma.product.create({
+          data: {
+            name: description,
+            sku: `OS-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            type: 'SERVICO',
+            price: Number(amount),
+            unit: 'un',
+          },
+        });
+      }
+
+      await prisma.quotationItem.create({
+        data: {
+          quotationId: quotation.id,
+          productId: product.id,
+          quantity: 1,
+          unitPrice: Number(amount),
+          subtotal: Number(amount),
+          notes: notes || 'OS criada manualmente',
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

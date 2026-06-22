@@ -22,19 +22,37 @@ model Customer {
 }
 
 model Quotation {
-  id         String     @id @default(cuid())
+  id         String             @id @default(cuid())
   customerId String
-  items      Json       @default("[]")
-  total      Float      @default(0)
-  status     String     @default("rascunho")
-  notes      String     @default("")
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items      QuotationItem[]
+  total      Float              @default(0)
+  status     String             @default("rascunho")
+  notes      String             @default("")
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
   warranties Warranty[]
 
   @@index([customerId])
   @@map("quotations")
+}
+
+model QuotationItem {
+  id          String    @id @default(cuid())
+  quotationId String
+  productId   String
+  quantity    Float     @default(1)
+  unitPrice   Float     @default(0)
+  subtotal    Float     @default(0)
+  notes       String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([quotationId])
+  @@index([productId])
+  @@map("quotation_items")
 }
 
 model Warranty {
@@ -53,17 +71,18 @@ model Warranty {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String   @db.VarChar(255)
-  sku         String   @unique @db.VarChar(50)
-  type        String   @db.VarChar(20) // "SERVICO" ou "PECA"
-  description String   @default("")
-  price       Float    @default(0)
-  unit        String   @default("un") @db.VarChar(10) // un, m², h, kg, etc
-  category    String   @default("") @db.VarChar(100)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String            @id @default(cuid())
+  name            String            @db.VarChar(255)
+  sku             String            @unique @db.VarChar(50)
+  type            String            @db.VarChar(20) // "SERVICO" ou "PECA"
+  description     String            @default("")
+  price           Float             @default(0)
+  unit            String            @default("un") @db.VarChar(10) // un, m², h, kg, etc
+  category        String            @default("") @db.VarChar(100)
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  quotationItems  QuotationItem[]
 
   @@index([sku])
   @@index([type])

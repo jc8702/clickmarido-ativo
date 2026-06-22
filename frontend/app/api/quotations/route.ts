@@ -83,13 +83,44 @@ export async function POST(request: NextRequest) {
     const quotation = await prisma.quotation.create({
       data: {
         customerId: parsed.customerId,
-        items: parsed.items,
         total,
         status: 'rascunho',
         notes: parsed.notes,
       },
       include: { customer: true },
     });
+
+    // Criar itens do orçamento
+    if (Array.isArray(parsed.items)) {
+      for (const item of parsed.items) {
+        // Buscar ou criar produto
+        let product = await prisma.product.findFirst({
+          where: { name: item.description, type: 'SERVICO' },
+        });
+
+        if (!product) {
+          product = await prisma.product.create({
+            data: {
+              name: item.description,
+              sku: `SVC-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              type: 'SERVICO',
+              price: item.price,
+              unit: 'un',
+            },
+          });
+        }
+
+        await prisma.quotationItem.create({
+          data: {
+            quotationId: quotation.id,
+            productId: product.id,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            subtotal: item.quantity * item.price,
+          },
+        });
+      }
+    }
 
     return NextResponse.json(quotation, { status: 201 });
 

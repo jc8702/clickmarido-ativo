@@ -90,19 +90,43 @@ export async function POST(request: NextRequest) {
     const quotation = await prisma.quotation.create({
       data: {
         customerId,
-        items: [
-          {
-            description,
-            quantity: 1,
-            price: Number(amount),
-          },
-        ],
         total: Number(amount),
         status: quotationStatus,
         notes: 'Lançamento de pagamento manual avulso',
       },
       include: { customer: true },
     });
+
+    // Criar item do orçamento se houver produto selecionado
+    if (description) {
+      // Buscar ou criar um produto padrão para pagamentos avulsos
+      let product = await prisma.product.findFirst({
+        where: { name: description, type: 'SERVICO' },
+      });
+
+      if (!product) {
+        product = await prisma.product.create({
+          data: {
+            name: description,
+            sku: `PAY-${Date.now()}`,
+            type: 'SERVICO',
+            price: Number(amount),
+            unit: 'un',
+          },
+        });
+      }
+
+      await prisma.quotationItem.create({
+        data: {
+          quotationId: quotation.id,
+          productId: product.id,
+          quantity: 1,
+          unitPrice: Number(amount),
+          subtotal: Number(amount),
+          notes: 'Lançamento de pagamento manual avulso',
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,

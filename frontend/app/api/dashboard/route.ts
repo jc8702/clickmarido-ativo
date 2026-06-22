@@ -29,7 +29,12 @@ export async function GET(request: NextRequest) {
 
     // 2. Todos os Orçamentos
     const allQuotations = await prisma.quotation.findMany({
-      include: { customer: true },
+      include: {
+        customer: true,
+        items: {
+          include: { product: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -87,18 +92,13 @@ export async function GET(request: NextRequest) {
     // 9. Top Serviços mais requisitados (Agregando itens dos orçamentos)
     const serviceCounts: Record<string, number> = {};
     allQuotations.forEach(q => {
-      try {
-        const items = Array.isArray(q.items) ? q.items : JSON.parse(q.items as string);
-        if (Array.isArray(items)) {
-          items.forEach((item: any) => {
-            if (item.name) {
-              const name = item.name.trim();
-              serviceCounts[name] = (serviceCounts[name] || 0) + (item.quantity || 1);
-            }
-          });
-        }
-      } catch (err) {
-        console.error('Erro ao processar itens do orçamento:', err);
+      if (q.items && Array.isArray(q.items)) {
+        q.items.forEach((item: any) => {
+          const name = item.product?.name || item.name;
+          if (name) {
+            serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + (item.quantity || 1);
+          }
+        });
       }
     });
 

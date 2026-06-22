@@ -50,16 +50,38 @@ export async function POST(
     const repairOS = await prisma.quotation.create({
       data: {
         customerId: warranty.customerId,
-        items: [
-          {
-            description: `Reparo sob Garantia: ${notes}`,
-            quantity: 1,
-            price: 0,
-          },
-        ],
         total: 0,
         status: 'agendada',
         notes: `Acionamento de garantia Ref: ${warranty.id}. OS original: ${warranty.quotationId}.`,
+      },
+    });
+
+    // Criar item do orçamento (reparo sob garantia)
+    const repairDescription = `Reparo sob Garantia: ${notes}`;
+    let product = await prisma.product.findFirst({
+      where: { name: 'Reparo sob Garantia', type: 'SERVICO' },
+    });
+
+    if (!product) {
+      product = await prisma.product.create({
+        data: {
+          name: 'Reparo sob Garantia',
+          sku: `WARRANTY-${Date.now()}`,
+          type: 'SERVICO',
+          price: 0,
+          unit: 'un',
+        },
+      });
+    }
+
+    await prisma.quotationItem.create({
+      data: {
+        quotationId: repairOS.id,
+        productId: product.id,
+        quantity: 1,
+        unitPrice: 0,
+        subtotal: 0,
+        notes: repairDescription,
       },
     });
 
