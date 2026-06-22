@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
       const itemPrice = item.unit_price || item.price || 0;
       const itemQuantity = item.quantity || 1;
       const itemProductId = item.product_id || null;
+      const itemType = item.type || 'SERVICO';
 
       // Se tem product_id, usar o produto existente
       let product = null;
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       // Se não encontrou pelo ID, buscar por nome
       if (!product && itemName) {
         product = await prisma.product.findFirst({
-          where: { name: itemName, type: 'SERVICO' },
+          where: { name: itemName, type: itemType },
         });
       }
 
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
           data: {
             name: itemName,
             sku,
-            type: 'SERVICO',
+            type: itemType,
             price: itemPrice,
             unit: 'un',
           },

@@ -15,7 +15,7 @@ export default function NewQuotationPage() {
   const { mutateAsync, isPending } = useCreateQuotation();
 
   const methods = useForm<QuotationFormValues>({
-    resolver: zodResolver(quotationSchema),
+    resolver: zodResolver(quotationSchema) as any,
     defaultValues: {
       customer_id: '',
       items: [{ name: '', quantity: 1, unit_price: 0 }],

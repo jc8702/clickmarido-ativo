@@ -29,13 +29,14 @@ export function ItemsBuilder() {
   const subtotal = items.reduce((acc: number, item: any) => acc + ((item.quantity || 0) * (item.unit_price || 0)), 0);
   const total = subtotal - discount;
 
-  const handleProductSelect = (product: SelectedProduct, quantity: number) => {
+  const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
     append({
       name: product.name,
       quantity: quantity,
       unit_price: product.price,
       sku: product.sku,
       product_id: product.id,
+      type: type,
     });
     setShowPicker(false);
   };
@@ -65,6 +66,13 @@ export function ItemsBuilder() {
 
       {fields.map((field, index) => (
         <div key={field.id} className="flex gap-3 items-start p-3 bg-neutral-50 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 rounded relative">
+          <div className="w-28">
+            <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">Tipo</label>
+            <select {...register(`items.${index}.type`)} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">
+              <option value="SERVICO">Serviço</option>
+              <option value="PECA">Peça</option>
+            </select>
+          </div>
           <div className="flex-1">
             <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">Serviço/Peça *</label>
             <input {...register(`items.${index}.name`)} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
@@ -90,7 +98,7 @@ export function ItemsBuilder() {
 
       <button
         type="button"
-        onClick={() => append({ name: '', quantity: 1, unit_price: 0 })}
+        onClick={() => append({ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' })}
         className="text-sm px-4 py-2 bg-neutral-200 dark:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded hover:bg-neutral-300 dark:hover:bg-neutral-500 font-medium"
       >
         + Adicionar Item Manual

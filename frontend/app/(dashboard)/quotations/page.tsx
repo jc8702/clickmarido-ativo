@@ -459,6 +459,15 @@ export default function QuotationsPage() {
                     ✕ Orçamento Rejeitado
                   </div>
                 )}
+                <Button
+                  variant="secondary"
+                  className="px-4"
+                  onClick={() => {
+                    window.location.href = `/quotations/${selectedQuotation.id}`;
+                  }}
+                >
+                  Editar Itens
+                </Button>
               </div>
             </div>
           </>

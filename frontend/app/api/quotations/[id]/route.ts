@@ -72,7 +72,7 @@ export async function PUT(
 
     if (body.items) {
       updateData.total = body.items.reduce(
-        (sum: number, item: any) => sum + item.quantity * item.price,
+        (sum: number, item: any) => sum + item.quantity * item.unit_price,
         0
       );
     }
@@ -82,6 +82,32 @@ export async function PUT(
       data: updateData,
       include: { customer: true },
     });
+
+    // Auto-create ServiceOrder when approving quotation
+    if (body.status === 'aceito') {
+      const existingOS = await prisma.serviceOrder.findFirst({
+        where: { quotationId: id },
+      });
+
+      if (!existingOS) {
+        const addresses = (quotation.customer as any)?.addresses;
+        const firstAddress = Array.isArray(addresses) && addresses.length > 0 ? addresses[0] : null;
+        const address = firstAddress
+          ? [firstAddress.street, firstAddress.number, firstAddress.city, firstAddress.state].filter(Boolean).join(', ')
+          : '';
+
+        await prisma.serviceOrder.create({
+          data: {
+            number: `OS-${Date.now()}`,
+            quotationId: id,
+            customerId: quotation.customerId,
+            status: 'agendada',
+            address,
+            finalTotal: quotation.total,
+          },
+        });
+      }
+    }
 
     return NextResponse.json(quotation);
 

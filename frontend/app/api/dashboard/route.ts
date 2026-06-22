@@ -98,6 +98,8 @@ export async function GET(request: NextRequest) {
     allQuotations.forEach(q => {
       if (q.items && Array.isArray(q.items)) {
         q.items.forEach((item: any) => {
+          const productType = item.product?.type;
+          if (productType === 'PECA') return;
           const name = item.product?.name || item.name;
           if (name) {
             serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + (item.quantity || 1);

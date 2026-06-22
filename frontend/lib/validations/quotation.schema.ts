@@ -7,6 +7,7 @@ export const quotationItemSchema = z.object({
   unit_price: z.number().min(0, 'Não pode ser negativo'),
   sku: z.string().optional(),
   product_id: z.string().optional(),
+  type: z.enum(['SERVICO', 'PECA']).default('SERVICO'),
 });
 
 export const quotationSchema = z.object({

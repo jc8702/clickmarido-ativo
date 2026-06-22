@@ -17,7 +17,7 @@ interface Product {
 }
 
 interface ProductPickerProps {
-  onSelect: (product: Product, quantity: number) => void;
+  onSelect: (product: Product, quantity: number, type: 'SERVICO' | 'PECA') => void;
   onClose: () => void;
 }
 
@@ -91,8 +91,12 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
 
   const handleConfirm = () => {
     if (selectedProduct) {
-      onSelect(selectedProduct, quantity);
+      onSelect(selectedProduct, quantity, getProductType(selectedProduct));
     }
+  };
+
+  const getProductType = (product: Product): 'SERVICO' | 'PECA' => {
+    return product.type === 'PECA' ? 'PECA' : 'SERVICO';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
