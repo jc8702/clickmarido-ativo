@@ -4,17 +4,13 @@ import * as jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION = '7d';
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET não configurado nas variáveis de ambiente');
-}
-
-const SECRET = JWT_SECRET!;
 
 export async function POST(request: NextRequest) {
   try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return NextResponse.json({ error: 'JWT_SECRET não configurado' }, { status: 500 });
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -46,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      SECRET,
+      secret,
       { expiresIn: JWT_EXPIRATION }
     );
 

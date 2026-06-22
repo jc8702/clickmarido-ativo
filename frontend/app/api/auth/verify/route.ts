@@ -3,16 +3,12 @@ import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET não configurado nas variáveis de ambiente');
-}
-
-const SECRET = JWT_SECRET!;
 
 export async function GET(request: NextRequest) {
   try {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) return NextResponse.json({ error: 'JWT_SECRET não configurado' }, { status: 500 });
+
     const authHeader = request.headers.get('authorization');
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -23,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, SECRET) as any;
+    const decoded = jwt.verify(token, secret) as any;
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
