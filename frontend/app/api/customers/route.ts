@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const customer = await prisma.customer.create({
       data: {
         name: parsed.name,
-        email: parsed.email || '',
+        email: parsed.email || null,
         phone: parsed.phone,
         addresses: parsed.addresses || [],
       },
