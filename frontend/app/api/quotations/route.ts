@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { QuotationSchema } from '@/lib/schemas';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
@@ -65,58 +64,88 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = QuotationSchema.parse(body);
 
-    const total = (parsed.items as any[]).reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
+    // Aceitar ambos os formatos: customer_id (novo) e customerId (antigo)
+    const customerId = body.customer_id || body.customerId;
+    if (!customerId) {
+      return NextResponse.json({ error: 'Cliente é obrigatório' }, { status: 400 });
+    }
+
+    const items = body.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Adicione pelo menos 1 item' }, { status: 400 });
+    }
 
     const customer = await prisma.customer.findUnique({
-      where: { id: parsed.customerId },
+      where: { id: customerId },
     });
 
     if (!customer) {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
+    // Calcular total
+    const total = items.reduce(
+      (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || item.price || 0),
+      0
+    ) - (body.discount || 0);
+
+    const notes = body.notes || '';
+
     const quotation = await prisma.quotation.create({
       data: {
-        customerId: parsed.customerId,
+        customerId,
         total,
         status: 'rascunho',
-        notes: parsed.notes,
+        notes,
       },
       include: { customer: true },
     });
 
     // Criar itens do orçamento
-    if (Array.isArray(parsed.items)) {
-      for (const item of parsed.items) {
-        // Buscar ou criar produto
-        let product = await prisma.product.findFirst({
-          where: { name: item.description, type: 'SERVICO' },
+    for (const item of items) {
+      const itemName = item.name || item.description || '';
+      const itemPrice = item.unit_price || item.price || 0;
+      const itemQuantity = item.quantity || 1;
+      const itemProductId = item.product_id || null;
+
+      // Se tem product_id, usar o produto existente
+      let product = null;
+      if (itemProductId) {
+        product = await prisma.product.findUnique({
+          where: { id: itemProductId },
         });
+      }
 
-        if (!product) {
-          product = await prisma.product.create({
-            data: {
-              name: item.description,
-              sku: `SVC-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-              type: 'SERVICO',
-              price: item.price,
-              unit: 'un',
-            },
-          });
-        }
+      // Se não encontrou pelo ID, buscar por nome
+      if (!product && itemName) {
+        product = await prisma.product.findFirst({
+          where: { name: itemName, type: 'SERVICO' },
+        });
+      }
 
+      // Se ainda não encontrou, criar um novo produto
+      if (!product && itemName) {
+        const sku = item.sku || `SVC-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        product = await prisma.product.create({
+          data: {
+            name: itemName,
+            sku,
+            type: 'SERVICO',
+            price: itemPrice,
+            unit: 'un',
+          },
+        });
+      }
+
+      if (product) {
         await prisma.quotationItem.create({
           data: {
             quotationId: quotation.id,
             productId: product.id,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            subtotal: item.quantity * item.price,
+            quantity: itemQuantity,
+            unitPrice: itemPrice,
+            subtotal: itemQuantity * itemPrice,
           },
         });
       }
@@ -126,12 +155,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('POST /api/quotations error:', error);
-
-    if (error.name === 'ZodError') {
-      return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: 'Erro ao criar orçamento' }, { status: 500 });
+    return NextResponse.json({ error: 'Erro ao criar orçamento: ' + (error.message || 'Erro desconhecido') }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }
