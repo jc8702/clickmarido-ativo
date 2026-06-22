@@ -38,7 +38,7 @@ const statusLabels: Record<string, string> = {
 
 export default function ServiceOrdersPage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email: string } | null;
+  const authUser = user as { name?: string; email: string; role: string } | null;
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeModalId, setActiveModalId] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export default function ServiceOrdersPage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

@@ -3,15 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) return null;
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-
   try {
-    const token = authHeader.substring(7);
-    jwt.verify(token, JWT_SECRET);
+    jwt.verify(authHeader.substring(7), JWT_SECRET);
     return true;
   } catch {
     return null;
@@ -31,33 +30,31 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const final_total = body.final_total;
+    const finalTotal = body.final_total || body.finalTotal;
 
-    // Atualiza status do orçamento para "aceito" (concluído) e o valor final caso fornecido
-    const updateData: any = { status: 'aceito' };
-    if (final_total && !isNaN(final_total)) {
-      updateData.total = Number(final_total);
+    const updateData: any = {
+      status: 'concluida',
+      completedAt: new Date(),
+    };
+
+    if (finalTotal && !isNaN(finalTotal)) {
+      updateData.finalTotal = Number(finalTotal);
     }
 
-    const updated = await prisma.quotation.update({
+    const order = await prisma.serviceOrder.update({
       where: { id },
       data: updateData,
+      include: { customer: true, technician: true },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: updated,
-    });
+    return NextResponse.json(order);
 
   } catch (error: any) {
     console.error('PATCH /api/service-orders/[id]/complete error:', error);
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Ordem de serviço não encontrada' }, { status: 404 });
     }
-    return NextResponse.json(
-      { error: 'Erro ao concluir ordem de serviço' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erro ao concluir OS' }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

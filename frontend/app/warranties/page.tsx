@@ -31,7 +31,7 @@ interface Warranty {
 
 export default function WarrantiesPage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email: string } | null;
+  const authUser = user as { name?: string; email: string; role: string } | null;
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeWarrantyId, setActiveWarrantyId] = useState<string | null>(null);
@@ -44,47 +44,7 @@ export default function WarrantiesPage() {
       const res = await api.get('/warranties');
       const warrantiesData = res.data?.data || res.data || [];
       
-      if (warrantiesData.length > 0) {
-        setWarranties(warrantiesData);
-      } else {
-        // Fallback de demonstração
-        setWarranties([
-          {
-            id: 'war_1',
-            quotationId: 'quot_1',
-            customerId: 'cust_1',
-            service_description: 'Instalação Elétrica Completa e Manutenção de Disjuntores',
-            expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString(),
-            customer: {
-              name: 'João Silva',
-              email: 'joao@example.com',
-              phone: '11 99999999',
-            },
-            quotation: {
-              total: 2500,
-              status: 'aceito',
-            }
-          },
-          {
-            id: 'war_2',
-            quotationId: 'quot_2',
-            customerId: 'cust_2',
-            service_description: 'Reparo Hidráulico Geral no Banheiro Principal',
-            expiry_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(Date.now() - 190 * 24 * 60 * 60 * 1000).toISOString(),
-            customer: {
-              name: 'Maria Santos',
-              email: 'maria@example.com',
-              phone: '11 99999998',
-            },
-            quotation: {
-              total: 1800,
-              status: 'aceito',
-            }
-          }
-        ]);
-      }
+      setWarranties(warrantiesData);
     } catch (err) {
       console.error('Erro ao listar garantias:', err);
     } finally {
@@ -130,7 +90,7 @@ export default function WarrantiesPage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

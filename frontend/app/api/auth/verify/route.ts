@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado nas variáveis de ambiente');
+}
+
+const SECRET = JWT_SECRET!;
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,20 +23,36 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, SECRET) as any;
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, name: true, email: true, role: true, active: true },
+    });
+
+    if (!user || !user.active) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado ou inativo' },
+        { status: 401 }
+      );
+    }
 
     return NextResponse.json({
       valid: true,
-      email: decoded.email,
-      role: decoded.role,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
 
   } catch (error) {
-    console.error('Verify error:', error);
     return NextResponse.json(
       { error: 'Token inválido ou expirado' },
       { status: 401 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

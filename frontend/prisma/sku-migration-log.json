@@ -1,0 +1,500 @@
+[
+  {
+    "old": "SRV-CONLAMREAX",
+    "new": "SRV-ELE-001",
+    "name": "Conversão lâmpada reator x LED",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSDISUNI",
+    "new": "SRV-ELE-002",
+    "name": "Instalar Disjuntor (Unidade)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSTORELECOM",
+    "new": "SRV-ELE-003",
+    "name": "Instalar Torneira Elétrica com ponto elétrico definido",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSVENDETET",
+    "new": "SRV-ELE-004",
+    "name": "Instalar Ventilador de Teto (Unidade)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSLUSLUMOU",
+    "new": "SRV-ELE-005",
+    "name": "Instalar lustre, luminária ou spot simples",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSTOMUNI",
+    "new": "SRV-ELE-006",
+    "name": "Instalar/Substituir Tomadas (Unidade)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSINTUNI",
+    "new": "SRV-ELE-007",
+    "name": "Instalar/Trocar Interruptores (Unidade)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSSENDEPRE",
+    "new": "SRV-ELE-008",
+    "name": "Instalar/Trocar Sensor de presença",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSDECAMSEM",
+    "new": "SRV-ELE-009",
+    "name": "Instalação de campainha sem fio",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSDEPLASIM",
+    "new": "SRV-ELE-010",
+    "name": "Instalação de plafon simples",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-INSELIMDE",
+    "new": "SRV-ELE-011",
+    "name": "Instalação e limpeza de chuveiro elétrico ou eletrônico",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-MONDEVEN",
+    "new": "SRV-ELE-012",
+    "name": "Montagem de ventilador",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-REVELEPONSIM",
+    "new": "SRV-ELE-013",
+    "name": "Revisão elétrica (ponto simples)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMCOMACI",
+    "new": "SRV-ELE-014",
+    "name": "Substituir Lâmpada comum acima de 1 unidade",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMCOMATE",
+    "new": "SRV-ELE-015",
+    "name": "Substituir Lâmpada comum até 1 unidade",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMDEREF",
+    "new": "SRV-ELE-016",
+    "name": "Substituir Lâmpada de refletor até 1 unidade até 2 metros de altura",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMFLUACI",
+    "new": "SRV-ELE-017",
+    "name": "Substituir Lâmpada fluorescente acima de 1 unidade",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMFLUATE",
+    "new": "SRV-ELE-018",
+    "name": "Substituir Lâmpada fluorescente até 1 unidade",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-SUBLAMATE3",
+    "new": "SRV-ELE-019",
+    "name": "Substituir Lâmpadas (até 3 unidades)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-TRODISUNI",
+    "new": "SRV-ELE-020",
+    "name": "Trocar Disjuntor (Unidade)",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-TRORESCHUELE",
+    "new": "SRV-ELE-021",
+    "name": "Trocar Resistência Chuveiro Elétrico ou Eletrônico",
+    "family": "ELE"
+  },
+  {
+    "old": "SRV-CONVAZJAN",
+    "new": "SRV-HID-001",
+    "name": "Consertar Vazamentos Janelas/Pias/Banheiros",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-DESVASSANE",
+    "new": "SRV-HID-002",
+    "name": "Desentupimento vaso sanitário e mictório",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSFILOUPUR",
+    "new": "SRV-HID-003",
+    "name": "Instalar Filtro ou purificador de Água",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSOUSUBTAN",
+    "new": "SRV-HID-004",
+    "name": "Instalar ou substituir tanque porcelana, resina ou plástico",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSPONDEAGU",
+    "new": "SRV-HID-005",
+    "name": "Instalar ponto de água adicional (externo parede) tubulação aparente",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSPONDEAGUI",
+    "new": "SRV-HID-006",
+    "name": "Instalar ponto de água adicional (interno parede) tubulação aparente",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSDEDUCHIG",
+    "new": "SRV-HID-007",
+    "name": "Instalação de ducha higiênica",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSOUSUBVAS",
+    "new": "SRV-HID-008",
+    "name": "Instalação ou substituição vaso sanitário",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-LIMCAIDAGTEL",
+    "new": "SRV-HID-009",
+    "name": "Limpeza Caixa D'água Telhado Simples até 1.000 litros",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-LIMCAIDAGTSO",
+    "new": "SRV-HID-010",
+    "name": "Limpeza Caixa D'água Telhado Sobrado até 1.000 litros",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-LIMDECAIDE",
+    "new": "SRV-HID-011",
+    "name": "Limpeza de caixa de gordura residencial",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-MANEMVASSAN",
+    "new": "SRV-HID-012",
+    "name": "Manutenção em vaso sanitário/vazamento",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBBOICAIDAG",
+    "new": "SRV-HID-013",
+    "name": "Substituir Bóia Caixa D'água",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBREPDESOC",
+    "new": "SRV-HID-014",
+    "name": "Substituir Reparo Descarga ou Caixa Acoplada Simples (Completo)",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBREPDESOU",
+    "new": "SRV-HID-015",
+    "name": "Substituir Reparo Descarga ou Caixa Acoplada Simples (Parcial) entrada de água ou saída",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBOUCONTOR",
+    "new": "SRV-HID-016",
+    "name": "Substituir ou Consertar Torneiras Simples (vedantes/unidade)",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBOUCONTORM",
+    "new": "SRV-HID-017",
+    "name": "Substituir ou Consertar Torneiras c/ misturador (vedantes/unidade)",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBOUCONVAZ",
+    "new": "SRV-HID-018",
+    "name": "Substituir ou Consertar Vazamentos Sifão (vedantes)",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-SUBOUINSTAM",
+    "new": "SRV-HID-019",
+    "name": "Substituir ou instalar tampa de vaso sanitário",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-TROREGDECHU",
+    "new": "SRV-HID-020",
+    "name": "Trocar registro de chuveiro",
+    "family": "HID"
+  },
+  {
+    "old": "SRV-INSCORUNI",
+    "new": "SRV-INS-001",
+    "name": "Instalar Cortina (Unidade)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSMAQDELAVL",
+    "new": "SRV-INS-002",
+    "name": "Instalar Máquina de Lavar Louça",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSMAQDELAV",
+    "new": "SRV-INS-003",
+    "name": "Instalar Máquina de Lavar Roupa",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSPERUNI",
+    "new": "SRV-INS-004",
+    "name": "Instalar Persiana (Unidade)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSQUAEESPG",
+    "new": "SRV-INS-005",
+    "name": "Instalar Quadros e Espelhos (modelo grande)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSQUAEESP",
+    "new": "SRV-INS-006",
+    "name": "Instalar Quadros e Espelhos (modelo pequeno)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSSUPDETV",
+    "new": "SRV-INS-007",
+    "name": "Instalar Suporte de TV Painel ou Parede / microondas",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSVARTETOU",
+    "new": "SRV-INS-008",
+    "name": "Instalar Varal Teto ou Externo (Unidade)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSPONDERED",
+    "new": "SRV-INS-009",
+    "name": "Instalar ponto de rede de internet e cabeamento",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSDEACEDE",
+    "new": "SRV-INS-010",
+    "name": "Instalação de acessórios de banheiro",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSDECOI",
+    "new": "SRV-INS-011",
+    "name": "Instalação de coifa/depurador",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSDECOO",
+    "new": "SRV-INS-012",
+    "name": "Instalação de cooktop",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-INSDEOLHMAG",
+    "new": "SRV-INS-013",
+    "name": "Instalação de olho mágico",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-MAODEOBRPORD",
+    "new": "SRV-INS-014",
+    "name": "Mão de obra por dia",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-MAODEOBRPOR",
+    "new": "SRV-INS-015",
+    "name": "Mão de obra por hora",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-PINREPDEPAR",
+    "new": "SRV-INS-016",
+    "name": "Pintura reparadora de paredes (por parede do ambiente)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBTELCOMTEL",
+    "new": "SRV-INS-017",
+    "name": "Substituir Telha Comum Telhado Simples (unidade)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBTELCOMTSO",
+    "new": "SRV-INS-018",
+    "name": "Substituir Telha Comum Telhado Sobrado (unidade)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBVALOUMAN",
+    "new": "SRV-INS-019",
+    "name": "Substituir Válvula ou mangueira de Gás",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBOUINSBOT",
+    "new": "SRV-INS-020",
+    "name": "Substituir ou Instalar Botijão de Gás",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBREPVALDOC",
+    "new": "SRV-INS-021",
+    "name": "Substituir reparo válvula Docol",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBREPVALHYD",
+    "new": "SRV-INS-022",
+    "name": "Substituir reparo válvula Hydra",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBREPVALORI",
+    "new": "SRV-INS-023",
+    "name": "Substituir reparo válvula Oriente",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-SUBPISEAZU",
+    "new": "SRV-INS-024",
+    "name": "Substituição Pisos e Azulejos (peças cada)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-TAXEXTSERNO",
+    "new": "SRV-INS-025",
+    "name": "Taxa extra serviços no raio entre 10 a 15 KM",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-VEDCOMSILPIA",
+    "new": "SRV-INS-026",
+    "name": "Vedação com silicone (pia ou banheira ou box)",
+    "family": "INS"
+  },
+  {
+    "old": "SRV-LIMCALTELSIM",
+    "new": "SRV-LIM-001",
+    "name": "Limpeza Calha Telhado Simples",
+    "family": "LIM"
+  },
+  {
+    "old": "SRV-LIMCALTELSOB",
+    "new": "SRV-LIM-002",
+    "name": "Limpeza Calha Telhado Sobrado",
+    "family": "LIM"
+  },
+  {
+    "old": "SRV-AJUPORDEMAD",
+    "new": "SRV-MAR-001",
+    "name": "Ajuste porta de madeira (Unidade)",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-MANJAN",
+    "new": "SRV-MAR-002",
+    "name": "Manutenção Janelas",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-MANPOREGAV",
+    "new": "SRV-MAR-003",
+    "name": "Manutenção Portas e Gavetas de Armários (unidade)",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-MANEMPORDE",
+    "new": "SRV-MAR-004",
+    "name": "Manutenção em portas de correr",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-SUBDOBPORCOM",
+    "new": "SRV-MAR-005",
+    "name": "Substituir Dobradiça (Porta Comum/Unidade)",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-SUBFECPOROU",
+    "new": "SRV-MAR-006",
+    "name": "Substituir Fechadura Porta ou Janela (Comum/Unidade)",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-SUBOUINSPOR",
+    "new": "SRV-MAR-007",
+    "name": "Substituição ou Instalação Porta simples (Porta madeira)",
+    "family": "MAR"
+  },
+  {
+    "old": "SRV-DESDEGUAROU",
+    "new": "SRV-MON-001",
+    "name": "Desmontagem de guarda-roupa",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-INSOUSUBPRA",
+    "new": "SRV-MON-002",
+    "name": "Instalar ou Substituir Prateleiras (por unidade)",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-MONDEGUAROUC",
+    "new": "SRV-MON-003",
+    "name": "Montagem de guarda-roupa casal",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-MONDEGUAROU",
+    "new": "SRV-MON-004",
+    "name": "Montagem de guarda-roupa solteiro",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-MONDEMOVMED",
+    "new": "SRV-MON-005",
+    "name": "Montagem de móveis médios",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-MONEINSDE",
+    "new": "SRV-MON-006",
+    "name": "Montagem e instalação de nicho (até 2 unidades)",
+    "family": "MON"
+  },
+  {
+    "old": "SRV-MUDDEMOVDE",
+    "new": "SRV-MON-007",
+    "name": "Mudança de móveis de local ou ambiente (unidade)",
+    "family": "MON"
+  }
+]

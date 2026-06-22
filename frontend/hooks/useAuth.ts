@@ -1,8 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface AuthUser {
+  token: string;
+  name?: string;
+  email: string;
+  role: string;
+}
+
 export function useAuth() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -28,8 +35,9 @@ export function useAuth() {
           const data = await response.json();
           setUser({
             token,
-            email: data.email,
-            role: data.role,
+            name: data.user?.name || data.name,
+            email: data.user?.email || data.email,
+            role: data.user?.role || data.role,
           });
         } else {
           localStorage.removeItem('token');
@@ -47,7 +55,7 @@ export function useAuth() {
     verifyAuth();
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -67,6 +75,7 @@ export function useAuth() {
       localStorage.setItem('token', data.token);
       setUser({
         token: data.token,
+        name: data.user?.name,
         email: data.user.email,
         role: data.user.role,
       });

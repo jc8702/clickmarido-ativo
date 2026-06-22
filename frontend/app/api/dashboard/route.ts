@@ -3,9 +3,13 @@ import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) {
+    return NextResponse.json({ error: 'Configuração inválida' }, { status: 500 });
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
@@ -110,16 +114,7 @@ export async function GET(request: NextRequest) {
     // Ordena de forma decrescente por quantidade de pedidos
     aggregatedServices.sort((a, b) => b.count - a.count);
 
-    // Mocks padrão caso não haja serviços cadastrados, para manter a fidelidade visual
-    const defaultServices = [
-      { name: 'Manutenção Elétrica', count: 12 },
-      { name: 'Instalação de Ar Cond.', count: 8 },
-      { name: 'Reparo Hidráulico', count: 5 },
-    ];
-
-    const topServices = aggregatedServices.length > 0 
-      ? aggregatedServices.slice(0, 5) 
-      : defaultServices;
+    const topServices = aggregatedServices.slice(0, 5);
 
     return NextResponse.json({
       success: true,

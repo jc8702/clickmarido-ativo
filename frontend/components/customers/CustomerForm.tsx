@@ -30,22 +30,22 @@ export function CustomerForm({ initialData, onSubmit, isLoading }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Nome *</label>
-          <input {...register('name')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="João da Silva" />
+          <input {...register('name')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="Nome completo" />
           {errors.name && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.name.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Telefone *</label>
-          <input {...register('phone')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="+5511999999999" />
+          <input {...register('phone')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="(XX) XXXXX-XXXX" />
           {errors.phone && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.phone.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">E-mail</label>
-          <input {...register('email')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="joao@example.com" />
+          <input {...register('email')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="email@exemplo.com" />
           {errors.email && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.email.message}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">CPF/CNPJ</label>
-          <input {...register('cpf_cnpj')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="12345678901" />
+          <input {...register('cpf_cnpj')} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" placeholder="XXX.XXX.XXX-XX" />
           {errors.cpf_cnpj && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.cpf_cnpj.message}</p>}
         </div>
         <div className="md:col-span-2">

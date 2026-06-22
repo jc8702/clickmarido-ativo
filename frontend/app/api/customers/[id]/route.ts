@@ -4,9 +4,13 @@ import { customerSchema } from '@/lib/validations/customer.schema';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) {
+    return NextResponse.json({ error: 'Configuração inválida' }, { status: 500 });
+  }
+
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 

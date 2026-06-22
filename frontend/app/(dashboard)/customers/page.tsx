@@ -32,7 +32,7 @@ interface Customer {
 
 export default function CustomersPage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email: string } | null;
+  const authUser = user as { name?: string; email: string; role: string } | null;
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   
@@ -130,7 +130,7 @@ export default function CustomersPage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

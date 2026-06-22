@@ -1,54 +1,187 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAuth } from './useAuth';
 
-// Mocks simulando a API
-const mockOrders = [
-  { id: 'os-1', number: 'OS-1001', scheduled_date: new Date().toISOString(), scheduled_time: '09:00', status: 'agendada', technician_name: 'Técnico Alpha', customer_name: 'João Silva', address: 'Rua A, 123' },
-  { id: 'os-2', number: 'OS-1002', scheduled_date: new Date().toISOString(), scheduled_time: '14:00', status: 'em_progresso', technician_name: 'Técnico Beta', customer_name: 'Maria Souza', address: 'Av B, 456' },
-];
+export interface ServiceOrder {
+  id: string;
+  number: string;
+  quotationId: string;
+  customerId: string;
+  technicianId: string | null;
+  scheduledTime: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  status: string;
+  address: string;
+  notes: string;
+  finalTotal: number;
+  createdAt: string;
+  customer?: any;
+  technician?: any;
+  quotation?: any;
+  photos?: any[];
+}
 
-export function useServiceOrders() {
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useServiceOrders(page = 1, status?: string, search?: string) {
+  const [data, setData] = useState<{ data: ServiceOrder[]; meta: any }>({ data: [], meta: { total: 0 } });
+  const [isLoading, setIsLoading] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutate = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = getToken();
+      const params = new URLSearchParams({ page: String(page) });
+      if (status) params.set('status', status);
+      if (search) params.set('search', search);
+
+      const response = await fetch(`/api/service-orders?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setData(await response.json());
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, status, search, getToken]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setData(mockOrders);
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    mutate();
+  }, [mutate]);
 
-  return { data, isLoading };
+  return { data, isLoading, mutate };
 }
 
 export function useServiceOrder(id: string) {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<ServiceOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { getToken } = useAuth();
 
-  useEffect(() => {
-    setTimeout(() => {
-      // Cria um mock detalhado baseado no id
-      setData({
-        id,
-        number: `OS-${id.toUpperCase()}`,
-        quotation_id: 'q-123',
-        status: id === 'os-2' ? 'em_progresso' : 'agendada',
-        scheduled_date: new Date().toISOString(),
-        scheduled_time: '09:00',
-        customer_name: 'João Silva',
-        technician_name: 'Técnico Alpha',
-        arrival_time: id === 'os-2' ? new Date().toISOString() : null,
-        completion_time: null,
-        before_photos: [],
-        after_photos: [],
-        address: 'Rua A, 123 - Centro'
+  const fetchOrder = async () => {
+    if (!id) return;
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/service-orders/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (response.ok) setData(await response.json());
+    } catch (err) {
+      console.error('Error fetching service order:', err);
+    } finally {
       setIsLoading(false);
-    }, 500);
-  }, [id]);
-
-  const mutate = (newData: any) => {
-    setData((prev: any) => ({ ...prev, ...newData }));
+    }
   };
 
-  return { data, isLoading, mutate };
+  useEffect(() => {
+    fetchOrder();
+  }, [id, getToken]);
+
+  return { data, isLoading, mutate: fetchOrder };
+}
+
+export function useCreateServiceOrder() {
+  const [isPending, setIsPending] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (formData: any) => {
+    setIsPending(true);
+    try {
+      const token = getToken();
+      const response = await fetch('/api/service-orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Erro ao criar OS');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending };
+}
+
+export function useUpdateServiceOrder(id: string) {
+  const [isPending, setIsPending] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (formData: any) => {
+    setIsPending(true);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/service-orders/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error('Erro ao atualizar OS');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending };
+}
+
+export function useStartServiceOrder() {
+  const [isPending, setIsPending] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (id: string) => {
+    setIsPending(true);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/service-orders/${id}/start`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Erro ao iniciar OS');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending };
+}
+
+export function useCompleteServiceOrder() {
+  const [isPending, setIsPending] = useState(false);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (id: string, finalTotal?: number) => {
+    setIsPending(true);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/service-orders/${id}/complete`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ final_total: finalTotal }),
+      });
+
+      if (!response.ok) throw new Error('Erro ao concluir OS');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending };
 }

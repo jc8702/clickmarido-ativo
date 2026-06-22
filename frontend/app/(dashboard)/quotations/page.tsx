@@ -56,7 +56,7 @@ const columns = ['rascunho', 'pendente', 'enviado', 'aceito', 'rejeitado'];
 
 export default function QuotationsPage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email: string } | null;
+  const authUser = user as { name?: string; email: string; role: string } | null;
   
   const { data, isLoading, mutate } = useQuotations(undefined, 1);
   const [mounted, setMounted] = useState(false);
@@ -188,7 +188,7 @@ export default function QuotationsPage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

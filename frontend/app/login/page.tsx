@@ -8,7 +8,7 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('jose@clickmarido.local');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -81,14 +81,6 @@ export default function LoginPage() {
                 {isLoading ? 'Autenticando...' : 'Entrar'}
               </Button>
             </form>
-
-            <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-700 text-center">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                <strong className="text-neutral-700 dark:text-neutral-300">Credenciais de teste:</strong>
-                <br />
-                jose@clickmarido.local / 123456
-              </p>
-            </div>
           </div>
         </Card>
       </div>

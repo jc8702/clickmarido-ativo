@@ -9,15 +9,14 @@ import { Navigation } from '@/components/Navigation';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email?: string } | null;
+  const authUser = user as { name?: string; email?: string; role?: string } | null;
   const [saved, setSaved] = useState(false);
 
-  const defaultEmail = authUser?.email || 'jose@clickmarido.local';
   const [formData, setFormData] = useState({
-    name: 'José',
-    email: defaultEmail,
-    phone: '(11) 99999-9999',
-    company: 'Click Marido Serviços',
+    name: authUser?.name || '',
+    email: authUser?.email || '',
+    phone: '',
+    company: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -38,7 +37,7 @@ export default function ProfilePage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email || 'admin@clickmarido.local' } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email || '' } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

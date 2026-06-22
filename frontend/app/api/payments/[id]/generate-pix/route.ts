@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
+import { generatePixPayload, getPixQRCodeUrl } from '@/lib/pix';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) return null;
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-
   try {
     const token = authHeader.substring(7);
     jwt.verify(token, JWT_SECRET);
@@ -39,17 +40,46 @@ export async function GET(
       return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
     }
 
-    // Código PIX Estático Simulado com valor dinâmico
-    const formattedAmount = quotation.total.toFixed(2);
-    const pixCode = `00020126580014br.gov.bcb.pix0136clickmarido-pix-chave-randomica0212PagamentoOS05204000053039865406${formattedAmount}5802BR5915ClickMaridoLtda6009SaoPaulo62070503***6304`;
+    const pixKey = process.env.PIX_KEY || '47997896229';
+    const customerName = quotation.customer?.name || 'Cliente';
+
+    const pixPayload = generatePixPayload({
+      key: pixKey,
+      amount: quotation.total,
+      name: customerName,
+      city: 'SAO PAULO',
+    });
+
+    const qrCodeUrl = getPixQRCodeUrl(pixPayload);
+
+    // Salvar pagamento no banco
+    let payment = await prisma.payment.findFirst({
+      where: { quotationId: id, status: 'pendente' },
+    });
+
+    if (!payment) {
+      payment = await prisma.payment.create({
+        data: {
+          quotationId: id,
+          customerId: quotation.customerId,
+          amount: quotation.total,
+          method: 'pix',
+          status: 'pendente',
+          pixCode: pixPayload,
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        qr_code: pixCode,
+        payment_id: payment.id,
+        qr_code: pixPayload,
+        qr_code_url: qrCodeUrl,
         amount: quotation.total,
-        customer_name: quotation.customer?.name || 'Cliente',
+        customer_name: customerName,
         customer_phone: quotation.customer?.phone || '',
+        pix_key: pixKey,
       },
     });
 

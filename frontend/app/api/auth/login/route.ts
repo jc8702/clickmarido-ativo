@@ -1,19 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
-const ADMIN_CREDENTIALS = {
-  email: 'jose@clickmarido.local',
-  password: '123456',
-};
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION = '7d';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado nas variáveis de ambiente');
+}
+
+const SECRET = JWT_SECRET!;
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    if (email !== ADMIN_CREDENTIALS.email || password !== ADMIN_CREDENTIALS.password) {
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Email e senha são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user || !user.active) {
+      return NextResponse.json(
+        { error: 'Email ou senha inválidos' },
+        { status: 401 }
+      );
+    }
+
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordValid) {
       return NextResponse.json(
         { error: 'Email ou senha inválidos' },
         { status: 401 }
@@ -21,21 +45,18 @@ export async function POST(request: NextRequest) {
     }
 
     const token = jwt.sign(
-      { email, role: 'admin' },
-      JWT_SECRET,
+      { userId: user.id, email: user.email, role: user.role },
+      SECRET,
       { expiresIn: JWT_EXPIRATION }
     );
 
     return NextResponse.json({
       token,
       user: {
-        email,
-        role: 'admin',
-      },
-    }, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
     });
 
@@ -45,5 +66,7 @@ export async function POST(request: NextRequest) {
       { error: 'Erro ao processar login' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

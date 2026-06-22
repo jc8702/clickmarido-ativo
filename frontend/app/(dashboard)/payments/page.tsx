@@ -35,7 +35,7 @@ const statusLabels: Record<string, string> = {
 
 export default function PaymentsPage() {
   const { user, logout } = useAuth();
-  const authUser = user as { email: string } | null;
+  const authUser = user as { name?: string; email: string; role: string } | null;
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [pixModalId, setPixModalId] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export default function PaymentsPage() {
           { href: '/payments', label: 'Pagamentos' },
           { href: '/warranties', label: 'Garantias' },
         ]}
-        user={authUser ? { name: 'Admin', email: authUser.email } : { name: 'Admin', email: 'admin@clickmarido.local' }}
+        user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : { name: 'Admin', email: '' }}
         onLogout={logout}
       />
 

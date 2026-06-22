@@ -1,7 +1,13 @@
 import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado nas variáveis de ambiente');
+}
+
+const SECRET = JWT_SECRET!;
 
 export interface AuthResult {
   success: boolean;
@@ -17,7 +23,7 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, SECRET);
 
     if (!decoded) {
       return { success: false, error: 'Token inválido ou expirado' };
@@ -30,14 +36,14 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
 }
 
 export const signToken = (payload: any) => {
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, SECRET, {
     expiresIn: '7d',
   });
 };
 
 export const verifyToken = (token: string) => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, SECRET);
   } catch (error) {
     return null;
   }

@@ -7,6 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  name         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  role         String   @default("admin") @db.VarChar(20)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Technician {
+  id         String   @id @default(cuid())
+  name       String   @db.VarChar(255)
+  email      String   @default("") @db.VarChar(255)
+  phone      String   @default("") @db.VarChar(20)
+  specialty  String   @default("") @db.VarChar(100)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  serviceOrders ServiceOrder[]
+
+  @@map("technicians")
+}
+
 model Customer {
   id         String      @id @default(cuid())
   name       String      @db.VarChar(255)
@@ -17,21 +44,25 @@ model Customer {
   updatedAt  DateTime    @updatedAt
   quotations Quotation[]
   warranties Warranty[]
+  payments   Payment[]
+  serviceOrders ServiceOrder[]
 
   @@map("customers")
 }
 
 model Quotation {
-  id         String             @id @default(cuid())
-  customerId String
-  items      QuotationItem[]
-  total      Float              @default(0)
-  status     String             @default("rascunho")
-  notes      String             @default("")
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  warranties Warranty[]
+  id           String             @id @default(cuid())
+  customerId   String
+  items        QuotationItem[]
+  total        Float              @default(0)
+  status       String             @default("rascunho")
+  notes        String             @default("")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  customer     Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  warranties   Warranty[]
+  payments     Payment[]
+  serviceOrder ServiceOrder?
 
   @@index([customerId])
   @@map("quotations")
@@ -88,4 +119,65 @@ model Product {
   @@index([type])
   @@index([active])
   @@map("products")
+}
+
+model ServiceOrder {
+  id             String            @id @default(cuid())
+  number         String            @unique @db.VarChar(20)
+  quotationId    String            @unique
+  customerId     String
+  technicianId   String?
+  scheduledTime  DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  status         String            @default("agendada") @db.VarChar(20)
+  address        String            @default("") @db.VarChar(500)
+  notes          String            @default("")
+  finalTotal     Float             @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  quotation      Quotation         @relation(fields: [quotationId], references: [id])
+  customer       Customer          @relation(fields: [customerId], references: [id])
+  technician     Technician?       @relation(fields: [technicianId], references: [id])
+  photos         ServiceOrderPhoto[]
+
+  @@index([quotationId])
+  @@index([customerId])
+  @@index([technicianId])
+  @@index([status])
+  @@map("service_orders")
+}
+
+model Payment {
+  id           String    @id @default(cuid())
+  quotationId  String
+  customerId   String
+  amount       Float
+  method       String    @default("pix") @db.VarChar(20)
+  status       String    @default("pendente") @db.VarChar(20)
+  pixCode      String    @default("") @db.Text
+  description  String    @default("")
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  quotation    Quotation @relation(fields: [quotationId], references: [id])
+  customer     Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([quotationId])
+  @@index([customerId])
+  @@index([status])
+  @@map("payments")
+}
+
+model ServiceOrderPhoto {
+  id             String        @id @default(cuid())
+  serviceOrderId String
+  url            String        @db.Text
+  fileName       String        @default("") @db.VarChar(255)
+  type           String        @default("geral") @db.VarChar(20)
+  createdAt      DateTime      @default(now())
+  serviceOrder   ServiceOrder  @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  @@index([serviceOrderId])
+  @@map("service_order_photos")
 }

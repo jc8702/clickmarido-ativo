@@ -3,15 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) return null;
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-
   try {
-    const token = authHeader.substring(7);
-    jwt.verify(token, JWT_SECRET);
+    jwt.verify(authHeader.substring(7), JWT_SECRET);
     return true;
   } catch {
     return null;
@@ -30,26 +29,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // Atualiza status do orçamento para "enviado" (representando em progresso)
-    const updated = await prisma.quotation.update({
+    const order = await prisma.serviceOrder.update({
       where: { id },
-      data: { status: 'enviado' },
+      data: {
+        status: 'em_execucao',
+        startedAt: new Date(),
+      },
+      include: { customer: true, technician: true },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: updated,
-    });
+    return NextResponse.json(order);
 
   } catch (error: any) {
     console.error('PATCH /api/service-orders/[id]/start error:', error);
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Ordem de serviço não encontrada' }, { status: 404 });
     }
-    return NextResponse.json(
-      { error: 'Erro ao iniciar ordem de serviço' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erro ao iniciar OS' }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }
