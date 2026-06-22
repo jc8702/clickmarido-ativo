@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/prisma';
 import * as jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -30,15 +29,24 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
     const isActive = searchParams.get('isActive');
+    const isBlocked = searchParams.get('isBlocked');
+    const category = searchParams.get('category');
+    const classification = searchParams.get('classification');
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (isActive !== null) where.isActive = isActive === 'true';
+    if (isActive !== null && isActive !== undefined) where.isActive = isActive === 'true';
+    if (isBlocked !== null && isBlocked !== undefined) where.isBlocked = isBlocked === 'true';
+    if (category) where.category = category;
+    if (classification) where.classification = classification;
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
+        { tradeName: { contains: search, mode: 'insensitive' } },
         { cnpjCpf: { contains: search } },
         { email: { contains: search, mode: 'insensitive' } },
+        { contactName: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -46,7 +54,7 @@ export async function GET(request: NextRequest) {
       prisma.vendor.findMany({
         where,
         include: {
-          _count: { select: { expenses: true } },
+          _count: { select: { expenses: true, purchaseOrders: true } },
         },
         skip,
         take: limit,
@@ -62,8 +70,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/vendors error:', error);
     return NextResponse.json({ error: 'Erro ao listar fornecedores' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -75,7 +81,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, phone, cnpjCpf, address, notes } = body;
+    const {
+      name,
+      tradeName,
+      email,
+      phone,
+      whatsapp,
+      cnpjCpf,
+      stateRegistration,
+      municipalRegistration,
+      address,
+      contactName,
+      category,
+      classification,
+      paymentTerms,
+      averageDeliveryDays,
+      isBlocked,
+      notes
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 });
@@ -98,10 +121,20 @@ export async function POST(request: NextRequest) {
     const vendor = await prisma.vendor.create({
       data: {
         name,
+        tradeName: tradeName || '',
         email: email || '',
         phone: phone || '',
+        whatsapp: whatsapp || '',
         cnpjCpf: cnpjCpf || null,
+        stateRegistration: stateRegistration || '',
+        municipalRegistration: municipalRegistration || '',
         address: address || '',
+        contactName: contactName || '',
+        category: category || 'OUTROS',
+        classification: classification || 'B',
+        paymentTerms: paymentTerms || '',
+        averageDeliveryDays: averageDeliveryDays !== undefined && averageDeliveryDays !== null ? parseInt(averageDeliveryDays) : 0,
+        isBlocked: isBlocked === true,
         notes: notes || '',
         isActive: true,
       },
@@ -111,7 +144,5 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/vendors error:', error);
     return NextResponse.json({ error: 'Erro ao criar fornecedor' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

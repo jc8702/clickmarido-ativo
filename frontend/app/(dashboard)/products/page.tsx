@@ -11,6 +11,7 @@ import { ProductTable } from '@/components/products/ProductTable';
 import { ProductForm } from '@/components/products/ProductForm';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { TableShimmer } from '@/components/Shimmer';
+import { ProductDetailsDrawer } from '@/components/products/ProductDetailsDrawer';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedProductForDrawer, setSelectedProductForDrawer] = useState<any>(null);
 
   const { data, isLoading, mutate } = useProducts(1, debouncedSearch, typeFilter);
   const { mutateAsync: createProduct, isPending: isCreating } = useCreateProduct();
@@ -144,6 +146,7 @@ export default function ProductsPage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               deletingId={deletingId}
+              onViewDetails={(prod) => setSelectedProductForDrawer(prod)}
             />
           </Card>
         )}
@@ -173,6 +176,14 @@ export default function ProductsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Drawer de Detalhes e Timeline do SKU */}
+      {selectedProductForDrawer && (
+        <ProductDetailsDrawer
+          product={selectedProductForDrawer}
+          onClose={() => setSelectedProductForDrawer(null)}
+        />
       )}
     </div>
   );

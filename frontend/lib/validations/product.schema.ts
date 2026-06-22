@@ -9,6 +9,7 @@ export const productSchema = z.object({
   unit: z.string().min(1, 'Unidade é obrigatória').max(10, 'Unidade muito longa'),
   category: z.string().max(200, 'Categoria muito longa').optional(),
   active: z.boolean().optional(),
+  vendorId: z.string().optional().nullable().or(z.literal('')),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, ProductFormValues } from '../../lib/validations/product.schema';
+import { useVendors } from '../../hooks/useVendors';
 
 type Props = {
   initialData?: any;
@@ -21,7 +22,7 @@ const FAMILY_OPTIONS = [
 ];
 
 export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialData || {
       name: '',
@@ -32,11 +33,72 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
       unit: 'un',
       category: '',
       active: true,
+      vendorId: '',
     }
   });
 
   const category = watch('category');
   const [nextSku, setNextSku] = useState<any>(null);
+
+  // Estados e Logica do Fornecedor Inline
+  const { data: vendorsData, mutate: refreshVendors } = useVendors(1, '', '', '', 'true', 'false');
+  const vendors = vendorsData?.data || [];
+
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [vendorName, setVendorName] = useState('');
+  const [vendorCnpj, setVendorCnpj] = useState('');
+  const [vendorPhone, setVendorPhone] = useState('');
+  const [vendorEmail, setVendorEmail] = useState('');
+  const [vendorCategory, setVendorCategory] = useState('MATERIAL');
+  const [isCreatingVendor, setIsCreatingVendor] = useState(false);
+
+  const handleCreateVendorInline = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!vendorName.trim()) return;
+    setIsCreatingVendor(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/vendors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: vendorName,
+          cnpjCpf: vendorCnpj || undefined,
+          phone: vendorPhone || undefined,
+          email: vendorEmail || undefined,
+          category: vendorCategory,
+          isActive: true,
+          isBlocked: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao criar fornecedor');
+      }
+
+      const newVendor = await response.json();
+      await refreshVendors();
+      
+      // Seleciona automaticamente o fornecedor cadastrado
+      setValue('vendorId', newVendor.id);
+      
+      // Limpa e fecha o modal
+      setShowVendorModal(false);
+      setVendorName('');
+      setVendorCnpj('');
+      setVendorPhone('');
+      setVendorEmail('');
+      setVendorCategory('MATERIAL');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao cadastrar fornecedor');
+    } finally {
+      setIsCreatingVendor(false);
+    }
+  };
 
   useEffect(() => {
     if (!category || initialData) {
@@ -152,6 +214,30 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
         </div>
 
         <div className="md:col-span-2">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Fornecedor Padrão</label>
+            <button
+              type="button"
+              onClick={() => setShowVendorModal(true)}
+              className="text-xs text-primary-600 hover:text-primary-700 dark:text-teal-400 dark:hover:text-teal-300 font-semibold"
+            >
+              + Cadastrar Fornecedor
+            </button>
+          </div>
+          <select
+            {...register('vendorId')}
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+          >
+            <option value="">Nenhum fornecedor associado</option>
+            {vendors.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name} {v.cnpjCpf ? `(${v.cnpjCpf})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Descrição</label>
           <textarea
             {...register('description')}
@@ -183,6 +269,99 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
           {isLoading ? 'Salvando...' : initialData ? 'Atualizar Produto' : 'Cadastrar Produto'}
         </button>
       </div>
+
+      {/* Modal Inline de Cadastro Rápido de Fornecedor */}
+      {showVendorModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1050] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-neutral-200 dark:border-neutral-700">
+            <div className="p-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center bg-neutral-50 dark:bg-neutral-800">
+              <h3 className="text-md font-bold text-neutral-900 dark:text-neutral-100">Cadastrar Fornecedor Rápido</h3>
+              <button
+                type="button"
+                onClick={() => setShowVendorModal(false)}
+                className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Razão Social / Nome Comercial *</label>
+                <input
+                  type="text"
+                  value={vendorName}
+                  onChange={(e) => setVendorName(e.target.value)}
+                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                  placeholder="Nome do Fornecedor"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">CNPJ / CPF</label>
+                <input
+                  type="text"
+                  value={vendorCnpj}
+                  onChange={(e) => setVendorCnpj(e.target.value)}
+                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                  placeholder="Apenas números ou formato"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">WhatsApp / Telefone</label>
+                  <input
+                    type="text"
+                    value={vendorPhone}
+                    onChange={(e) => setVendorPhone(e.target.value)}
+                    className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                    placeholder="(XX) XXXXX-XXXX"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Categoria Principal</label>
+                  <select
+                    value={vendorCategory}
+                    onChange={(e) => setVendorCategory(e.target.value)}
+                    className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                  >
+                    <option value="MATERIAL">Material / Peça</option>
+                    <option value="SERVICO">Serviço Terceirizado</option>
+                    <option value="TRANSPORTE">Transporte / Frete</option>
+                    <option value="OUTROS">Outros</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">E-mail Comercial</label>
+                <input
+                  type="email"
+                  value={vendorEmail}
+                  onChange={(e) => setVendorEmail(e.target.value)}
+                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                  placeholder="fornecedor@email.com"
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowVendorModal(false)}
+                className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 text-sm rounded bg-white dark:bg-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-600 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateVendorInline}
+                disabled={isCreatingVendor || !vendorName.trim()}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm rounded font-medium disabled:opacity-50"
+              >
+                {isCreatingVendor ? 'Criando...' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

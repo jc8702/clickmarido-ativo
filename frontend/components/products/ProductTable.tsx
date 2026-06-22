@@ -11,6 +11,12 @@ interface Product {
   unit: string;
   category: string;
   active: boolean;
+  vendorId?: string;
+  vendor?: {
+    id: string;
+    name: string;
+    cnpjCpf?: string;
+  };
 }
 
 interface ProductTableProps {
@@ -19,9 +25,10 @@ interface ProductTableProps {
   onEdit: (product: Product) => void;
   onDelete: (id: string) => void;
   deletingId: string | null;
+  onViewDetails?: (product: Product) => void;
 }
 
-export function ProductTable({ data, isLoading, onEdit, onDelete, deletingId }: ProductTableProps) {
+export function ProductTable({ data, isLoading, onEdit, onDelete, deletingId, onViewDetails }: ProductTableProps) {
   if (isLoading) {
     return <div className="p-4 text-center text-neutral-900 dark:text-neutral-100">Carregando...</div>;
   }
@@ -87,6 +94,12 @@ export function ProductTable({ data, isLoading, onEdit, onDelete, deletingId }: 
               </td>
               <td className="p-4">
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => onViewDetails && onViewDetails(product)}
+                    className="px-3 py-1.5 rounded-md text-xs font-semibold bg-teal-50 dark:bg-teal-900/20 hover:bg-teal-100 dark:hover:bg-teal-900/40 text-teal-700 dark:text-teal-400 transition-colors"
+                  >
+                    Histórico
+                  </button>
                   <button
                     onClick={() => onEdit(product)}
                     className="px-3 py-1.5 rounded-md text-xs font-semibold bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 transition-colors"

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../lib/prisma';
 import * as jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -35,6 +34,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           orderBy: { expenseDate: 'desc' },
           take: 10,
         },
+        purchaseOrders: {
+          orderBy: { issueDate: 'desc' },
+          take: 10,
+        },
       },
     });
 
@@ -46,8 +49,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('GET /api/vendors/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao buscar fornecedor' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -60,7 +61,25 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { name, email, phone, cnpjCpf, address, notes, isActive } = body;
+    const {
+      name,
+      tradeName,
+      email,
+      phone,
+      whatsapp,
+      cnpjCpf,
+      stateRegistration,
+      municipalRegistration,
+      address,
+      contactName,
+      category,
+      classification,
+      paymentTerms,
+      averageDeliveryDays,
+      isActive,
+      isBlocked,
+      notes
+    } = body;
 
     const existingVendor = await prisma.vendor.findUnique({
       where: { id },
@@ -86,12 +105,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updateData: any = {};
     if (name) updateData.name = name;
+    if (tradeName !== undefined) updateData.tradeName = tradeName;
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
+    if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
     if (cnpjCpf !== undefined) updateData.cnpjCpf = cnpjCpf || null;
+    if (stateRegistration !== undefined) updateData.stateRegistration = stateRegistration;
+    if (municipalRegistration !== undefined) updateData.municipalRegistration = municipalRegistration;
     if (address !== undefined) updateData.address = address;
-    if (notes !== undefined) updateData.notes = notes;
+    if (contactName !== undefined) updateData.contactName = contactName;
+    if (category !== undefined) updateData.category = category;
+    if (classification !== undefined) updateData.classification = classification;
+    if (paymentTerms !== undefined) updateData.paymentTerms = paymentTerms;
+    if (averageDeliveryDays !== undefined) {
+      updateData.averageDeliveryDays = averageDeliveryDays !== null ? parseInt(averageDeliveryDays) : 0;
+    }
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (isBlocked !== undefined) updateData.isBlocked = isBlocked;
+    if (notes !== undefined) updateData.notes = notes;
 
     const vendor = await prisma.vendor.update({
       where: { id },
@@ -102,7 +133,5 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('PUT /api/vendors/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao atualizar fornecedor' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

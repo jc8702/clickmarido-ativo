@@ -69,6 +69,7 @@ model Quotation {
   payments     Payment[]
   serviceOrder ServiceOrder?
   invoice      Invoice?
+  purchaseOrders PurchaseOrder[]
 
   // Financeiro
   paymentTerms String?   @default("A_VISTA")  // A_VISTA, 30_DIAS, 60_DIAS
@@ -129,10 +130,16 @@ model Product {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   quotationItems  QuotationItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+
+  // Fornecedor padrão associado ao SKU
+  vendorId        String?
+  vendor          Vendor?           @relation(fields: [vendorId], references: [id], onDelete: SetNull)
 
   @@index([sku])
   @@index([type])
   @@index([active])
+  @@index([vendorId])
   @@map("products")
 }
 
@@ -155,6 +162,7 @@ model ServiceOrder {
   customer       Customer          @relation(fields: [customerId], references: [id])
   technician     Technician?       @relation(fields: [technicianId], references: [id])
   photos         ServiceOrderPhoto[]
+  purchaseOrders PurchaseOrder[]
 
   // Automação
   automationLog     Json?
@@ -320,6 +328,7 @@ model Expense {
   updatedAt         DateTime  @updatedAt
 
   vendor            Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  purchaseOrders    PurchaseOrder[]
 
   @@index([category])
   @@index([vendorId])
@@ -335,27 +344,128 @@ model Vendor {
 
   // Dados
   name              String    @db.VarChar(255)
+  tradeName         String?   @default("")
   email             String?   @db.VarChar(255)
   phone             String?   @db.VarChar(20)
+  whatsapp          String?   @db.VarChar(20)
 
   // Fiscal
   cnpjCpf           String?   @unique
+  stateRegistration String?   @default("")
+  municipalRegistration String? @default("")
 
   // Endereço
   address           String?   @default("")
+  contactName       String?   @default("")
+
+  // Classificação e Controle
+  category          String    @default("OUTROS") // MATERIAL, SERVICO, TRANSPORTE, EQUIPAMENTO, TERCEIRIZADO, OUTROS
+  classification    String    @default("B") // A, B, C, D
+  paymentTerms      String?   @default("")
+  averageDeliveryDays Int?    @default(0)
+  isActive          Boolean   @default(true)
+  isBlocked         Boolean   @default(false)
 
   // Relacionamento
   expenses          Expense[]
+  purchaseOrders    PurchaseOrder[]
+  products          Product[]
 
   // Metadados
-  isActive          Boolean   @default(true)
   notes             String?   @default("")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([cnpjCpf])
   @@index([isActive])
+  @@index([classification])
+  @@index([category])
   @@map("vendors")
+}
+
+model PurchaseOrder {
+  id                   String               @id @default(cuid())
+  number               String               @unique @db.VarChar(30)
+  vendorId             String
+  quotationId          String?
+  serviceOrderId       String?
+  expenseId            String?
+  status               String               @default("rascunho")
+  issueDate            DateTime             @default(now())
+  expectedDeliveryDate DateTime?
+  deliveredAt          DateTime?
+  paymentTerms         String?              @default("")
+  paymentMethod        String?              @default("")
+  costCenter           String?              @default("")
+  requestedBy          String?              @default("")
+  deliveryAddress      String?              @default("")
+  subtotal             Float                @default(0)
+  discountAmount       Float                @default(0)
+  freightAmount        Float                @default(0)
+  taxAmount            Float                @default(0)
+  totalAmount          Float                @default(0)
+  internalNotes        String?              @default("")
+  supplierTerms        String?              @default("")
+  attachments          Json?
+  metadata             Json?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  vendor               Vendor               @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  quotation            Quotation?           @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  serviceOrder         ServiceOrder?        @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  expense              Expense?             @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  items                PurchaseOrderItem[]
+  events               PurchaseOrderEvent[]
+
+  @@index([vendorId])
+  @@index([quotationId])
+  @@index([serviceOrderId])
+  @@index([expenseId])
+  @@index([status])
+  @@index([issueDate])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id               String        @id @default(cuid())
+  purchaseOrderId  String
+  productId        String?
+  description      String        @db.VarChar(500)
+  quantity         Float         @default(1)
+  unit             String        @default("un") @db.VarChar(20)
+  unitPrice        Float         @default(0)
+  discountAmount   Float         @default(0)
+  taxAmount        Float         @default(0)
+  subtotal         Float         @default(0)
+  receivedQuantity Float         @default(0)
+  status           String        @default("pendente")
+  notes            String?       @default("")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product          Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@index([status])
+  @@map("purchase_order_items")
+}
+
+model PurchaseOrderEvent {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  type            String        @db.VarChar(50)
+  description     String        @db.VarChar(500)
+  oldValue        Json?
+  newValue        Json?
+  createdBy       String?       @db.VarChar(100)
+  createdAt       DateTime      @default(now())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("purchase_order_events")
 }
 
 model FinancialTransaction {

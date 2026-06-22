@@ -2,7 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 
 export function useProducts(page = 1, search = '', type = '') {
-  const [data, setData] = useState({ data: [], meta: { total: 0, page, limit: 50 } });
+  const [data, setData] = useState<{
+    data: any[];
+    meta: { total: number; page: number; limit: number; totalPages?: number };
+  }>({ data: [], meta: { total: 0, page, limit: 50, totalPages: 1 } });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();

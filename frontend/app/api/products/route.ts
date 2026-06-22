@@ -87,6 +87,9 @@ export async function GET(request: NextRequest) {
     const [data, total] = await Promise.all([
       prisma.product.findMany({
         where,
+        include: {
+          vendor: true,
+        },
         skip,
         take: limit,
         orderBy: { sku: 'asc' },
@@ -162,6 +165,10 @@ export async function POST(request: NextRequest) {
         unit: parsed.unit,
         category: parsed.category || '',
         active: parsed.active ?? true,
+        vendorId: parsed.vendorId && parsed.vendorId.trim() !== '' ? parsed.vendorId : null,
+      },
+      include: {
+        vendor: true,
       },
     });
 

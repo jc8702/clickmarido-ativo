@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Automações, Cron Jobs e Faturamento Automático Implantados (MVP 2.0 Expandido)
+- **Status Atual:** Atrelamento de fornecedores a SKUs, cadastro inline rápido e timeline de histórico de compras implementados e compilados com 100% de sucesso.
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 22/06/2026 - 15:20
+- **Última Atualização:** 22/06/2026 - 16:35
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,37 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 22/06/2026 - 16:35
+- **Implementação do Atrelamento de Fornecedores a SKUs e Timeline de Compras**:
+  - Atualizado o schema do Prisma com relacionamento `Product <-> Vendor` e executado o push no PostgreSQL do Neon.
+  - Modificadas as APIs REST de produtos para salvar `vendorId` e retornar dados estruturados do fornecedor.
+  - Desenvolvida a API `/api/products/[id]/purchase-history` para agregar o histórico de ordens de compra e logs de auditoria do SKU.
+  - Modificado o `ProductForm` adicionando a seleção de fornecedor e a criação rápida inline de fornecedores com salvamento dinâmico sem perda de estado.
+  - Criado o `ProductDetailsDrawer` com estatísticas financeiras de compra (total, custo médio, margem bruta de lucro e último preço pago) e a timeline visual conectando eventos cronológicos do SKU.
+  - Adicionado o botão "Histórico" na `ProductTable` para acionamento do Drawer de detalhes.
+  - Executada a compilação do Next.js via `npm run build` com sucesso absoluto (TypeScript e compilação de páginas 100%).
+  - Arquivos modificados/criados: `schema.prisma`, `product.schema.ts`, `api/products/route.ts`, `api/products/[id]/route.ts`, `api/products/[id]/purchase-history/route.ts`, `ProductForm.tsx`, `ProductTable.tsx`, `ProductDetailsDrawer.tsx`, `products/page.tsx` e `walkthrough.md`.
+
+### 22/06/2026 - 16:17
+- **Deploy de Produção Concluído**:
+  - Executado o build e deploy na Vercel com sucesso absoluto.
+  - URL de Produção: https://clickmarido-ativo-frontend.vercel.app
+  - Verificação de logs sem erros na plataforma de execução em Washington, D.C. (iad1).
+
+### 22/06/2026 - 16:13
+- **Implementação Completa do Módulo de Compras e Fornecedores**:
+  - Modelagem de dados via Prisma Schema e sincronização com o banco Neon Postgres (`PurchaseOrder`, `PurchaseOrderItem`, `PurchaseOrderEvent`, novos campos em `Vendor`).
+  - Criação de APIs REST sob `/api/vendors` e `/api/purchase-orders` (incluindo sub-rotas `/emit`, `/approve`, `/receive`, `/cancel`).
+  - Geração automática de despesas financeiras (`Expense`) ao aprovar OCs e controle transacional rígido (bloqueio de compras para fornecedores inativos ou bloqueados).
+  - Implementação de layouts responsivos com tema escuro e componentes reutilizáveis utilizando react-hook-form e Zod.
+  - Correção de bugs de tipagem no compilador estático do Next.js e compilação de produção com 100% de sucesso.
+  - Arquivos modificados/criados: `schema.prisma`, `VendorForm.tsx`, `VendorPurchaseHistory.tsx`, `useVendors.ts`, `usePurchaseOrders.ts`, `walkthrough.md` e `task.md`.
+
+### 22/06/2026 - 15:48
+- **Diagnóstico e Mapeamento de Skills do Módulo de Compras:**
+  - Análise profunda do `PLANO_IMPLEMENTACAO_MODULO_COMPRAS.md`.
+  - Mapeamento das skills de engenharia, arquitetura e interface necessárias para implementar o módulo integrado de Compras.
 
 ### 22/06/2026 - 15:20
 - **Implantação de Cron Jobs Adicionais e Automações:**

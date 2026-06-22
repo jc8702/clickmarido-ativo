@@ -41,6 +41,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const product = await prisma.product.findUnique({
       where: { id },
+      include: {
+        vendor: true,
+      },
     });
 
     if (!product) {
@@ -65,12 +68,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    if (!validateToken(request)) {
+    const decoded = validateToken(request);
+    if (!decoded) {
       return NextResponse.json(
         { error: 'Não autenticado' },
         { status: 401 }
       );
     }
+    const userEmail = (decoded as any).email || 'admin';
 
     const { id } = await params;
     const body = await request.json();
@@ -87,6 +92,32 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    const oldProduct = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!oldProduct) {
+      return NextResponse.json(
+        { error: 'Produto não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const newVendorId = parsed.vendorId && parsed.vendorId.trim() !== '' ? parsed.vendorId : null;
+
+    if (oldProduct.vendorId !== newVendorId) {
+      await prisma.auditLog.create({
+        data: {
+          entity: 'product',
+          entityId: id,
+          action: 'updated',
+          oldValue: { vendorId: oldProduct.vendorId },
+          newValue: { vendorId: newVendorId },
+          createdBy: userEmail,
+        },
+      });
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -98,6 +129,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         unit: parsed.unit,
         category: parsed.category || '',
         active: parsed.active ?? true,
+        vendorId: newVendorId,
+      },
+      include: {
+        vendor: true,
       },
     });
 
