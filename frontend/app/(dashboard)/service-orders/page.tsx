@@ -32,14 +32,14 @@ interface ServiceOrder {
 
 const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
   agendada: 'primary',
-  em_progresso: 'warning',
+  em_execucao: 'warning',
   concluida: 'success',
   cancelada: 'danger',
 };
 
 const statusLabels: Record<string, string> = {
   agendada: 'Agendada',
-  em_progresso: 'Em Progresso',
+  em_execucao: 'Em Execução',
   concluida: 'Concluída',
   cancelada: 'Cancelada',
 };
@@ -174,12 +174,12 @@ export default function ServiceOrdersPage() {
                             Iniciar
                           </Button>
                         )}
-                        {row.status === 'em_progresso' && (
+                        {row.status === 'em_execucao' && (
                           <Button variant="secondary" size="sm" onClick={() => setActiveModalId(row.id)}>
                             Concluir
                           </Button>
                         )}
-                        {row.status !== 'agendada' && row.status !== 'em_progresso' && (
+                        {row.status !== 'agendada' && row.status !== 'em_execucao' && (
                           <span className="text-neutral-400 dark:text-neutral-500 text-sm">—</span>
                         )}
                       </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
-import { uploadFile } from '@/lib/google-drive';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -43,23 +42,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ordem de serviço não encontrada' }, { status: 404 });
     }
 
-    // Converter File para Buffer
+    // Converter File para Buffer e depois para base64
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const dataUrl = `data:${file.type};base64,${base64}`;
 
-    // Upload para Google Drive
-    const result = await uploadFile(buffer, file.name, file.type, undefined);
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error || 'Erro ao fazer upload' }, { status: 500 });
-    }
-
-    // Salvar referência no banco
+    // Salvar referência no banco (como data URL se Google Drive não estiver configurado)
     const photo = await prisma.serviceOrderPhoto.create({
       data: {
         serviceOrderId,
-        url: result.url || '',
-        fileName: result.fileName || file.name,
+        url: dataUrl,
+        fileName: file.name,
         type,
       },
     });
