@@ -34,22 +34,82 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // Atualiza status do orçamento para "aceito" (que significa aprovado / pago)
-    const updated = await prisma.quotation.update({
+    // 1. Buscar o pagamento pelo ID real
+    const payment = await prisma.payment.findUnique({
       where: { id },
-      data: { status: 'aceito' },
+    });
+
+    if (!payment) {
+      return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
+    }
+
+    if (payment.status === 'confirmado') {
+      return NextResponse.json({ error: 'Pagamento já está confirmado/pago' }, { status: 400 });
+    }
+
+    const now = new Date();
+
+    // 2. Executar atualização transacional
+    const result = await prisma.$transaction(async (tx) => {
+      // A. Atualizar status do pagamento
+      const updatedPayment = await tx.payment.update({
+        where: { id },
+        data: {
+          status: 'confirmado',
+          paidAt: now,
+          confirmedAt: now,
+        },
+      });
+
+      // B. Se houver Quotation associada, atualiza status
+      if (payment.quotationId) {
+        await tx.quotation.update({
+          where: { id: payment.quotationId },
+          data: { status: 'aceito' },
+        });
+      }
+
+      // C. Se houver Invoice associada, atualiza status
+      if (payment.invoiceId) {
+        await tx.invoice.update({
+          where: { id: payment.invoiceId },
+          data: { status: 'paga' },
+        });
+      }
+
+      // D. Criar Transação Financeira de Entrada
+      await tx.financialTransaction.create({
+        data: {
+          type: 'PAYMENT_RECEIVED',
+          paymentId: payment.id,
+          invoiceId: payment.invoiceId || null,
+          credit: payment.amount,
+          debit: 0,
+          description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (${payment.method.toUpperCase()})`,
+          transactionDate: now,
+        },
+      });
+
+      // E. Registrar log de auditoria
+      await tx.auditLog.create({
+        data: {
+          entity: 'payment',
+          entityId: payment.id,
+          action: 'updated',
+          newValue: { status: 'confirmado', confirmedAt: now }
+        }
+      });
+
+      return updatedPayment;
     });
 
     return NextResponse.json({
       success: true,
-      data: updated,
+      data: result,
     });
 
   } catch (error: any) {
     console.error('PATCH /api/payments/[id]/approve error:', error);
-    if (error.code === 'P2025') {
-      return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
-    }
     return NextResponse.json(
       { error: 'Erro ao aprovar pagamento' },
       { status: 500 }

@@ -11,6 +11,7 @@ import { Modal } from '@/components/Modal';
 import ServiceOrderForm from '../../../components/ServiceOrderForm';
 import CreateServiceOrderForm from '../../../components/CreateServiceOrderForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface ServiceOrder {
   id: string;
@@ -51,16 +52,8 @@ export default function ServiceOrdersPage() {
   const [activeModalId, setActiveModalId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setActiveModalId(null);
-        setIsCreateOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  useEscapeToClose(activeModalId !== null, () => setActiveModalId(null));
+  useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
 
   const fetchOrders = async () => {
     setLoading(true);

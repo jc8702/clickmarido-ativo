@@ -296,7 +296,8 @@ model Expense {
   id                String    @id @default(cuid())
 
   // Categoria
-  category          String    // MATERIAL, SERVICO, TRANSPORTE, ALUGUEL, UTILITIES, OUTROS
+  category          String    // MATERIAL, SERVICO, TRANSPORTE, ALUGUEL, UTILITIES, FERRAMENTAS, OUTROS
+  costCenter        String?   @default("")
 
   // Dados
   description       String    @db.VarChar(255)
@@ -331,6 +332,7 @@ model Expense {
   purchaseOrders    PurchaseOrder[]
 
   @@index([category])
+  @@index([costCenter])
   @@index([vendorId])
   @@index([status])
   @@index([expenseDate])
@@ -359,7 +361,7 @@ model Vendor {
   contactName       String?   @default("")
 
   // Classificação e Controle
-  category          String    @default("OUTROS") // MATERIAL, SERVICO, TRANSPORTE, EQUIPAMENTO, TERCEIRIZADO, OUTROS
+  category          String    @default("OUTROS") // MATERIAL, SERVICO, TRANSPORTE, EQUIPAMENTO, FERRAMENTAS, TERCEIRIZADO, OUTROS
   classification    String    @default("B") // A, B, C, D
   paymentTerms      String?   @default("")
   averageDeliveryDays Int?    @default(0)

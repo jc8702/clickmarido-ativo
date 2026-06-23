@@ -11,25 +11,37 @@ import { Modal } from '@/components/Modal';
 import PaymentForm from '../../../components/PaymentForm';
 import CreatePaymentForm from '../../../components/CreatePaymentForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Payment {
   id: string;
-  service_order_id: string;
+  quotationId?: string;
+  invoiceId?: string;
   customerId: string;
-  customer_name: string;
-  customer_phone?: string;
   amount: number;
-  status: 'pendente' | 'aprovado';
+  status: 'pendente' | 'aprovado' | 'confirmado';
+  customer?: {
+    name: string;
+    phone?: string;
+  };
+  quotation?: {
+    id: string;
+    serviceOrder?: {
+      id: string;
+    };
+  };
 }
 
 const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
   pendente: 'warning',
   aprovado: 'success',
+  confirmado: 'success',
 };
 
 const statusLabels: Record<string, string> = {
   pendente: 'Pendente',
   aprovado: 'Pago',
+  confirmado: 'Pago',
 };
 
 export default function PaymentsPage() {
@@ -39,6 +51,9 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [pixModalId, setPixModalId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  useEscapeToClose(pixModalId !== null, () => setPixModalId(null));
+  useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -55,18 +70,6 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, []);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setPixModalId(null);
-      setIsCreateOpen(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
 
   const handleApprove = async (id: string) => {
     try {
@@ -120,16 +123,20 @@ export default function PaymentsPage() {
                         href={`/customers?id=${row.customerId}`} 
                         className="font-semibold text-neutral-800 dark:text-neutral-200 hover:text-primary-600 dark:hover:text-primary-400 hover:underline transition-colors"
                       >
-                        {row.customer_name}
+                        {row.customer?.name || 'Cliente Avulso'}
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Link 
-                        href={`/service-orders`} 
-                        className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline bg-neutral-100/80 dark:bg-neutral-700/80 px-2 py-1 rounded font-bold"
-                      >
-                        {row.service_order_id.slice(-6).toUpperCase()}
-                      </Link>
+                      {row.quotationId ? (
+                        <Link 
+                          href={`/quotations?id=${row.quotationId}`} 
+                          className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline bg-neutral-100/80 dark:bg-neutral-700/80 px-2 py-1 rounded font-bold"
+                        >
+                          {row.quotationId.slice(-6).toUpperCase()}
+                        </Link>
+                      ) : (
+                        <span className="text-neutral-400 dark:text-neutral-550 text-xs italic">Manual/Avulso</span>
+                      )}
                     </TableCell>
                     <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
                       {row.amount ? `R$ ${Number(row.amount).toFixed(2)}` : 'R$ 0,00'}

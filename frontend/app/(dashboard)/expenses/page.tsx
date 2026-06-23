@@ -12,10 +12,12 @@ import { Modal } from '@/components/Modal';
 interface Expense {
   id: string;
   category: string;
+  costCenter?: string;
   description: string;
   amount: number;
   status: 'pendente' | 'paga' | 'cancelada';
   expenseDate: string;
+  notes?: string;
 }
 
 const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -30,6 +32,9 @@ const statusLabels: Record<string, string> = {
   cancelada: 'Cancelada',
 };
 
+import { EXPENSE_CATEGORIES, COST_CENTERS, getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+
 export default function ExpensesPage() {
   const { user, logout } = useAuth();
   const authUser = user as { name?: string; email: string; role: string } | null;
@@ -39,10 +44,25 @@ export default function ExpensesPage() {
 
   // Form states
   const [category, setCategory] = useState('MATERIAL');
+  const [costCenter, setCostCenter] = useState('OPERACIONAL');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Edit states
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editCategory, setEditCategory] = useState('');
+  const [editCostCenter, setEditCostCenter] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editExpenseDate, setEditExpenseDate] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+
+  // Integrar ESC no fechamento
+  useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
+  useEscapeToClose(isEditOpen, () => setIsEditOpen(false));
 
   const fetchExpenses = async () => {
     setLoading(true);
@@ -65,6 +85,7 @@ export default function ExpensesPage() {
     try {
       await api.post('/expenses', {
         category,
+        costCenter,
         description,
         amount: Number(amount),
         expenseDate: expenseDate || undefined,
@@ -75,9 +96,51 @@ export default function ExpensesPage() {
       setAmount('');
       setExpenseDate('');
       setNotes('');
+      setCostCenter('OPERACIONAL');
       fetchExpenses();
     } catch (err) {
       alert('Erro ao registrar despesa.');
+    }
+  };
+
+  const handleEditClick = (exp: Expense) => {
+    setSelectedExpense(exp);
+    setEditCategory(exp.category);
+    setEditCostCenter(exp.costCenter || 'OPERACIONAL');
+    setEditDescription(exp.description);
+    setEditAmount(String(exp.amount));
+    setEditExpenseDate(exp.expenseDate ? exp.expenseDate.split('T')[0] : '');
+    setEditNotes(exp.notes || '');
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedExpense) return;
+    try {
+      await api.put(`/expenses/${selectedExpense.id}`, {
+        category: editCategory,
+        costCenter: editCostCenter,
+        description: editDescription,
+        amount: Number(editAmount),
+        expenseDate: editExpenseDate || undefined,
+        notes: editNotes,
+      });
+      setIsEditOpen(false);
+      setSelectedExpense(null);
+      fetchExpenses();
+    } catch (err) {
+      alert('Erro ao atualizar despesa.');
+    }
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    if (!confirm('Deseja realmente excluir esta despesa definitivamente?')) return;
+    try {
+      await api.delete(`/expenses/${id}`);
+      fetchExpenses();
+    } catch (err) {
+      alert('Erro ao excluir despesa.');
     }
   };
 
@@ -123,6 +186,7 @@ export default function ExpensesPage() {
                   <TableHeader>Data</TableHeader>
                   <TableHeader>Descrição</TableHeader>
                   <TableHeader>Categoria</TableHeader>
+                  <TableHeader>Centro de Custo</TableHeader>
                   <TableHeader>Valor</TableHeader>
                   <TableHeader>Status</TableHeader>
                   <TableHeader>Ações</TableHeader>
@@ -134,13 +198,20 @@ export default function ExpensesPage() {
                     <TableCell className="text-neutral-600 dark:text-neutral-400 text-sm">
                       {new Date(exp.expenseDate).toLocaleDateString('pt-BR')}
                     </TableCell>
-                    <TableCell className="font-semibold text-neutral-850 dark:text-neutral-100">
+                    <TableCell className="font-semibold text-neutral-855 dark:text-neutral-100">
                       {exp.description}
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">{exp.category}</span>
+                      <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
+                        {getCategoryLabel(exp.category)}
+                      </span>
                     </TableCell>
-                    <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
+                    <TableCell>
+                      <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
+                        {getCostCenterLabel(exp.costCenter || '')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-bold text-neutral-850 dark:text-neutral-200">
                       {formatCurrency(exp.amount)}
                     </TableCell>
                     <TableCell>
@@ -149,13 +220,19 @@ export default function ExpensesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {exp.status === 'pendente' ? (
-                        <Button variant="outline" size="sm" onClick={() => handleMarkPaid(exp.id)}>
-                          Marcar Paga
+                      <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                        {exp.status === 'pendente' && (
+                          <Button variant="outline" size="xs" onClick={() => handleMarkPaid(exp.id)}>
+                            Marcar Paga
+                          </Button>
+                        )}
+                        <Button variant="outline" size="xs" onClick={() => handleEditClick(exp)}>
+                          Editar
                         </Button>
-                      ) : (
-                        <span className="text-neutral-400 dark:text-neutral-500">—</span>
-                      )}
+                        <Button variant="danger" size="xs" onClick={() => handleDeleteExpense(exp.id)}>
+                          Excluir
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -165,24 +242,38 @@ export default function ExpensesPage() {
         )}
       </main>
 
+      {/* Modal Criar Despesa */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nova Despesa">
         <form onSubmit={handleCreateExpense} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Categoria
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-            >
-              <option value="MATERIAL">Material</option>
-              <option value="SERVICO">Serviço</option>
-              <option value="TRANSPORTE">Transporte</option>
-              <option value="ALUGUEL">Aluguel</option>
-              <option value="UTILITIES">Contas de Consumo (Luz, Água, etc)</option>
-              <option value="OUTROS">Outros</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                Categoria
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              >
+                {EXPENSE_CATEGORIES.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                Centro de Custo
+              </label>
+              <select
+                value={costCenter}
+                onChange={(e) => setCostCenter(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              >
+                {COST_CENTERS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
@@ -239,6 +330,97 @@ export default function ExpensesPage() {
             </Button>
             <Button type="submit">
               Registrar Despesa
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Editar Despesa */}
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Editar Despesa">
+        <form onSubmit={handleUpdateExpense} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                Categoria
+              </label>
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              >
+                {EXPENSE_CATEGORIES.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+                Centro de Custo
+              </label>
+              <select
+                value={editCostCenter}
+                onChange={(e) => setEditCostCenter(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              >
+                {COST_CENTERS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Descrição
+            </label>
+            <input
+              type="text"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Valor (R$)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={editAmount}
+              onChange={(e) => setEditAmount(e.target.value)}
+              required
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Data da Despesa
+            </label>
+            <input
+              type="date"
+              value={editExpenseDate}
+              onChange={(e) => setEditExpenseDate(e.target.value)}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Observações
+            </label>
+            <textarea
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              Atualizar Despesa
             </Button>
           </div>
         </form>

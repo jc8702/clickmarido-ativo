@@ -8,13 +8,14 @@ import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Invoice {
   id: string;
   invoiceNumber: string;
   dueDate: string;
   totalAmount: number;
-  status: 'rascunho' | 'emitida' | 'cancelada';
+  status: 'rascunho' | 'emitida' | 'cancelada' | 'paga';
   customer: {
     name: string;
   };
@@ -24,12 +25,14 @@ const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'da
   rascunho: 'warning',
   emitida: 'primary',
   cancelada: 'danger',
+  paga: 'success',
 };
 
 const statusLabels: Record<string, string> = {
   rascunho: 'Rascunho',
   emitida: 'Emitida',
   cancelada: 'Cancelada',
+  paga: 'Paga',
 };
 
 export default function InvoicesPage() {
@@ -40,6 +43,18 @@ export default function InvoicesPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [quotationId, setQuotationId] = useState('');
   const [dueDate, setDueDate] = useState('');
+
+  // Estados para baixa e detalhes
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isPayOpen, setIsPayOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState('pix');
+  const [payNotes, setPayNotes] = useState('');
+  const [payDate, setPayDate] = useState('');
+  const [payLoading, setPayLoading] = useState(false);
+
+  useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
+  useEscapeToClose(selectedInvoice !== null && !isPayOpen, () => setSelectedInvoice(null));
+  useEscapeToClose(isPayOpen, () => setIsPayOpen(false));
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -70,6 +85,28 @@ export default function InvoicesPage() {
       fetchInvoices();
     } catch (err) {
       alert('Erro ao criar invoice. Verifique se o Orçamento existe e já não possui fatura.');
+    }
+  };
+
+  const handlePayInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedInvoice) return;
+    setPayLoading(true);
+    try {
+      await api.post(`/invoices/${selectedInvoice.id}/pay`, {
+        method: payMethod,
+        paidAt: payDate || undefined,
+        notes: payNotes,
+      });
+      setIsPayOpen(false);
+      setSelectedInvoice(null);
+      setPayNotes('');
+      setPayDate('');
+      fetchInvoices();
+    } catch (err) {
+      alert('Erro ao dar baixa na fatura.');
+    } finally {
+      setPayLoading(false);
     }
   };
 
@@ -110,7 +147,11 @@ export default function InvoicesPage() {
               </TableHead>
               <tbody>
                 {invoices.map((inv) => (
-                  <TableRow key={inv.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+                  <TableRow 
+                    key={inv.id} 
+                    onClick={() => setSelectedInvoice(inv)}
+                    className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer"
+                  >
                     <TableCell className="font-bold text-neutral-900 dark:text-neutral-100">
                       #{inv.invoiceNumber}
                     </TableCell>
@@ -168,6 +209,99 @@ export default function InvoicesPage() {
             </Button>
             <Button type="submit">
               Criar Fatura
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Detalhes da Fatura */}
+      <Modal isOpen={selectedInvoice !== null && !isPayOpen} onClose={() => setSelectedInvoice(null)} title={`Detalhes da Fatura #${selectedInvoice?.invoiceNumber}`}>
+        {selectedInvoice && (
+          <div className="space-y-6 text-neutral-800 dark:text-neutral-200">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-xs text-neutral-500 block font-bold uppercase">Cliente</span>
+                <strong className="text-sm font-semibold">{selectedInvoice.customer?.name}</strong>
+              </div>
+              <div>
+                <span className="text-xs text-neutral-500 block font-bold uppercase">Vencimento</span>
+                <strong className="text-sm font-semibold">{new Date(selectedInvoice.dueDate).toLocaleDateString('pt-BR')}</strong>
+              </div>
+              <div>
+                <span className="text-xs text-neutral-500 block font-bold uppercase">Valor Total</span>
+                <strong className="text-sm font-extrabold text-neutral-900 dark:text-white">{formatCurrency(selectedInvoice.totalAmount)}</strong>
+              </div>
+              <div>
+                <span className="text-xs text-neutral-500 block font-bold uppercase">Status</span>
+                <div>
+                  <Badge variant={statusBadgeVariant[selectedInvoice.status] || 'neutral'} size="sm">
+                    {statusLabels[selectedInvoice.status] || selectedInvoice.status.toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-700">
+              <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
+                Fechar
+              </Button>
+              {selectedInvoice.status !== 'paga' && selectedInvoice.status !== 'cancelada' && (
+                <Button onClick={() => setIsPayOpen(true)}>
+                  Baixar Fatura (Pago)
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Baixa de Fatura */}
+      <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Baixar Fatura como Paga">
+        <form onSubmit={handlePayInvoice} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Método de Recebimento
+            </label>
+            <select
+              value={payMethod}
+              onChange={(e) => setPayMethod(e.target.value)}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+            >
+              <option value="pix">PIX</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="cartao">Cartão de Crédito/Débito</option>
+              <option value="boleto">Boleto</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Data do Pagamento
+            </label>
+            <input
+              type="date"
+              value={payDate}
+              onChange={(e) => setPayDate(e.target.value)}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Observações
+            </label>
+            <textarea
+              value={payNotes}
+              onChange={(e) => setPayNotes(e.target.value)}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
+              rows={3}
+              placeholder="Ex: Recebido via PIX manual"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsPayOpen(false)}>
+              Voltar
+            </Button>
+            <Button type="submit" isLoading={payLoading}>
+              Confirmar Recebimento
             </Button>
           </div>
         </form>

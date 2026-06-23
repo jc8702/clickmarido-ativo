@@ -22,24 +22,35 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
       return () => {
         document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[1060]">
       <div className="absolute inset-0 bg-black/50 animate-fade-in" onClick={onClose} />
-      <div className="relative flex items-center justify-center min-h-screen p-6">
+      <div className="relative flex items-center justify-center min-h-screen p-6 pointer-events-none">
         <div
+          onClick={(e) => e.stopPropagation()}
           className={`
             bg-white dark:bg-neutral-800 rounded-xl shadow-2xl
             ${sizeMap[size]} w-full
             animate-scale-in
             max-h-[90vh] overflow-y-auto
+            pointer-events-auto
           `}
         >
           {title && (

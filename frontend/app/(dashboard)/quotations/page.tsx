@@ -8,6 +8,8 @@ import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import { CardShimmer } from '@/components/Shimmer';
 
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+
 interface QuotationItem {
   description: string;
   quantity: number;
@@ -63,6 +65,8 @@ export default function QuotationsPage() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null);
 
+  useEscapeToClose(selectedQuotation !== null, () => setSelectedQuotation(null));
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -85,16 +89,6 @@ export default function QuotationsPage() {
   const closeDrawer = useCallback(() => {
     setSelectedQuotation(null);
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeDrawer();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [closeDrawer]);
 
   if (!mounted) return null;
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Product {
   id: string;
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export function ProductDetailsDrawer({ product, onClose }: Props) {
+  useEscapeToClose(product !== null, onClose);
+
   const [historyData, setHistoryData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

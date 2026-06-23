@@ -9,6 +9,7 @@ import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components
 import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/Modal';
 import { useAuth } from '@/hooks/useAuth';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Warranty {
   id: string;
@@ -37,15 +38,7 @@ export default function WarrantiesPage() {
   const [notes, setNotes] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setActiveWarrantyId(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  useEscapeToClose(activeWarrantyId !== null, () => setActiveWarrantyId(null));
 
   const fetchWarranties = async () => {
     setLoading(true);

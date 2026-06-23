@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, ProductFormValues } from '../../lib/validations/product.schema';
 import { useVendors } from '../../hooks/useVendors';
+import { useEscapeToClose } from '../../hooks/useEscapeToClose';
 
 type Props = {
   initialData?: any;
@@ -48,6 +49,8 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
   const [vendorName, setVendorName] = useState('');
   const [vendorCnpj, setVendorCnpj] = useState('');
   const [vendorPhone, setVendorPhone] = useState('');
+
+  useEscapeToClose(showVendorModal, () => setShowVendorModal(false));
   const [vendorEmail, setVendorEmail] = useState('');
   const [vendorCategory, setVendorCategory] = useState('MATERIAL');
   const [isCreatingVendor, setIsCreatingVendor] = useState(false);
@@ -327,6 +330,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
                     <option value="MATERIAL">Material / Peça</option>
                     <option value="SERVICO">Serviço Terceirizado</option>
                     <option value="TRANSPORTE">Transporte / Frete</option>
+                    <option value="FERRAMENTAS">Ferramentas</option>
                     <option value="OUTROS">Outros</option>
                   </select>
                 </div>

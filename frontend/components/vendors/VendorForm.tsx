@@ -157,6 +157,7 @@ export function VendorForm({ initialData, onSubmit, isLoading }: Props) {
             <option value="SERVICO">Serviço Terceirizado</option>
             <option value="TRANSPORTE">Transporte / Frete</option>
             <option value="EQUIPAMENTO">Locação de Equipamento</option>
+            <option value="FERRAMENTAS">Ferramentas</option>
             <option value="TERCEIRIZADO">Terceirização de Mão de Obra</option>
             <option value="OUTROS">Outros</option>
           </select>

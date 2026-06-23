@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -39,6 +41,10 @@ export async function GET(request: NextRequest) {
       todayExpenses,
       recentPayments,
       recentExpenses,
+      allPaidExpenses,
+      pendingExpensesSum,
+      expensesByCategory,
+      expensesByCostCenter
     ] = await Promise.all([
       // Total de invoices (valor total)
       prisma.invoice.aggregate({
@@ -47,7 +53,7 @@ export async function GET(request: NextRequest) {
         _count: true,
       }),
 
-      // Invoices pagas
+      // Invoices pagas (pagamentos confirmados)
       prisma.payment.aggregate({
         where: { status: 'confirmado' },
         _sum: { amount: true },
@@ -119,23 +125,48 @@ export async function GET(request: NextRequest) {
           description: true,
         },
       }),
+
+      // Soma de todas as despesas pagas para o saldo real
+      prisma.expense.aggregate({
+        where: { status: 'paga' },
+        _sum: { amount: true }
+      }),
+
+      // Soma das despesas pendentes (a pagar)
+      prisma.expense.aggregate({
+        where: { status: 'pendente' },
+        _sum: { amount: true }
+      }),
+
+      // Agrupamento por categoria de despesas
+      prisma.expense.groupBy({
+        by: ['category'],
+        where: { status: 'paga' },
+        _sum: { amount: true }
+      }),
+
+      // Agrupamento por centro de custo de despesas
+      prisma.expense.groupBy({
+        by: ['costCenter'],
+        where: { status: 'paga' },
+        _sum: { amount: true }
+      })
     ]);
 
     // Calcular totais
     const totalReceivable = pendingInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
     const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const totalPayable = 0; // Implementar quando tiver despesas pendentes
+    const totalPayable = pendingExpensesSum._sum.amount || 0;
 
-    // Calcular saldo atual (simplificado)
-    const currentBalance =
-      (paidInvoices._sum.amount || 0) - (recentExpenses.reduce((sum, exp) => sum + exp.amount, 0));
+    // Calcular saldo atual (real consolidado)
+    const currentBalance = (paidInvoices._sum.amount || 0) - (allPaidExpenses._sum.amount || 0);
 
     // Previsão 30/60/90 dias (simplificada)
-    const forecast30 = totalReceivable * 0.7;
-    const forecast60 = totalReceivable * 0.9;
-    const forecast90 = totalReceivable;
+    const forecast30 = currentBalance + (totalReceivable * 0.7) - totalPayable;
+    const forecast60 = currentBalance + (totalReceivable * 0.9) - totalPayable;
+    const forecast90 = currentBalance + totalReceivable - totalPayable;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       balance: {
         current: currentBalance,
         forecast30,
@@ -166,7 +197,24 @@ export async function GET(request: NextRequest) {
         payments: recentPayments,
         expenses: recentExpenses,
       },
+      distribution: {
+        byCategory: expensesByCategory.map(item => ({
+          category: item.category,
+          amount: item._sum.amount || 0
+        })),
+        byCostCenter: expensesByCostCenter.map(item => ({
+          costCenter: item.costCenter || 'OUTROS',
+          amount: item._sum.amount || 0
+        }))
+      }
     });
+
+    // Desativar cache completamente
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error) {
     console.error('GET /api/financial/dashboard error:', error);
     return NextResponse.json(

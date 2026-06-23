@@ -6,18 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { CardShimmer } from '@/components/Shimmer';
+import { getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
 
 export default function FinancialDashboard() {
   const { user, logout } = useAuth();
   const authUser = user as { name?: string; email: string; role: string } | null;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchFinancialData = async () => {
     setLoading(true);
     try {
       const res = await api.get('/financial/dashboard');
       setData(res.data);
+      setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
     } catch (err) {
       console.error('Erro ao carregar dados financeiros:', err);
     } finally {
@@ -27,6 +30,25 @@ export default function FinancialDashboard() {
 
   useEffect(() => {
     fetchFinancialData();
+
+    const handleFocus = () => {
+      fetchFinancialData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchFinancialData();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const formatCurrency = (val: number) => {
@@ -41,9 +63,16 @@ export default function FinancialDashboard() {
             <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Painel Financeiro</h1>
             <p className="text-neutral-600 dark:text-neutral-400">Controle integrado de receitas, despesas e fluxo de caixa</p>
           </div>
-          <Button onClick={fetchFinancialData} variant="outline" size="sm">
-            Recarregar Dados
-          </Button>
+          <div className="flex items-center gap-3">
+            {lastUpdated && (
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+                Atualizado às {lastUpdated}
+              </span>
+            )}
+            <Button onClick={fetchFinancialData} variant="outline" size="sm">
+              Recarregar Dados
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -145,6 +174,54 @@ export default function FinancialDashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Distribuição e DRE */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm overflow-hidden bg-white dark:bg-neutral-800">
+                <CardHeader className="bg-neutral-50/50 dark:bg-neutral-700/50 border-b border-neutral-100 dark:border-neutral-700 py-4">
+                  <CardTitle className="text-sm font-bold text-neutral-800 dark:text-neutral-200">Despesas por Categoria (DRE)</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  {data.distribution?.byCategory?.length > 0 ? (
+                    data.distribution.byCategory.map((c: any) => (
+                      <div key={c.category} className="flex justify-between items-center p-3 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                        <span className="font-bold text-sm text-neutral-800 dark:text-neutral-200">
+                          {getCategoryLabel(c.category)}
+                        </span>
+                        <span className="font-extrabold text-rose-600 text-sm">
+                          -{formatCurrency(c.amount)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center py-6 text-xs text-neutral-400">Nenhuma despesa registrada</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm overflow-hidden bg-white dark:bg-neutral-800">
+                <CardHeader className="bg-neutral-50/50 dark:bg-neutral-700/50 border-b border-neutral-100 dark:border-neutral-700 py-4">
+                  <CardTitle className="text-sm font-bold text-neutral-800 dark:text-neutral-200">Despesas por Centro de Custo (DRE)</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 space-y-3">
+                  {data.distribution?.byCostCenter?.length > 0 ? (
+                    data.distribution.byCostCenter.map((cc: any) => (
+                      <div key={cc.costCenter} className="flex justify-between items-center p-3 bg-neutral-50 dark:bg-neutral-900 rounded-xl">
+                        <span className="font-bold text-sm text-neutral-800 dark:text-neutral-200">
+                          {getCostCenterLabel(cc.costCenter)}
+                        </span>
+                        <span className="font-extrabold text-rose-600 text-sm">
+                          -{formatCurrency(cc.amount)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-center py-6 text-xs text-neutral-400">Nenhuma despesa registrada</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
           </div>
         )}
       </main>

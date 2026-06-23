@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { purchaseOrderSchema, PurchaseOrderFormValues } from '../../lib/validations/purchase-order.schema';
 import { useVendors } from '../../hooks/useVendors';
 import { useProducts } from '../../hooks/useProducts';
+import { COST_CENTERS } from '../../lib/finance-options';
 
 type Props = {
   initialData?: any;
@@ -162,11 +163,15 @@ export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Centro de Custos</label>
-          <input 
+          <select 
             {...register('costCenter')} 
-            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" 
-            placeholder="Ex: Operacional Click" 
-          />
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+          >
+            <option value="">Selecione</option>
+            {COST_CENTERS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 

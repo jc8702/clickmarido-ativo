@@ -30,12 +30,14 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const status = searchParams.get('status') || '';
     const category = searchParams.get('category') || '';
+    const costCenter = searchParams.get('costCenter') || '';
     const serviceOrderId = searchParams.get('serviceOrderId') || '';
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
     if (category) where.category = category;
+    if (costCenter) where.costCenter = costCenter;
     if (serviceOrderId) where.serviceOrderId = serviceOrderId;
 
     const [expenses, total] = await Promise.all([
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       category,
+      costCenter,
       description,
       amount,
       vendorId,
@@ -95,6 +98,7 @@ export async function POST(request: NextRequest) {
     const expense = await prisma.expense.create({
       data: {
         category,
+        costCenter: costCenter || 'OUTROS',
         description,
         amount: Number(amount),
         vendorId: vendorId || null,

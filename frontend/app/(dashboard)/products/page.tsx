@@ -12,6 +12,7 @@ import { ProductForm } from '@/components/products/ProductForm';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { TableShimmer } from '@/components/Shimmer';
 import { ProductDetailsDrawer } from '@/components/products/ProductDetailsDrawer';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -33,17 +34,6 @@ export default function ProductsPage() {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showForm) {
-        setShowForm(false);
-        setEditingProduct(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showForm]);
 
   const products = (data?.data || []) as any[];
 
@@ -98,6 +88,9 @@ export default function ProductsPage() {
     setShowForm(false);
     setEditingProduct(null);
   };
+
+  useEscapeToClose(showForm, handleCloseForm);
+  useEscapeToClose(selectedProductForDrawer !== null, () => setSelectedProductForDrawer(null));
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">

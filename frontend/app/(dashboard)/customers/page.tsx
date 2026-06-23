@@ -10,6 +10,7 @@ import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import { TableShimmer } from '@/components/Shimmer';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface CustomerAddress {
   street: string;
@@ -39,6 +40,8 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
+  useEscapeToClose(selectedCustomer !== null, () => setSelectedCustomer(null));
+
   // Efeito para debounce da busca
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,16 +64,6 @@ export default function CustomersPage() {
       }
     }
   }, [customers]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSelectedCustomer(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir este cliente?')) return;

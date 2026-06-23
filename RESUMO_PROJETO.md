@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Atrelamento de fornecedores a SKUs, cadastro inline rápido e timeline de histórico de compras implementados e compilados com 100% de sucesso.
+- **Status Atual:** Aguardando aprovação do plano de varredura e melhorias do financeiro e operacional.
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 22/06/2026 - 16:35
+- **Última Atualização:** 22/06/2026 - 16:55
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,15 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 22/06/2026 - 16:55
+- **Criação do Plano de Varredura e Melhorias Financeiro-Operacional**:
+  - Mapeamento e elaboração do plano detalhado em `implementation_plan.md` abrangendo o fechamento de modais com Escape (ESC), modelagem de ferramentas e centros de custo no Prisma e no Neon, dinamicidade do painel financeiro sem cache, faturamento e baixa de faturas manuais, CRUD de despesas completo e correções de aprovação de pagamentos.
+
+### 22/06/2026 - 16:37
+- **Deploy de Produção via CI/CD**:
+  - Todas as alterações locais foram commitadas (`cdbd601`) e enviadas (`git push origin main`) para o repositório GitHub (`jc8702/clickmarido-ativo`).
+  - O push acionou de forma automática a compilação e deploy da versão estável na Vercel (Produção).
 
 ### 22/06/2026 - 16:35
 - **Implementação do Atrelamento de Fornecedores a SKUs e Timeline de Compras**:
@@ -214,12 +223,12 @@ npm run dev
 
 ## Próximos Passos
 
-1. **Obter aprovação do usuário** sobre o plano de revitalização e a gaveta lateral de detalhes (Drawer).
-2. **Estabilizar o hook `useAuth.js`** e remover as concorrências de `mutate()` para cessar o piscamento em Clientes e Orçamentos.
-3. **Revitalizar o Dashboard** com layout em Bento Grid e estatísticas premium.
-4. **Implementar a gaveta lateral de detalhes (Drawer) e as novas informações de Clientes**.
-5. **Enriquecer o formulário de Orçamentos** e corrigir a tipagem/chave do Zod.
-6. **Integrar os módulos** de Ordens de Serviço, Pagamentos e Garantias com novos fluxos e botões de ação rápidos.
+1. **Obter aprovação do usuário** sobre o plano de varredura e melhorias financeiro e operacional (`implementation_plan.md`).
+2. **Executar a Fase 1**: Padronizar tecla `Escape` em modais e criar hook `useEscapeToClose` para Drawers.
+3. **Executar a Fase 2 e 3**: Adicionar a categoria `FERRAMENTAS` e centros de custo ao banco (Prisma/Neon) e criar fonte única `finance-options.ts`.
+4. **Executar a Fase 4**: Corrigir saldo, calcular despesas pendentes e agrupar dados do Dashboard Financeiro no backend e frontend sem cache.
+5. **Executar a Fase 5**: Habilitar a baixa e detalhes de faturas manuais e criar a API de recebimento `/pay`.
+6. **Executar a Fase 6**: Implementar o CRUD completo de despesas (Editar/Excluir) e as integrações com fluxo de caixa.
 7. **Compilar e validar estática de tipos** (`npm run build`).
 
 ---

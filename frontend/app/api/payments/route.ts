@@ -64,19 +64,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { quotationId, customerId, amount, method, description } = body;
+    const { quotationId, customerId, amount, method, description, status } = body;
 
-    if (!quotationId || !customerId || amount === undefined) {
+    if (!customerId || amount === undefined) {
       return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
     }
 
+    // Normalizar status: 'aprovado' do front vira 'confirmado' no banco
+    const normalizedStatus = status === 'aprovado' ? 'confirmado' : (status || 'pendente');
+
     const payment = await prisma.payment.create({
       data: {
-        quotationId,
+        quotationId: quotationId || null,
         customerId,
         amount: Number(amount),
         method: method || 'pix',
-        status: 'pendente',
+        status: normalizedStatus,
         description: description || '',
       },
       include: { customer: true },

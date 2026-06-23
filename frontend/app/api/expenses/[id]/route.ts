@@ -59,6 +59,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const body = await request.json();
     const {
       category,
+      costCenter,
       description,
       amount,
       vendorId,
@@ -82,6 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const updateData: any = {};
     if (category) updateData.category = category;
+    if (costCenter !== undefined) updateData.costCenter = costCenter;
     if (description) updateData.description = description;
     if (amount !== undefined) updateData.amount = Number(amount);
     if (vendorId !== undefined) updateData.vendorId = vendorId;
@@ -131,18 +133,79 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Despesa já está paga' }, { status: 400 });
     }
 
-    const expense = await prisma.expense.update({
-      where: { id },
-      data: {
-        status: 'paga',
-        paidAt: new Date(),
-      },
+    const payDate = new Date();
+
+    // Executar alterações transacionais
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Atualizar status da despesa para paga
+      const expense = await tx.expense.update({
+        where: { id },
+        data: {
+          status: 'paga',
+          paidAt: payDate,
+        },
+      });
+
+      // 2. Criar transação financeira de saída
+      await tx.financialTransaction.create({
+        data: {
+          type: 'EXPENSE_PAID',
+          expenseId: id,
+          credit: 0,
+          debit: existingExpense.amount,
+          description: `Pagamento de Despesa: ${existingExpense.description}`,
+          notes: `Categoria: ${existingExpense.category}${existingExpense.costCenter ? ` | Centro de Custo: ${existingExpense.costCenter}` : ''}`,
+          transactionDate: payDate
+        }
+      });
+
+      // 3. Registrar log de auditoria
+      await tx.auditLog.create({
+        data: {
+          entity: 'expense',
+          entityId: id,
+          action: 'status_changed',
+          oldValue: { status: existingExpense.status },
+          newValue: { status: 'paga', paidAt: payDate }
+        }
+      });
+
+      return expense;
     });
 
-    return NextResponse.json({ message: 'Despesa marcada como paga', expense });
+    return NextResponse.json({ message: 'Despesa marcada como paga', expense: result });
   } catch (error) {
     console.error('POST /api/expenses/[id]/mark-paid error:', error);
     return NextResponse.json({ error: 'Erro ao marcar despesa como paga' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// DELETE /api/expenses/[id] - Excluir despesa
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
+  try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const existingExpense = await prisma.expense.findUnique({
+      where: { id },
+    });
+
+    if (!existingExpense) {
+      return NextResponse.json({ error: 'Despesa não encontrada' }, { status: 404 });
+    }
+
+    await prisma.expense.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ message: 'Despesa excluída com sucesso' });
+  } catch (error) {
+    console.error('DELETE /api/expenses/[id] error:', error);
+    return NextResponse.json({ error: 'Erro ao excluir despesa' }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }
