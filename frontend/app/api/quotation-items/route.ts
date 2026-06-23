@@ -10,6 +10,40 @@ const createItemSchema = z.object({
   notes: z.string().default(''),
 });
 
+export async function GET(request: NextRequest) {
+  try {
+    const authResult = await verifyAuth(request);
+    if (!authResult.success) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const quotationId = searchParams.get('quotationId');
+
+    const where: any = {};
+    if (quotationId) {
+      where.quotationId = quotationId;
+    }
+
+    const items = await prisma.quotationItem.findMany({
+      where,
+      include: {
+        product: true,
+        quotation: true,
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return NextResponse.json({ data: items });
+  } catch (error) {
+    console.error('Error listing quotation items:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);

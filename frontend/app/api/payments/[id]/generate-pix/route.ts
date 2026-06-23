@@ -21,7 +21,7 @@ function validateToken(request: NextRequest) {
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function GET(
+async function handleGeneratePix(
   request: NextRequest,
   { params }: RouteParams
 ) {
@@ -52,7 +52,6 @@ export async function GET(
 
     const qrCodeUrl = getPixQRCodeUrl(pixPayload);
 
-    // Salvar pagamento no banco
     let payment = await prisma.payment.findFirst({
       where: { quotationId: id, status: 'pendente' },
     });
@@ -84,7 +83,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('GET /api/payments/[id]/generate-pix error:', error);
+    console.error('POST /api/payments/[id]/generate-pix error:', error);
     return NextResponse.json(
       { error: 'Erro ao gerar PIX' },
       { status: 500 }
@@ -92,4 +91,18 @@ export async function GET(
   } finally {
     await prisma.$disconnect();
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  return handleGeneratePix(request, { params });
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  return handleGeneratePix(request, { params });
 }

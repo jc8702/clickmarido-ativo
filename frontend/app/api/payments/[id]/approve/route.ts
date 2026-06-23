@@ -24,7 +24,7 @@ function validateToken(request: NextRequest) {
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function PATCH(
+async function handleApprove(
   request: NextRequest,
   { params }: RouteParams
 ) {
@@ -34,7 +34,6 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // 1. Buscar o pagamento pelo ID real
     const payment = await prisma.payment.findUnique({
       where: { id },
     });
@@ -49,9 +48,7 @@ export async function PATCH(
 
     const now = new Date();
 
-    // 2. Executar atualização transacional
     const result = await prisma.$transaction(async (tx) => {
-      // A. Atualizar status do pagamento
       const updatedPayment = await tx.payment.update({
         where: { id },
         data: {
@@ -61,7 +58,6 @@ export async function PATCH(
         },
       });
 
-      // B. Se houver Quotation associada, atualiza status
       if (payment.quotationId) {
         await tx.quotation.update({
           where: { id: payment.quotationId },
@@ -69,7 +65,6 @@ export async function PATCH(
         });
       }
 
-      // C. Se houver Invoice associada, atualiza status
       if (payment.invoiceId) {
         await tx.invoice.update({
           where: { id: payment.invoiceId },
@@ -77,7 +72,6 @@ export async function PATCH(
         });
       }
 
-      // D. Criar Transação Financeira de Entrada
       await tx.financialTransaction.create({
         data: {
           type: 'PAYMENT_RECEIVED',
@@ -90,7 +84,6 @@ export async function PATCH(
         },
       });
 
-      // E. Registrar log de auditoria
       await tx.auditLog.create({
         data: {
           entity: 'payment',
@@ -109,7 +102,7 @@ export async function PATCH(
     });
 
   } catch (error: any) {
-    console.error('PATCH /api/payments/[id]/approve error:', error);
+    console.error('POST /api/payments/[id]/approve error:', error);
     return NextResponse.json(
       { error: 'Erro ao aprovar pagamento' },
       { status: 500 }
@@ -117,4 +110,18 @@ export async function PATCH(
   } finally {
     await prisma.$disconnect();
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  return handleApprove(request, { params });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteParams
+) {
+  return handleApprove(request, { params });
 }
