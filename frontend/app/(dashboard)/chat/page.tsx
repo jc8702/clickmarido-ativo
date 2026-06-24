@@ -95,6 +95,26 @@ export default function ChatPage() {
 
       setApiOnline(true);
       const data = await healthRes.json();
+
+      // Se a instância não existe, criar uma nova
+      if (data.status === 404 || data.error === 'Not Found' || (data.response?.message && data.response.message[0]?.includes('does not exist'))) {
+        setConnected(false);
+        const createRes = await apiFetch('/instance/create', {
+          method: 'POST',
+          body: JSON.stringify({
+            instanceName: INSTANCE_NAME,
+            token: API_KEY,
+            qrcode: true
+          })
+        }).catch(() => null);
+
+        if (createRes && createRes.ok) {
+          const createData = await createRes.json();
+          const qr = createData.qrcode?.base64 || createData.base64 || null;
+          setQrCode(qr);
+        }
+        return;
+      }
       
       if (data.instance?.state === 'open' || data.state === 'open') {
         setConnected(true);
@@ -105,7 +125,8 @@ export default function ChatPage() {
         const connectRes = await apiFetch(`/instance/connect/${INSTANCE_NAME}`, { method: 'POST' }).catch(() => null);
         if (connectRes && connectRes.ok) {
           const connectData = await connectRes.json();
-          setQrCode(connectData.code || connectData.base64 || null);
+          const qr = connectData.base64 || connectData.qrcode?.base64 || connectData.code || null;
+          setQrCode(qr);
         }
       }
     } catch (err) {
@@ -285,7 +306,7 @@ export default function ChatPage() {
               {/* Bloco de Código com Comando Docker */}
               <div className="w-full max-w-lg bg-neutral-900 text-neutral-200 p-4 rounded-xl text-left font-mono text-xs overflow-x-auto border border-neutral-800 shadow-inner">
                 <p className="text-neutral-500 mb-1"># Execute este comando no terminal para iniciar o serviço:</p>
-                <p className="text-purple-400 select-all">docker run -d --name evolution-api -p 8080:8080 -e AUTH_API_KEY=clickmarido_key -e TEMPLATE_ENABLED=true atendare/evolution-api:latest</p>
+                <p className="text-purple-400 select-all">docker run -d --name evolution-api -p 8080:8080 -e AUTHENTICATION_API_KEY=clickmarido_key -e TEMPLATE_ENABLED=true evoapicloud/evolution-api:v1.8.2</p>
               </div>
 
               <div className="flex gap-3">
