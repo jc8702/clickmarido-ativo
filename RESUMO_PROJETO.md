@@ -4,7 +4,7 @@
 
 - **Status Atual:** Fase 6 (Expansão, Escala e Segurança) concluída. Sistema 100% integrado e operacional.
 - **Objetivo Central:** CRM para serviços residenciais (com suporte multi-user)
-- **Última Atualização:** 24/06/2026 - 12:55
+- **Última Atualização:** 24/06/2026 - 13:15
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias) + Expo Updates (EAS)
 
 ## Arquitetura Final
@@ -48,6 +48,15 @@ Vercel (Deploy)
 - [x] Relatórios e Faturamentos Avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 13:15
+- **WhatsApp Web Clone e Busca de Contatos:**
+  - **Visual e Design Fiel:** Redesenhada a tela de chat para ser um clone idêntico ao WhatsApp Web (balões com rabicho de canto reto no tema light/dark, padrão doodle texturizado de fundo no chat, cabeçalhos na cor cinza clássica e altura esticada de `h-[calc(100vh-140px)]`).
+  - **Contatos e Nova Conversa:** Adicionada a aba "Nova Conversa" que faz fetch dinâmico nos clientes do CRM (`/api/customers`) permitindo selecionar qualquer cliente por nome ou telefone e iniciar um chat diretamente, criando um JID virtual/temporário.
+  - **Filtro Avançado:** Implementada a busca em tempo real na barra de contatos/conversas com suporte ao modo de visualização.
+  - **Linha do Tempo e Agrupamento:** Adicionado o agrupamento de mensagens por data com separadores visuais sutilmente centralizados ("Hoje", "Ontem" ou datas passadas).
+  - **Deploy:** Deploy atualizado e verificado com sucesso na Vercel.
+  - Arquivos modificados: [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/chat/page.tsx)
 
 ### 24/06/2026 - 12:12
 - **Melhorias no WhatsApp Hub Local:**
