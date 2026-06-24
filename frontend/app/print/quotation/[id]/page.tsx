@@ -74,10 +74,10 @@ export default function PrintQuotationPage() {
     if (!element) return;
 
     const opt = {
-      margin: 10,
+      margin: 0,
       filename: `Orcamento_Click_Marido_${quote?.id?.slice(0, 8) || 'PROP'}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
@@ -99,10 +99,10 @@ export default function PrintQuotationPage() {
     setActionLoading(true);
     
     const opt = {
-      margin: 10,
+      margin: 0,
       filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
@@ -233,10 +233,11 @@ export default function PrintQuotationPage() {
       </div>
 
       {/* Conteúdo Otimizado para Folha A4 exata (794px x 1123px) */}
-      <div 
-        id="pdf-content" 
-        className="w-[794px] min-h-[1123px] mx-auto bg-[#ffffff] text-[#111827] p-[40px] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
-      >
+      <div className="flex justify-center w-full">
+        <div 
+          id="pdf-content" 
+          className="w-[794px] min-h-[1123px] bg-[#ffffff] text-[#111827] p-[40px] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
+        >
         <div>
           {/* Header do Documento */}
           <div className="flex justify-between items-start border-b border-neutral-100 pb-6 mb-8">
@@ -374,5 +375,6 @@ export default function PrintQuotationPage() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
