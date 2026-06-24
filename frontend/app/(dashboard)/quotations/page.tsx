@@ -25,6 +25,7 @@ interface Customer {
 
 interface Quotation {
   id: string;
+  number?: string | null;
   customerId: string;
   total: number;
   status: string;
