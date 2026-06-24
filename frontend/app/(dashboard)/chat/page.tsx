@@ -39,7 +39,8 @@ const getInitials = (name: string) => {
   return (parts[0][0] + (parts[1][0] || '')).toUpperCase();
 };
 
-const formatChatTime = (dateStr: string) => {
+const formatChatTime = (dateStr?: string) => {
+  if (!dateStr) return '';
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return '';
