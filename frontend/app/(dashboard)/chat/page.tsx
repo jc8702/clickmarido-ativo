@@ -694,8 +694,8 @@ export default function ChatPage() {
     const autoAttach = urlParams.get('autoAttach');
     const targetPhone = urlParams.get('phone');
     const textParam = urlParams.get('text');
-    const pendingPdf = sessionStorage.getItem('auto_attach_pdf');
-    const pendingPdfName = sessionStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
+    const pendingPdf = localStorage.getItem('auto_attach_pdf');
+    const pendingPdfName = localStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
 
     if (autoAttach === 'true' && targetPhone && pendingPdf) {
       const jid = `${targetPhone}@s.whatsapp.net`;
@@ -734,8 +734,8 @@ export default function ChatPage() {
         console.error('Erro ao processar PDF anexado:', err);
         toast.error('Erro ao ler PDF anexado.');
       } finally {
-        sessionStorage.removeItem('auto_attach_pdf');
-        sessionStorage.removeItem('auto_attach_name');
+        localStorage.removeItem('auto_attach_pdf');
+        localStorage.removeItem('auto_attach_name');
         
         // Remove param from url to avoid looping on reload
         const newUrl = new URL(window.location.href);

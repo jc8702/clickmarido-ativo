@@ -119,8 +119,8 @@ export default function PrintQuotationPage() {
       const pdfBase64Url = await window.html2pdf().from(element).set(opt).outputPdf('datauristring');
       const pureBase64 = pdfBase64Url.split(',')[1];
       
-      sessionStorage.setItem('auto_attach_pdf', pureBase64);
-      sessionStorage.setItem('auto_attach_name', opt.filename);
+      localStorage.setItem('auto_attach_pdf', pureBase64);
+      localStorage.setItem('auto_attach_name', opt.filename);
       const msgText = `Olá! Segue em anexo a nossa proposta comercial #${quote.id.slice(0, 8).toUpperCase()}. Qualquer dúvida, estamos à disposição.`;
       
       const customerPhone = quote.customer?.phone ? quote.customer.phone.replace(/\D/g, '') : '';
