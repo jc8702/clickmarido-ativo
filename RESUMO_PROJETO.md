@@ -4,7 +4,7 @@
 
 - **Status Atual:** Fase 6 (Expansão, Escala e Segurança) concluída. Sistema 100% integrado e operacional.
 - **Objetivo Central:** CRM para serviços residenciais (com suporte multi-user)
-- **Última Atualização:** 24/06/2026 - 11:40
+- **Última Atualização:** 24/06/2026 - 12:12
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias)
 
 ## Arquitetura Final
@@ -49,10 +49,12 @@ Vercel (Deploy)
 
 ## Histórico de Evolução
 
-### 24/06/2026 - 11:40
-- **Correção no WhatsApp Hub Local:**
+### 24/06/2026 - 12:12
+- **Melhorias no WhatsApp Hub Local:**
   - **Auto-criação de Instância:** Implementada a auto-criação automática da instância `clickmarido_instance` caso ela não exista no Docker local.
   - **Correção da API Key:** Ajustado o comando Docker e recriado o container local usando a variável `AUTHENTICATION_API_KEY=clickmarido_key` correta, substituindo a antiga variável inválida `AUTH_API_KEY` para evitar erros de autenticação 401 Unauthorized.
+  - **Layout Estilo WhatsApp:** Refatorado o visual da tela de Chat para imitar o WhatsApp Web (avatares com iniciais coloridas, balões de conversa verde/branco com cantos personalizados, fundo clássico e barra de input arredondada).
+  - **Ordenação Inteligente:** Implementada a ordenação de conversas por quantidade de não lidas e data decrescente de atividade (mais recentes no topo). As mensagens dentro do chat agora são ordenadas de forma cronológica estrita crescente com rolagem automática para a mensagem mais recente.
   - Arquivos modificados: [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/chat/page.tsx)
 
 ### 24/06/2026 - 14:00
