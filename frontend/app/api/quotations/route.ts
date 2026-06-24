@@ -22,7 +22,7 @@ function validateToken(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -155,6 +155,21 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'quotation',
+      entityId: quotation.id,
+      action: 'created',
+      newValue: {
+        id: quotation.id,
+        customerId: quotation.customerId,
+        total: quotation.total,
+        status: quotation.status,
+        notes: quotation.notes,
+      },
+    });
 
     return NextResponse.json(quotation, { status: 201 });
 

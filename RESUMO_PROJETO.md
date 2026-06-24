@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Fase 4 (Chat, Pós-Venda e Auditoria) iniciada. Deploy intermediário para homologação das bases estruturais e interface do Chat.
+- **Status Atual:** Fase 4 (Chat, Pós-Venda e Auditoria) concluída e implantada. Próxima etapa: Planejamento da Fase 5 (App Móvel e IA de precificação).
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 24/06/2026 - 00:30
+- **Última Atualização:** 24/06/2026 - 00:40
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,13 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 00:40
+- **Implementação Completa da Fase 4 (Nível 4 — Interações & Pós-Venda) Concluída**:
+  - **Módulo de Conversas (Chat):** Tela `/chat`, hook `useMessages` e API `/api/messages` integrados ao `MessageLog` e envio manual por WhatsApp.
+  - **Módulo de Pós-Venda (NPS):** Desenvolvida a página pública mobile-friendly `/survey/[id]` para o cliente votar anonimamente. Criada a tela administrativa de controle de NPS em `/nps` com gráficos Recharts e lista de avaliações. Criada API `/api/nps/customer/[id]` e adicionada a automação `service-order-completed.ts` para disparar a notificação de WhatsApp com o link do NPS quando a OS for concluída.
+  - **Módulo de Auditoria (AuditLog):** Criada a biblioteca `lib/audit.ts` e o hook `useAudit`. Injetado o `logAudit` nos fluxos e endpoints críticos de criação/edição/exclusão de Orçamentos, OS (incluindo start/complete) e Pagamentos. Desenvolvida a tela `/audit` com timeline e visualizador JSON interativo de oldValue/newValue.
+  - **Validação e Ajustes:** Corrigidos tipos de retorno estritos das API Routes para `: Promise<Response>` e corrigidas propriedades semânticas dos componentes. Compilação estática (`npm run build`) concluída com 100% de sucesso.
 
 ### 24/06/2026 - 00:30
 - **Início da Fase 4 (Nível 4 — Interações & Pós-Venda) e Deploy de Homologação**:

@@ -27,7 +27,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 async function handleApprove(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
@@ -115,13 +115,13 @@ async function handleApprove(
 export async function POST(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   return handleApprove(request, { params });
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   return handleApprove(request, { params });
 }

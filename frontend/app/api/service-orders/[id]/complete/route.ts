@@ -22,7 +22,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function PATCH(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
@@ -41,6 +41,10 @@ export async function PATCH(
       updateData.finalTotal = Number(finalTotal);
     }
 
+    const oldValue = await prisma.serviceOrder.findUnique({
+      where: { id },
+    });
+
     const order = await prisma.serviceOrder.update({
       where: { id },
       data: updateData,
@@ -55,6 +59,27 @@ export async function PATCH(
     } catch (error) {
       console.error('[AUTOMATION ERROR] Failed to trigger service order automation:', error);
     }
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'service_order',
+      entityId: id,
+      action: 'completed',
+      oldValue: oldValue ? {
+        id: oldValue.id,
+        number: oldValue.number,
+        status: oldValue.status,
+        finalTotal: oldValue.finalTotal,
+      } : null,
+      newValue: {
+        id: order.id,
+        number: order.number,
+        status: order.status,
+        finalTotal: order.finalTotal,
+      },
+    });
 
     return NextResponse.json(order);
 

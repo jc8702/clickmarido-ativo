@@ -18,7 +18,7 @@ function validateToken(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -83,6 +83,23 @@ export async function POST(request: NextRequest) {
         description: description || '',
       },
       include: { customer: true },
+    });
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'payment',
+      entityId: payment.id,
+      action: 'created',
+      newValue: {
+        id: payment.id,
+        customerId: payment.customerId,
+        quotationId: payment.quotationId,
+        amount: payment.amount,
+        status: payment.status,
+        method: payment.method,
+      },
     });
 
     return NextResponse.json(payment, { status: 201 });

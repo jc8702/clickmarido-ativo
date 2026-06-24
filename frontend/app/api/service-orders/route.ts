@@ -32,7 +32,7 @@ async function generateOSNumber(): Promise<string> {
   return `OS-${String(next).padStart(4, '0')}`;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -117,6 +117,24 @@ export async function POST(request: NextRequest) {
         finalTotal: quotation.total,
       },
       include: { customer: true, technician: true, quotation: true },
+    });
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'service_order',
+      entityId: order.id,
+      action: 'created',
+      newValue: {
+        id: order.id,
+        number: order.number,
+        quotationId: order.quotationId,
+        customerId: order.customerId,
+        technicianId: order.technicianId,
+        status: order.status,
+        finalTotal: order.finalTotal,
+      },
     });
 
     return NextResponse.json(order, { status: 201 });

@@ -11,12 +11,12 @@
 | Métrica | Valor |
 |---------|-------|
 | Total de Itens | 27 |
-| Concluídos | 21 |
+| Concluídos | 25 |
 | Em Andamento | 0 |
-| Não Iniciados | 6 |
+| Não Iniciados | 2 |
 | Bloqueados | 0 |
 | Horas Estimadas | 449-630h |
-| Horas Realizadas | ~192h |
+| Horas Realizadas | ~204h |
 | Semanas Estimadas | 13 |
 
 ---
@@ -63,10 +63,10 @@
 
 | # | Item | Status | Data Início | Data Fim | Horas | Observações |
 |---|------|--------|-------------|----------|-------|-------------|
-| 22 | Fornecedores e Compras | ⬜ | | | 20-28h | |
-| 23 | Conversas (Chat) | 🔄 | 24/06/2026 | | 4h | Tela de mensagens, hook useMessages e rotas de envio manual criadas |
-| 24 | Pós-Venda | 🔄 | 24/06/2026 | | 1h | Infraestrutura de NPS iniciada com hook useNPS e rota de API |
-| 25 | Auditoria e Logging | ⬜ | | | 8-12h | |
+| 22 | Fornecedores e Compras | ✅ | 22/06/2026 | 22/06/2026 | 24h | Modelo Prisma, APIs REST, Drawer de histórico de SKU e fluxo financeiro integrado |
+| 23 | Conversas (Chat) | ✅ | 24/06/2026 | 24/06/2026 | 5h | Tela de histórico, hook useMessages e rota de envio manual operacionais |
+| 24 | Pós-Venda | ✅ | 24/06/2026 | 24/06/2026 | 4h | NPS completo. Página survey/[id], dashboard /nps e gatilho de WhatsApp na OS |
+| 25 | Auditoria e Logging | ✅ | 24/06/2026 | 24/06/2026 | 3h | Timeline em /audit com expander JSON e logAudit injetado em rotas críticas |
 
 ### 🔵 NÍVEL 5 — AMBIÇÃO (2 itens) — 70-110h
 
@@ -100,8 +100,9 @@
 | 23/06 | Inventário | Abatimento automático de estoque e alertas de estoque baixo | 3h | ✅ | Abatimento no encerramento de OS integrado |
 | 23/06 | WhatsApp | Log persistente de mensagens WhatsApp | 2h | ✅ | Logs salvos em MessageLog ao enviar notificações |
 | 23/06 | Build | Compilação estática de produção com zero erros | 1h | ✅ | Executado npm run build com 100% de sucesso |
-| 24/06 | Chat | Criação de tela /chat, hook useMessages e rotas API /api/messages | 4h | 🔄 | Módulo de Conversas estruturado, build de produção validado |
-| 24/06 | NPS | Criação de hook useNPS e rota base /api/nps | 1h | 🔄 | Infraestrutura para avaliações de cliente iniciada |
+| 24/06 | Chat | Criação de tela /chat, hook useMessages e rotas API /api/messages | 4h | ✅ | Módulo de Conversas concluído e build validado |
+| 24/06 | NPS | Criação de hook useNPS, rota base /api/nps, tela survey/[id] e trigger OS | 4h | ✅ | Pesquisa NPS mobile, dashboard e automação integrados |
+| 24/06 | Auditoria | Criados rota /api/audit, hook useAudit, tela /audit e logAudit em rotas | 3h | ✅ | Logs de auditoria injetados em orçamentos, OS e pagamentos |
 | 24/06 | Build | Instalação de swr/toast e ajuste de tipos do Next.js | 1h | ✅ | npm run build concluído com 100% de sucesso localmente |
 
 *Atualizar esta tabela a cada sessão de trabalho.*
@@ -111,20 +112,17 @@
 ## 🎯 PRÓXIMO PASSO
 
 ### Item Atual
-**Fase 4: Nível 4 — Baixo (0/4 itens concluídos)**
+**Fase 5: Nível 5 — Ambição (0/2 itens concluídos)**
 
 ### Próxima Ação
-1. Concluir a integração do módulo de Compras e Fornecedores ao fluxo de despesas e OS.
-2. Criar a tela de Conversas (Chat) com atalhos de envio direto para WhatsApp.
-3. Implementar a rotina de Pós-Venda (follow-up de satisfação e NPS automatizados).
-4. Expandir o módulo de Auditoria e logs de segurança (`AuditLog`).
+1. Desenvolver o protótipo do App Mobile Nativo usando React Native e Expo para o técnico em campo.
+2. Integrar funcionalidade de Inteligência Artificial para estimativa de preço automática com base no histórico de serviços.
 
 ### Dependências para Continuar
-- [x] Relatórios operacionais e exportação CSV funcional (Fase 3)
-- [x] Configurações de empresa cadastradas e taxas de hora salvas (Fase 3)
-- [x] Impressão nativa de OS e Orçamentos testada (Fase 3)
-- [x] Build estático do Next.js sem nenhum erro de tipo (Fase 3)
-- [ ] Início do planejamento do chat e pós-venda (Fase 4)
+- [x] Módulos de Chat, NPS e Auditoria de Segurança totalmente implantados e buildados (Fase 4)
+- [x] Build estático do Next.js sem nenhum erro de compilação ou tipo
+- [x] Integração da automação de pós-venda enviando links dinâmicos de pesquisa no WhatsApp
+- [ ] Planejamento inicial do escopo do aplicativo móvel ou do modelo de IA para precificação (Fase 5)
 
 ### Quando Pausar e Retornar
 > **Sempre atualizar a seção "PRÓXIMO PASSO" antes de parar.**

@@ -22,7 +22,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function GET(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
@@ -56,7 +56,7 @@ export async function GET(
 export async function PUT(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
@@ -133,6 +133,32 @@ export async function PUT(
         // Continue (não falhar a requisição)
       }
     }
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'service_order',
+      entityId: id,
+      action: 'updated',
+      oldValue: {
+        id: currentOrder.id,
+        number: currentOrder.number,
+        quotationId: currentOrder.quotationId,
+        customerId: currentOrder.customerId,
+        technicianId: currentOrder.technicianId,
+        status: currentOrder.status,
+        finalTotal: currentOrder.finalTotal,
+      },
+      newValue: {
+        id: order.id,
+        number: order.number,
+        quotationId: order.quotationId,
+        customerId: order.customerId,
+        technicianId: order.technicianId,
+        status: order.status,
+        finalTotal: order.finalTotal,
+      },
+    });
 
     return NextResponse.json(order);
 
@@ -148,14 +174,36 @@ export async function PUT(
 export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
+    const oldValue = await prisma.serviceOrder.findUnique({
+      where: { id },
+    });
+
     await prisma.serviceOrder.delete({ where: { id } });
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'service_order',
+      entityId: id,
+      action: 'deleted',
+      oldValue: oldValue ? {
+        id: oldValue.id,
+        number: oldValue.number,
+        quotationId: oldValue.quotationId,
+        customerId: oldValue.customerId,
+        technicianId: oldValue.technicianId,
+        status: oldValue.status,
+        finalTotal: oldValue.finalTotal,
+      } : null,
+    });
 
     return NextResponse.json({ success: true });
 

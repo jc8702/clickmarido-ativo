@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
 
 interface AutomationResult {
   status: 'success' | 'skipped' | 'error';
@@ -15,6 +16,20 @@ export async function handleServiceOrderCompleted(
     const serviceOrder = await prisma.serviceOrder.findUniqueOrThrow({
       where: { id: serviceOrderId },
       include: { quotation: true, customer: true },
+    });
+
+    // 1.5 Enviar notificação de WhatsApp com link do NPS para o cliente
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
+    const surveyLink = `${appUrl}/survey/${serviceOrder.customerId}`;
+
+    fireAndForgetNotification({
+      phone: serviceOrder.customer.phone,
+      template: 'service_order_completed',
+      variables: {
+        customerName: serviceOrder.customer.name,
+        serviceOrderId: serviceOrder.id.slice(-6).toUpperCase(),
+        surveyLink: surveyLink,
+      },
     });
 
     // 2. Check if payment already exists

@@ -27,7 +27,7 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function GET(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
@@ -62,12 +62,17 @@ export async function GET(
 export async function PUT(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
+
+    const oldValue = await prisma.quotation.findUnique({
+      where: { id },
+      select: { id: true, customerId: true, total: true, status: true, notes: true },
+    });
 
     const body = await request.json();
 
@@ -192,13 +197,29 @@ export async function PUT(
         });
       }
     }
-
     // Return updated quotation with items
     const updated = await prisma.quotation.findUnique({
       where: { id },
       include: {
         customer: true,
         items: { include: { product: true } },
+      },
+    });
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'quotation',
+      entityId: id,
+      action: 'updated',
+      oldValue,
+      newValue: {
+        id: updated?.id,
+        customerId: updated?.customerId,
+        total: updated?.total,
+        status: updated?.status,
+        notes: updated?.notes,
       },
     });
 
@@ -220,14 +241,29 @@ export async function PUT(
 export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
-) {
+): Promise<Response> {
   const { id } = await params;
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
+    const oldValue = await prisma.quotation.findUnique({
+      where: { id },
+      select: { id: true, customerId: true, total: true, status: true, notes: true },
+    });
+
     await prisma.quotation.delete({ where: { id } });
+
+    // Registrar log de auditoria
+    const { logAudit } = await import('@/lib/audit');
+    await logAudit({
+      request,
+      entity: 'quotation',
+      entityId: id,
+      action: 'deleted',
+      oldValue,
+    });
 
     return NextResponse.json({ success: true });
 
