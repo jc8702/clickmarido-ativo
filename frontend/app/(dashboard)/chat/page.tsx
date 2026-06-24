@@ -329,41 +329,58 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Carregar mensagens de uma conversa selecionada
+  // Carregar mensagens de uma conversa selecionada — com filtragem rigorosa por remoteJid
   const loadMessages = useCallback(async (chatId: string, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
-      // Tentar endpoint de mensagens (v2 e v1.8.x)
+      // Normalizar o chatId para comparação (remover sufixo @s.whatsapp.net ou @g.us)
+      const phoneNumber = chatId.split('@')[0];
+
+      // Endpoint POST com filtro por remoteJid
       let data: any = null;
       const resPost = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
         method: 'POST',
         body: JSON.stringify({
           where: { key: { remoteJid: chatId } },
-          limit: 60
+          limit: 80
         })
       }).catch(() => null);
 
       if (resPost && resPost.ok) {
         data = await resPost.json();
       } else {
-        // Fallback: endpoint GET (alguns forks da Evolution API)
-        const resGet = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}?remoteJid=${encodeURIComponent(chatId)}&limit=60`).catch(() => null);
+        // Fallback endpoint GET
+        const resGet = await apiFetch(
+          `/chat/findMessages/${INSTANCE_NAME}?remoteJid=${encodeURIComponent(chatId)}&limit=80`
+        ).catch(() => null);
         if (resGet && resGet.ok) data = await resGet.json();
       }
 
       if (data) {
         const rawList = data.records || data.messages || data || [];
-        const list = (Array.isArray(rawList) ? rawList : []).map((m: any) => {
-          let ts = m.messageTimestamp;
-          if (!ts && m.createdAt) ts = new Date(m.createdAt).getTime() / 1000;
-          if (!ts) ts = Date.now() / 1000;
-          return {
-            id: m.key?.id || m.id || String(Math.random()),
-            fromMe: m.key?.fromMe ?? m.fromMe ?? false,
-            body: getMessageBody(m),
-            timestamp: ts,
-          };
-        });
+
+        const list = (Array.isArray(rawList) ? rawList : [])
+          // ====== FILTRAGEM RIGOROSA: só mensagens deste chat ======
+          .filter((m: any) => {
+            const jid = m.key?.remoteJid || m.remoteJid || '';
+            if (!jid) return false; // descartar se não tiver jid
+            const jidPhone = jid.split('@')[0];
+            // Aceitar se o número bate exatamente com o chat selecionado
+            return jidPhone === phoneNumber;
+          })
+          // =========================================================
+          .map((m: any) => {
+            let ts = m.messageTimestamp;
+            if (!ts && m.createdAt) ts = new Date(m.createdAt).getTime() / 1000;
+            if (!ts) ts = Date.now() / 1000;
+            return {
+              id: m.key?.id || m.id || String(Math.random()),
+              fromMe: m.key?.fromMe ?? m.fromMe ?? false,
+              body: getMessageBody(m),
+              timestamp: ts,
+            };
+          });
+
         list.sort((a: any, b: any) => a.timestamp - b.timestamp);
 
         // Só atualiza se houver mensagens novas (evita re-render desnecessário)
@@ -378,6 +395,7 @@ export default function ChatPage() {
       if (!silent) setLoadingMessages(false);
     }
   }, [apiFetch]);
+
 
   // Enviar nova mensagem no chat vivo
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -494,23 +512,44 @@ export default function ChatPage() {
   // Carregar mensagens quando um chat é selecionado + polling a cada 4s para receber em tempo real
   useEffect(() => {
     if (selectedChat) {
+      // Limpar mensagens do chat anterior IMEDIATAMENTE ao trocar de contato
+      setChatMessages([]);
       lastMessageCountRef.current = 0;
-      loadMessages(selectedChat.id);
-      // Polling de mensagens para receber em tempo real
-      if (pollingRef.current) clearInterval(pollingRef.current);
+
+      // Cancelar polling anterior
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+
+      // Capturar o chatId no momento da execução para evitar race condition
+      const currentChatId = selectedChat.id;
+
+      // Carregar mensagens do novo chat
+      loadMessages(currentChatId);
+
+      // Iniciar polling apenas para este chat
       pollingRef.current = setInterval(() => {
-        loadMessages(selectedChat.id, true); // silent = não mostra loading
+        loadMessages(currentChatId, true); // silent = não mostra loading spinner
       }, 4000);
+
       return () => {
-        if (pollingRef.current) clearInterval(pollingRef.current);
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
       };
     } else {
+      // Chat deselecionado: limpar tudo
+      setChatMessages([]);
+      lastMessageCountRef.current = 0;
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
     }
   }, [selectedChat?.id, loadMessages]);
+
 
   const filteredChats = chats.filter(chat => 
     chat.name.toLowerCase().includes(chatSearch.toLowerCase()) || 

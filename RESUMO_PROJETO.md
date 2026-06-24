@@ -49,6 +49,15 @@ Vercel (Deploy)
 
 ## Histórico de Evolução
 
+### 24/06/2026 - 13:35
+- **Correção crítica de envio e recebimento de mensagens no WhatsApp Hub:**
+  - **Envio (multi-formato):** Corrigido o body do `POST /message/sendText` para tentar 3 formatos diferentes da Evolution API (v2 com `textMessage.text`, v1 com `text`, e formato alternativo com `options`). O primeiro formato aceito pelo servidor é usado automaticamente.
+  - **Optimistic UI:** A mensagem enviada aparece instantaneamente na tela (sem esperar resposta do servidor) e é revertida caso todos os formatos falhem.
+  - **Recebimento em tempo real:** Adicionado polling automático de mensagens a cada **4 segundos** enquanto um chat está aberto — novas mensagens chegam automaticamente sem precisar recarregar a página.
+  - **Polling de lista de chats:** Adicionado polling de 30s para detectar novos chats/contatos automaticamente.
+  - **Fallback de endpoint:** `loadMessages` agora tenta POST e GET (para forks da Evolution API que usam GET).
+  - Arquivos modificados: [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/chat/page.tsx)
+
 ### 24/06/2026 - 13:15
 - **WhatsApp Web Clone e Busca de Contatos:**
   - **Visual e Design Fiel:** Redesenhada a tela de chat para ser um clone idêntico ao WhatsApp Web (balões com rabicho de canto reto no tema light/dark, padrão doodle texturizado de fundo no chat, cabeçalhos na cor cinza clássica e altura esticada de `h-[calc(100vh-140px)]`).
