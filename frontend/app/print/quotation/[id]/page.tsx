@@ -99,9 +99,10 @@ export default function PrintQuotationPage() {
       
       sessionStorage.setItem('auto_attach_pdf', pureBase64);
       sessionStorage.setItem('auto_attach_name', opt.filename);
+      const msgText = `Olá! Segue em anexo a nossa proposta comercial #${quote.id.slice(0, 8).toUpperCase()}. Qualquer dúvida, estamos à disposição.`;
       
       const customerPhone = quote.customer?.phone ? quote.customer.phone.replace(/\D/g, '') : '';
-      const targetUrl = `/chat?phone=${customerPhone}&autoAttach=true`;
+      const targetUrl = `/chat?phone=${customerPhone}&autoAttach=true&text=${encodeURIComponent(msgText)}`;
       
       if (window.opener && !window.opener.closed) {
         window.opener.location.href = targetUrl;
@@ -151,7 +152,7 @@ export default function PrintQuotationPage() {
   const items = getQuotationItems(quote.items);
 
   return (
-    <div className="bg-neutral-100 min-h-screen py-8 print:py-0 print:bg-white transition-colors duration-200">
+    <div className="bg-[#f5f5f5] min-h-screen py-8 print:py-0 print:bg-white transition-colors duration-200">
       {/* Google Fonts para visual Premium */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap');
@@ -212,7 +213,7 @@ export default function PrintQuotationPage() {
       {/* Conteúdo Otimizado para Folha A4 (210mm x 297mm) */}
       <div 
         id="pdf-content" 
-        className="max-w-[210mm] min-h-[297mm] mx-auto bg-white text-neutral-900 p-12 shadow-xl print:shadow-none print:p-0 border border-neutral-200/60 print:border-none rounded-3xl print:rounded-none flex flex-col justify-between"
+        className="max-w-[210mm] min-h-[297mm] mx-auto bg-[#ffffff] text-[#111827] p-12 shadow-xl print:shadow-none print:p-0 border border-neutral-200/60 print:border-none rounded-3xl print:rounded-none flex flex-col justify-between"
       >
         <div>
           {/* Header do Documento */}
@@ -237,15 +238,15 @@ export default function PrintQuotationPage() {
 
           {/* Dados Principais (Grid 2 colunas) */}
           <div className="grid grid-cols-2 gap-6 mb-8">
-            <div className="bg-neutral-50/50 p-5 rounded-2xl border border-neutral-100 space-y-2.5">
+            <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
               <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Cliente</h3>
-              <p className="text-sm font-extrabold text-neutral-800 leading-tight">{customerName}</p>
+              <p className="text-sm font-extrabold text-[#1f2937] leading-tight">{customerName}</p>
               <div className="text-xs text-neutral-600 space-y-1">
                 <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Tel:</span> {customerPhone}</p>
                 <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">E-mail:</span> {customerEmail}</p>
               </div>
             </div>
-            <div className="bg-neutral-50/50 p-5 rounded-2xl border border-neutral-100 space-y-2.5">
+            <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
               <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Condições Comerciais</h3>
               <div className="text-xs text-neutral-600 space-y-1.5">
                 <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate} (15 dias)</span></p>

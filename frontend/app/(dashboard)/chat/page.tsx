@@ -679,6 +679,7 @@ export default function ChatPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const autoAttach = urlParams.get('autoAttach');
     const targetPhone = urlParams.get('phone');
+    const textParam = urlParams.get('text');
     const pendingPdf = sessionStorage.getItem('auto_attach_pdf');
     const pendingPdfName = sessionStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
 
@@ -703,12 +704,12 @@ export default function ChatPage() {
       const optimisticMsg = {
         id: `optimistic-doc-auto-${Date.now()}`,
         fromMe: true,
-        body: `📄 Enviando orçamento: ${pendingPdfName}...`,
+        body: `📄 Enviando orçamento: ${pendingPdfName}...${textParam ? `\n\n${textParam}` : ''}`,
         timestamp: Date.now() / 1000
       };
       setChatMessages(prev => [...prev, optimisticMsg]);
 
-      // Enviar de fato
+      // Enviar de fato (com caption)
       apiFetch(`/message/sendDocument/${INSTANCE_NAME}`, {
         method: 'POST',
         body: JSON.stringify({
@@ -717,7 +718,8 @@ export default function ChatPage() {
           mediaMessage: {
             mediatype: 'document',
             fileName: pendingPdfName,
-            media: pendingPdf
+            media: pendingPdf,
+            caption: textParam || ''
           }
         })
       }).then(res => {
