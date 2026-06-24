@@ -155,6 +155,8 @@ export default function ChatPage() {
   const [sidebarMode, setSidebarMode] = useState<'chats' | 'contacts'>('chats');
   const [crmCustomers, setCrmCustomers] = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  // Mapa de JID/telefone -> nome real (da Evolution API)
+  const [contactsMap, setContactsMap] = useState<Record<string, string>>({});
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -308,6 +310,46 @@ export default function ChatPage() {
     }
   }, [connected, apiFetch]);
 
+  // Buscar nomes reais dos contatos na Evolution API
+  const loadWaContacts = useCallback(async () => {
+    try {
+      // Tenta GET primeiro
+      let contacts: any[] = [];
+      const resGet = await apiFetch(`/contact/findContacts/${INSTANCE_NAME}`).catch(() => null);
+      if (resGet && resGet.ok) {
+        const d = await resGet.json();
+        contacts = Array.isArray(d) ? d : (d.contacts || d.data || []);
+      }
+      // Fallback: POST sem filtro
+      if (contacts.length === 0) {
+        const resPost = await apiFetch(`/contact/findContacts/${INSTANCE_NAME}`, {
+          method: 'POST',
+          body: JSON.stringify({ limit: 500 })
+        }).catch(() => null);
+        if (resPost && resPost.ok) {
+          const d = await resPost.json();
+          contacts = Array.isArray(d) ? d : (d.contacts || d.data || []);
+        }
+      }
+      if (contacts.length > 0) {
+        const map: Record<string, string> = {};
+        contacts.forEach((c: any) => {
+          const name = c.pushName || c.name || c.verifiedName || c.notify || '';
+          if (!name) return;
+          // Indexar pelo JID completo e pelo número puro
+          const jid = c.id || c.remoteJid || c.jid || '';
+          if (jid) {
+            map[jid] = name;
+            map[jid.split('@')[0]] = name;
+          }
+        });
+        setContactsMap(map);
+      }
+    } catch (err) {
+      console.error('Error loading WA contacts:', err);
+    }
+  }, [apiFetch]);
+
   // Carregar contatos do CRM
   const loadCrmContacts = useCallback(async () => {
     setLoadingContacts(true);
@@ -329,39 +371,58 @@ export default function ChatPage() {
     }
   }, []);
 
+  // Resolver nome de um chat priorizando: contactsMap > nome da API > pushName > número
+  const resolveName = useCallback((chat: Chat): string => {
+    const phone = chat.id.split('@')[0];
+    return contactsMap[chat.id] || contactsMap[phone] || chat.name || phone;
+  }, [contactsMap]);
+
+  // ── Função auxiliar: extrai lista de mensagens de qualquer formato de resposta da Evolution API
+  const extractMessages = (d: any): any[] => {
+    if (!d) return [];
+    if (Array.isArray(d)) return d;
+    // { records: [...] }
+    if (Array.isArray(d.records)) return d.records;
+    // { messages: [...] } or { messages: { records: [...] } }
+    if (d.messages) {
+      if (Array.isArray(d.messages)) return d.messages;
+      if (Array.isArray(d.messages.records)) return d.messages.records;
+    }
+    // { data: [...] }
+    if (Array.isArray(d.data)) return d.data;
+    return [];
+  };
+
   // Carregar mensagens de uma conversa selecionada — estratégia de 3 camadas
   const loadMessages = useCallback(async (chatId: string, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
       const phoneNumber = chatId.split('@')[0];
-      // Últimos 8 dígitos para matching fuzzy (lida com 9º dígito Brasil)
-      const last8 = phoneNumber.slice(-8);
+      const last8 = phoneNumber.slice(-8); // últimos 8 dígitos para fuzzy matching (9º dígito BR)
 
       let rawList: any[] = [];
 
-      // ── Estratégia 1: filtro por remoteJid direto (campo de primeiro nível) ──
-      const tryFetch = async (body: object): Promise<any[]> => {
+      const tryPost = async (body: object): Promise<any[]> => {
         const res = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
           method: 'POST',
           body: JSON.stringify(body)
         }).catch(() => null);
         if (!res || !res.ok) return [];
         const d = await res.json();
-        const arr = d.records || d.messages || d || [];
-        return Array.isArray(arr) ? arr : [];
+        return extractMessages(d);
       };
 
-      // Tenta filtro por campo direto remoteJid
-      rawList = await tryFetch({ where: { remoteJid: chatId }, limit: 100 });
+      // Estratégia 1 — filtro Prisma por remoteJid (campo direto)
+      rawList = await tryPost({ where: { remoteJid: chatId }, limit: 100 });
 
-      // ── Estratégia 2: filtro por key.remoteJid (nested) ──
+      // Estratégia 2 — filtro Prisma JSON nested
       if (rawList.length === 0) {
-        rawList = await tryFetch({ where: { key: { remoteJid: chatId } }, limit: 100 });
+        rawList = await tryPost({ where: { key: { path: ['remoteJid'], equals: chatId } }, limit: 100 });
       }
 
-      // ── Estratégia 3: busca geral + filtragem 100% client-side ──
+      // Estratégia 3 — sem filtro servidor + filtragem 100% client-side
       if (rawList.length === 0) {
-        rawList = await tryFetch({ limit: 200 });
+        rawList = await tryPost({ limit: 400 });
       }
 
       // ── Filtragem client-side robusta ──
@@ -513,15 +574,17 @@ export default function ChatPage() {
     if (connected) {
       loadChats();
       loadCrmContacts();
-      // Polling da lista de chats para detectar novos contatos/mensagens
+      loadWaContacts(); // busca nomes reais dos contatos
+      // Polling da lista de chats e contatos
       chatPollingRef.current = setInterval(() => {
         loadChats();
+        loadWaContacts();
       }, 30000);
       return () => {
         if (chatPollingRef.current) clearInterval(chatPollingRef.current);
       };
     }
-  }, [connected, loadChats, loadCrmContacts]);
+  }, [connected, loadChats, loadCrmContacts, loadWaContacts]);
 
   // Carregar mensagens quando um chat é selecionado + polling a cada 4s para receber em tempo real
   useEffect(() => {
@@ -883,12 +946,12 @@ export default function ChatPage() {
                             selectedChat?.id === chat.id ? 'bg-[#efeae2]/45 dark:bg-[#2a3942]/20 border-l-4 border-emerald-500' : ''
                           }`}
                         >
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(chat.name)}`}>
-                            {getInitials(chat.name)}
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(resolveName(chat))}`}>
+                            {getInitials(resolveName(chat))}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-baseline mb-0.5">
-                              <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{chat.name}</p>
+                              <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{resolveName(chat)}</p>
                               <span className="text-[9px] text-neutral-400 shrink-0 ml-2">
                                 {formatChatTime(chat.updatedAt)}
                               </span>
@@ -950,11 +1013,11 @@ export default function ChatPage() {
                           </svg>
                         </button>
 
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(selectedChat.name)}`}>
-                          {getInitials(selectedChat.name)}
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(resolveName(selectedChat))}`}>
+                          {getInitials(resolveName(selectedChat))}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-200 truncate">{selectedChat.name}</h3>
+                          <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-200 truncate">{resolveName(selectedChat)}</h3>
                           <p className="text-[10px] text-neutral-400 font-mono truncate">{selectedChat.id.split('@')[0]}</p>
                         </div>
                       </div>
