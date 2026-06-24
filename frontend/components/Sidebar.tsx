@@ -63,7 +63,7 @@ export function Sidebar({
           transition-all duration-300
           bg-white dark:bg-neutral-900
           border-r border-neutral-200 dark:border-neutral-700
-          flex flex-col
+          flex flex-col print:hidden
           ${isOpen ? 'md:w-64' : 'md:w-20'}
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}

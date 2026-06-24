@@ -178,8 +178,17 @@ export default function ServiceOrderDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6 bg-neutral-50 dark:bg-neutral-900 min-h-screen">
-      <div className="mb-4">
+      <div className="flex justify-between items-center mb-4 print:hidden">
         <button onClick={goBack} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Voltar para Ordens de Serviço</button>
+        <button
+          onClick={() => window.print()}
+          className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Imprimir Ficha
+        </button>
       </div>
 
       <div className="flex justify-between items-start">
@@ -321,7 +330,57 @@ export default function ServiceOrderDetailPage() {
         )}
       </div>
 
-      <div className="flex justify-end gap-4 border-t border-neutral-200 dark:border-neutral-700 pt-6">
+      {/* Materiais/Peças Consumidos */}
+      {os.productUsages && os.productUsages.length > 0 && (
+        <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
+          <h3 className="font-semibold text-lg border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4 text-neutral-900 dark:text-neutral-100">
+            Materiais e Peças Utilizados
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="border-b border-neutral-200 dark:border-neutral-700 text-neutral-500">
+                  <th className="py-2">Descrição</th>
+                  <th className="py-2">Quantidade</th>
+                  <th className="py-2 text-right">Preço Unitário</th>
+                  <th className="py-2 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {os.productUsages.map((usage: any) => (
+                  <tr key={usage.id} className="border-b border-neutral-100 dark:border-neutral-800/50">
+                    <td className="py-2 text-neutral-800 dark:text-neutral-200">{usage.product?.name || 'Peça'}</td>
+                    <td className="py-2 text-neutral-600 dark:text-neutral-400">{usage.quantityUsed}</td>
+                    <td className="py-2 text-right text-neutral-600 dark:text-neutral-400">R$ {(usage.product?.price || 0).toFixed(2)}</td>
+                    <td className="py-2 text-right font-medium text-neutral-800 dark:text-neutral-200">R$ {(usage.quantityUsed * (usage.product?.price || 0)).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Assinatura Digital do Cliente */}
+      {os.signature && (
+        <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
+          <h3 className="font-semibold text-lg border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4 text-neutral-900 dark:text-neutral-100">
+            Assinatura Digital de Aceite
+          </h3>
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-4 rounded-xl flex items-center justify-center">
+              <img src={os.signature.signatureData} alt="Assinatura" className="h-20 max-w-full object-contain" />
+            </div>
+            <div className="text-sm space-y-1.5">
+              <p><span className="text-neutral-500">Signatário:</span> <span className="font-medium">{os.signature.signerName}</span></p>
+              <p><span className="text-neutral-500">Data e Hora:</span> <span>{new Date(os.signature.signedAt).toLocaleString('pt-BR')}</span></p>
+              {os.signature.ipAddress && <p><span className="text-neutral-500">IP:</span> <span className="font-mono text-xs">{os.signature.ipAddress}</span></p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-4 border-t border-neutral-200 dark:border-neutral-700 pt-6 print:hidden">
         {os.status === 'agendada' && (
           <button
             onClick={handleStart}

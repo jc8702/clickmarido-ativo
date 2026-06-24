@@ -20,6 +20,8 @@ export interface ServiceOrder {
   quotation?: any;
   photos?: any[];
   automationLog?: any;
+  signature?: any;
+  productUsages?: any[];
 }
 
 export function useServiceOrders(page = 1, status?: string, search?: string) {

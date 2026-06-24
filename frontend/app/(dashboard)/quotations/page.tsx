@@ -238,8 +238,8 @@ export default function QuotationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden">
-      <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden print:bg-white print:text-black">
+      <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 print:hidden">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Orçamentos</h1>
@@ -352,23 +352,34 @@ export default function QuotationsPage() {
       )}
 
       <div
-        className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white dark:bg-neutral-800 shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col ${
+        className={`fixed inset-y-0 right-0 max-w-lg w-full bg-white dark:bg-neutral-800 shadow-2xl z-[1050] transition-transform duration-300 transform flex flex-col print:static print:w-full print:max-w-none print:shadow-none print:bg-white print:text-black print:z-0 print:translate-x-0 ${
           selectedQuotation ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {selectedQuotation && (
           <>
-            <div className="p-6 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between bg-gradient-to-r from-neutral-50 dark:from-neutral-700 to-white dark:to-neutral-800">
+            <div className="p-6 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between bg-gradient-to-r from-neutral-50 dark:from-neutral-700 to-white dark:to-neutral-800 print:bg-white print:border-neutral-200">
               <div>
-                <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Detalhes do Orçamento</h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">ID: {selectedQuotation.id}</p>
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 print:text-black">Orçamento Click Marido</h3>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono print:text-neutral-600">Ref: {selectedQuotation.id.slice(0, 8)}</p>
               </div>
-              <button
-                onClick={closeDrawer}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2 print:hidden">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 text-neutral-700 dark:text-neutral-200"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Imprimir
+                </button>
+                <button
+                  onClick={closeDrawer}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
@@ -449,7 +460,7 @@ export default function QuotationsPage() {
               )}
             </div>
 
-            <div className="p-6 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50 space-y-4">
+            <div className="p-6 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50 space-y-4 print:hidden">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">Valor Total</span>
                 <span className="text-2xl font-extrabold text-neutral-900 dark:text-neutral-100">

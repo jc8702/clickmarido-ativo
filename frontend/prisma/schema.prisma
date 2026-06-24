@@ -759,3 +759,19 @@ model ProductUsage {
   @@index([productId])
   @@map("product_usages")
 }
+
+model CompanySettings {
+  id                String   @id @default(cuid())
+  companyName       String   @default("Click Marido") @db.VarChar(255)
+  cnpj              String?  @db.VarChar(20)
+  phone             String?  @db.VarChar(20)
+  email             String?  @db.VarChar(255)
+  address           String?  @db.VarChar(500)
+  defaultHourlyRate Float    @default(80.0)
+  defaultWarranty   String   @default("90 dias nos termos do art. 26, II do CDC.") @db.Text
+  defaultCommissionRate Float @default(40.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("company_settings")
+}

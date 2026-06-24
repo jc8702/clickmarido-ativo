@@ -36,6 +36,8 @@ export async function GET(
         technician: true,
         quotation: { include: { items: { include: { product: true } } } },
         photos: true,
+        signature: true,
+        productUsages: { include: { product: true } },
       },
     });
 
