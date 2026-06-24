@@ -384,7 +384,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Resolver nome de um chat priorizando: contactsMap > nome da API > pushName > número
+  // Resolver nome de um chat priorizando: CRM > contactsMap > nome da API > pushName > número
   const resolveName = useCallback((chat: Chat): string => {
     if (chat.id.includes('@g.us')) {
        // Se for um grupo, tentamos usar o chat.name. Se for apenas o ID numérico ou vazio, fallback para "Grupo WhatsApp"
@@ -394,15 +394,51 @@ export default function ChatPage() {
        return 'Grupo WhatsApp';
     }
     const phone = chat.id.split('@')[0];
+    
+    // 1. Tentar achar no CRM (Match flexível para lidar com o 9º dígito)
+    const crmMatch = crmCustomers.find(c => {
+      if (!c.phone) return false;
+      const crmPhone = c.phone.replace(/\D/g, '');
+      if (crmPhone === phone) return true;
+      
+      // Lidar com casos BR: 55 DDD 9XXXX XXXX
+      if (phone.startsWith('55') && phone.length >= 12 && crmPhone.length >= 10) {
+        if (phone.endsWith(crmPhone)) return true;
+        if (crmPhone.startsWith('55') && crmPhone.endsWith(phone.slice(4))) return true;
+        
+        const phoneDdd = phone.slice(2,4);
+        const phoneRest = phone.slice(4);
+        
+        let crmDdd = '';
+        let crmRest = '';
+        if (crmPhone.startsWith('55')) {
+          crmDdd = crmPhone.slice(2,4);
+          crmRest = crmPhone.slice(4);
+        } else {
+          crmDdd = crmPhone.slice(0,2);
+          crmRest = crmPhone.slice(2);
+        }
+        
+        if (phoneDdd === crmDdd) {
+          // Últimos 8 dígitos iguais
+          if (phoneRest.slice(-8) === crmRest.slice(-8)) return true;
+        }
+      }
+      return false;
+    });
+
+    if (crmMatch && crmMatch.name) return crmMatch.name;
+
+    // 2. Tentar achar na memória do WhatsApp
     const resolved = contactsMap[chat.id] || contactsMap[phone] || chat.name;
     if (resolved && resolved !== 'Contato' && resolved !== phone) return resolved;
     
-    // Se não achou nome, formata o telefone para ficar amigável
+    // 3. Se não achou nome, formata o telefone para ficar amigável
     if (phone.length > 10) {
       return `+${phone.slice(0,2)} ${phone.slice(2,4)} ${phone.slice(4,9)}-${phone.slice(9)}`;
     }
     return phone;
-  }, [contactsMap]);
+  }, [contactsMap, crmCustomers]);
 
   // ── Função auxiliar: extrai lista de mensagens de qualquer formato de resposta da Evolution API
   const extractMessages = (d: any): any[] => {
