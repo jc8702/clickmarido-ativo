@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useMessages } from '@/hooks/useMessages';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
@@ -15,6 +15,46 @@ import { toast } from 'react-hot-toast';
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
 const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
 const INSTANCE_NAME = 'clickmarido_instance';
+
+// Helpers para estilo WhatsApp
+const getAvatarColor = (name: string) => {
+  const colors = [
+    'bg-[#df5138]', 'bg-[#54be54]', 'bg-[#e2a82b]', 'bg-[#9158e2]', 
+    'bg-[#e258a5]', 'bg-[#3b82f6]', 'bg-[#14b8a6]', 'bg-[#f97316]'
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash % colors.length);
+  return colors[index];
+};
+
+const getInitials = (name: string) => {
+  if (!name) return 'WA';
+  const cleanName = name.replace(/\D/g, '').length > 5 ? 'Cliente' : name; // se for só número, põe Cliente
+  const parts = cleanName.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return 'WA';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1][0] || '')).toUpperCase();
+};
+
+const formatChatTime = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    const now = new Date();
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) return 'Ontem';
+    return date.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+  } catch {
+    return '';
+  }
+};
 
 interface Chat {
   id: string;
@@ -49,6 +89,21 @@ export default function ChatPage() {
   const [newMessageText, setNewMessageText] = useState('');
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Função para fazer scroll para baixo
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  // Rolar para o fim sempre que as mensagens forem carregadas ou atualizadas
+  useEffect(() => {
+    if (chatMessages.length > 0) {
+      const timer = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [chatMessages, scrollToBottom]);
 
   // Logs de notificações automáticas
   const { messages, total, totalPages, isLoading: loadingLogs, mutate: mutateLogs } = useMessages({
@@ -144,13 +199,29 @@ export default function ChatPage() {
       if (res.ok) {
         const data = await res.json();
         // Normalizar dados da Evolution API
-        const list = (data || []).map((c: any) => ({
-          id: c.id || c.jid,
-          name: c.name || c.id?.split('@')[0] || 'Contato',
-          unreadCount: c.unreadCount || 0,
-          lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || 'Sem mensagens',
-          updatedAt: c.updatedAt || c.createdAt,
-        }));
+        const list = (data || []).map((c: any) => {
+          const chatDate = c.updatedAt || c.createdAt || (c.lastMessage?.messageTimestamp ? new Date(c.lastMessage.messageTimestamp * 1000).toISOString() : new Date().toISOString());
+          return {
+            id: c.id || c.jid,
+            name: c.name || c.id?.split('@')[0] || 'Contato',
+            unreadCount: c.unreadCount || 0,
+            lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || 'Sem mensagens',
+            updatedAt: chatDate,
+          };
+        });
+
+        // Ordenação lógica do WhatsApp:
+        // 1. Mensagens não lidas primeiro
+        // 2. Por data decrescente (mais recente primeiro)
+        list.sort((a: any, b: any) => {
+          if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+          if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+          
+          const dateA = new Date(a.updatedAt).getTime() || 0;
+          const dateB = new Date(b.updatedAt).getTime() || 0;
+          return dateB - dateA;
+        });
+
         setChats(list);
       }
     } catch (err) {
@@ -168,7 +239,7 @@ export default function ChatPage() {
         method: 'POST',
         body: JSON.stringify({
           where: { key: { remoteJid: chatId } },
-          limit: 30
+          limit: 40
         })
       });
       if (res.ok) {
@@ -179,7 +250,11 @@ export default function ChatPage() {
           fromMe: m.key?.fromMe ?? false,
           body: m.message?.conversation || m.message?.extendedTextMessage?.text || '[Mídia ou Mensagem Especial]',
           timestamp: m.messageTimestamp || m.createdAt ? new Date(m.createdAt).getTime() / 1000 : Date.now() / 1000,
-        })).reverse(); // Ordenar do mais antigo ao mais recente
+        }));
+        
+        // Garantir ordenação cronológica estrita crescente (antigas no topo, novas embaixo)
+        list.sort((a: any, b: any) => a.timestamp - b.timestamp);
+        
         setChatMessages(list);
       }
     } catch (err) {
@@ -347,12 +422,14 @@ export default function ChatPage() {
           {apiOnline === true && connected && (
             <>
               {/* Lista de Conversas (Col 1) */}
-              <Card className="flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50">
-                <div className="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/20">
-                  <h3 className="font-bold text-sm text-neutral-700 dark:text-neutral-300 flex justify-between items-center">
-                    Conversas Ativas
-                    <button onClick={loadChats} className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline">🔄 Atualizar</button>
+              <Card className="flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-white dark:bg-neutral-900">
+                <div className="p-3.5 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30 flex justify-between items-center">
+                  <h3 className="font-bold text-xs text-neutral-700 dark:text-neutral-300">
+                    Conversas Ativas ({chats.length})
                   </h3>
+                  <button onClick={loadChats} className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
+                    🔄 Atualizar
+                  </button>
                 </div>
                 <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/50">
                   {loadingChats ? (
@@ -364,19 +441,31 @@ export default function ChatPage() {
                       <div
                         key={chat.id}
                         onClick={() => setSelectedChat(chat)}
-                        className={`p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors flex justify-between items-start ${
-                          selectedChat?.id === chat.id ? 'bg-purple-50/60 dark:bg-purple-950/20' : ''
+                        className={`p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3 ${
+                          selectedChat?.id === chat.id ? 'bg-[#efeae2]/40 dark:bg-[#2a3942]/20 border-r-4 border-emerald-500' : ''
                         }`}
                       >
-                        <div className="space-y-1 max-w-[70%]">
-                          <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{chat.name}</p>
-                          <p className="text-[10px] text-neutral-400 truncate">{chat.lastMessage}</p>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(chat.name)}`}>
+                          {getInitials(chat.name)}
                         </div>
-                        {chat.unreadCount > 0 && (
-                          <span className="bg-purple-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                            {chat.unreadCount}
-                          </span>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-baseline mb-0.5">
+                            <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{chat.name}</p>
+                            <span className="text-[9px] text-neutral-400 shrink-0 ml-2">
+                              {formatChatTime(chat.updatedAt)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <p className="text-[10px] text-neutral-450 dark:text-neutral-400 truncate pr-2">
+                              {chat.lastMessage}
+                            </p>
+                            {chat.unreadCount > 0 && (
+                              <span className="bg-emerald-500 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center px-1 rounded-full shrink-0 animate-pulse">
+                                {chat.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))
                   )}
@@ -384,63 +473,88 @@ export default function ChatPage() {
               </Card>
 
               {/* Box de Chat da Conversa Selecionada (Col 2 e 3) */}
-              <Card className="lg:col-span-2 flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50">
+              <Card className="lg:col-span-2 flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-[#efeae2] dark:bg-[#0b141a] transition-all relative">
                 {selectedChat ? (
                   <>
                     {/* Header da Conversa */}
-                    <div className="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/20 flex justify-between items-center">
-                      <div>
-                        <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-250">{selectedChat.name}</h3>
-                        <p className="text-[9px] text-neutral-400 font-mono">{selectedChat.id}</p>
+                    <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex items-center gap-3 z-10 shadow-sm">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner ${getAvatarColor(selectedChat.name)}`}>
+                        {getInitials(selectedChat.name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-200 truncate">{selectedChat.name}</h3>
+                        <p className="text-[10px] text-neutral-400 font-mono truncate">{selectedChat.id.split('@')[0]}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Online
                       </div>
                     </div>
 
                     {/* Timeline de Mensagens */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-neutral-50/40 dark:bg-neutral-900/10">
-                      {loadingMessages ? (
-                        <div className="text-center text-xs text-neutral-400 py-12">Carregando histórico...</div>
-                      ) : (
-                        chatMessages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}
-                          >
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
+                      <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
+                      
+                      <div className="relative z-10 space-y-2">
+                        {loadingMessages ? (
+                          <div className="text-center text-xs text-neutral-400 py-12">Carregando histórico...</div>
+                        ) : (
+                          chatMessages.map((msg) => (
                             <div
-                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs shadow-sm leading-relaxed ${
-                                msg.fromMe
-                                  ? 'bg-purple-600 text-white rounded-tr-none'
-                                  : 'bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-100 dark:border-neutral-750 rounded-tl-none'
-                              }`}
+                              key={msg.id}
+                              className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}
                             >
-                              <p>{msg.body}</p>
-                              <p className={`text-[8px] text-right mt-1.5 ${msg.fromMe ? 'text-purple-200' : 'text-neutral-400'}`}>
-                                {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
+                              <div
+                                className={`max-w-[70%] rounded-xl px-3 py-1.5 text-xs shadow-sm relative leading-relaxed ${
+                                  msg.fromMe
+                                    ? 'bg-[#d9fdd3] text-neutral-800 dark:bg-[#005c4b] dark:text-neutral-100 rounded-tr-none'
+                                    : 'bg-white text-neutral-800 dark:bg-[#202c33] dark:text-neutral-100 rounded-tl-none'
+                                }`}
+                              >
+                                <p className="pr-10 break-words">{msg.body}</p>
+                                <span className={`text-[9px] absolute bottom-1 right-2 ${msg.fromMe ? 'text-neutral-500/80 dark:text-neutral-300/80' : 'text-neutral-400/80'}`}>
+                                  {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))
-                      )}
+                          ))
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
                     </div>
 
                     {/* Barra de Input para Enviar Mensagem */}
-                    <form onSubmit={handleSendMessage} className="p-4 border-t border-neutral-200/50 dark:border-neutral-800/50 bg-white dark:bg-neutral-800 flex gap-2">
-                      <Input
-                        required
-                        placeholder="Digite sua mensagem técnica..."
-                        value={newMessageText}
-                        onChange={(e) => setNewMessageText(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button type="submit">Enviar</Button>
+                    <form onSubmit={handleSendMessage} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-center border-t border-neutral-200/50 dark:border-neutral-800/50 z-10">
+                      <div className="flex-1">
+                        <input
+                          required
+                          type="text"
+                          placeholder="Digite uma mensagem..."
+                          value={newMessageText}
+                          onChange={(e) => setNewMessageText(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-white dark:bg-[#2a3942] border-none rounded-full text-xs text-neutral-850 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                        />
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="w-10 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-full flex items-center justify-center shadow-md shrink-0"
+                      >
+                        <svg className="w-4 h-4 rotate-45 transform translate-x-[-1px] translate-y-[1px]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                        </svg>
+                      </button>
                     </form>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-400">
-                    <svg className="w-12 h-12 mb-3 text-neutral-300" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 18a5.969 5.969 0 01-.474-3.65A8.962 8.962 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                    </svg>
-                    <p className="text-xs">Selecione uma conversa ao lado para espelhar as mensagens.</p>
-                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-400 relative">
+                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
+                    <div className="relative z-10 flex flex-col items-center">
+                      <svg className="w-16 h-16 mb-4 text-emerald-600/60 dark:text-emerald-400/40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 18a5.969 5.969 0 01-.474-3.65A8.962 8.962 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                      </svg>
+                      <h4 className="font-bold text-neutral-800 dark:text-neutral-200 mb-1">WhatsApp Web Emulado</h4>
+                      <p className="text-xs max-w-xs leading-relaxed text-neutral-500 dark:text-neutral-400">Selecione uma conversa ativa ao lado para visualizar o histórico de mensagens e responder em tempo real.</p>
+                    </div>
                 )}
               </Card>
             </>
