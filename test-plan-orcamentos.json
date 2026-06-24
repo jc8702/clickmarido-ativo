@@ -1,0 +1,80 @@
+{
+  "projectId": "ea87f8a2-c633-475c-a57c-5c6a177f0c6d",
+  "type": "frontend",
+  "name": "Teste de Orçamentos",
+  "description": "Testa o fluxo completo de criação e gestão de orçamentos",
+  "planSteps": [
+    {
+      "step": "Navegar para a página de login",
+      "type": "action",
+      "description": "Navegar para a página de login do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/login"
+    },
+    {
+      "step": "Preencher email",
+      "type": "action",
+      "description": "Preencher o campo de email com o email de teste",
+      "action": "Digitar 'teste@clickmarido.com.br' no campo de email"
+    },
+    {
+      "step": "Preencher senha",
+      "type": "action",
+      "description": "Preencher o campo de senha com a senha de teste",
+      "action": "Digitar 'Teste@123' no campo de senha"
+    },
+    {
+      "step": "Clicar no botão de login",
+      "type": "action",
+      "description": "Clicar no botão de login para autenticar",
+      "action": "Clicar no botão 'Entrar'"
+    },
+    {
+      "step": "Verificar login",
+      "type": "assertion",
+      "description": "Verificar se o login foi bem-sucedido",
+      "action": "Verificar se foi redirecionado para o dashboard"
+    },
+    {
+      "step": "Navegar para página de orçamentos",
+      "type": "action",
+      "description": "Navegar para a seção de orçamentos do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/quotations"
+    },
+    {
+      "step": "Verificar lista de orçamentos",
+      "type": "action",
+      "description": "Clicar em um orçamento existente para ver detalhes",
+      "action": "Clicar no primeiro orçamento da lista"
+    },
+    {
+      "step": "Criar novo orçamento",
+      "type": "action",
+      "description": "Clicar no botão para criar novo orçamento",
+      "action": "Clicar no botão 'Novo Orçamento'"
+    },
+    {
+      "step": "Selecionar cliente",
+      "type": "action",
+      "description": "Selecionar um cliente para o orçamento",
+      "action": "Selecionar um cliente da lista"
+    },
+    {
+      "step": "Adicionar itens",
+      "type": "action",
+      "description": "Adicionar itens ao orçamento",
+      "action": "Adicionar produtos ou serviços ao orçamento"
+    },
+    {
+      "step": "Salvar orçamento",
+      "type": "action",
+      "description": "Salvar o orçamento",
+      "action": "Clicar no botão 'Salvar Orçamento'"
+    },
+    {
+      "step": "Verificar criação",
+      "type": "assertion",
+      "description": "Verificar se o orçamento foi criado com sucesso",
+      "action": "Verificar mensagem de sucesso e orçamento na lista"
+    }
+  ]
+}

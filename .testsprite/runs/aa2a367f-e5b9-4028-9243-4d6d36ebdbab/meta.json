@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "cli-v1",
+  "snapshotId": "snap_ffe0c1e0d2e9e8ee",
+  "testId": "9b12c47d-9dd4-4787-b894-3012322e07a7",
+  "projectId": "ea87f8a2-c633-475c-a57c-5c6a177f0c6d",
+  "codeVersion": "v1",
+  "runIdIfAvailable": "aa2a367f-e5b9-4028-9243-4d6d36ebdbab",
+  "targetUrl": "https://clickmarido-ativo-frontend.vercel.app",
+  "failedStepIndex": 8,
+  "failureKind": null,
+  "capturedAt": "2026-06-23T11:18:55.279Z",
+  "fetchedAt": "2026-06-23T11:19:14.708Z"
+}

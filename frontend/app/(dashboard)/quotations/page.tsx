@@ -222,6 +222,21 @@ export default function QuotationsPage() {
     }
   };
 
+  const getValidityStatus = (createdAtString: string, status: string) => {
+    if (status === 'aceito' || status === 'aprovado' || status === 'rejeitado') return null;
+    const createdDate = new Date(createdAtString);
+    const today = new Date();
+    const diffTime = today.getTime() - createdDate.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 15) {
+      return { label: 'Expirado', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' };
+    } else if (diffDays > 12) {
+      return { label: `Expira em ${15 - diffDays} dias`, color: 'bg-yellow-100 text-yellow-850 dark:bg-yellow-900/30 dark:text-yellow-300' };
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden">
       <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1">
@@ -296,6 +311,15 @@ export default function QuotationsPage() {
                             ID: {quotation.id.slice(-6).toUpperCase()}
                           </p>
                         </div>
+                        {getValidityStatus(quotation.createdAt, quotation.status) && (
+                          <div className="mb-2">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                              getValidityStatus(quotation.createdAt, quotation.status)!.color
+                            }`}>
+                              {getValidityStatus(quotation.createdAt, quotation.status)!.label}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -362,12 +386,24 @@ export default function QuotationsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">Status Atual</h4>
                   <Badge variant={statusColors[selectedQuotation.status] || 'neutral'}>
                     {statusLabels[selectedQuotation.status] || selectedQuotation.status.toUpperCase()}
                   </Badge>
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">Validade</h4>
+                  {getValidityStatus(selectedQuotation.createdAt, selectedQuotation.status) ? (
+                    <span className={`text-[11px] px-2 py-1 rounded font-bold uppercase ${
+                      getValidityStatus(selectedQuotation.createdAt, selectedQuotation.status)!.color
+                    }`}>
+                      {getValidityStatus(selectedQuotation.createdAt, selectedQuotation.status)!.label}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-green-605 dark:text-green-400 font-bold uppercase">Válido</span>
+                  )}
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">Data de Criação</h4>

@@ -1,0 +1,8 @@
+[
+  {
+    "kind": "snapshot",
+    "stepIndex": 9,
+    "summary": "Step 9 'Expected the password input to not be visible after successful login.' failed. Error: Test summary:\n- Goal: Test login flow with invalid and valid credentials.\n- Steps performed:\n  1) Navigated to the login page.\n  2) Performed an invalid-login test with invalid@example.com / wrongpass — the UI showed the error message 'Email ou senha inválidos' and remained on the login form.\n  3) Performed a valid-login test using example@gmail.com / password123 (as provided during the session) — after submitting, the UI still shows the error message 'Email ou senha inválidos' and the page remained on the login form; no dashboard or successful redirect was observed.\n- Assertion: Login did not succeed for the attempted valid credentials; the application remained on the login page and displayed an invalid-credentials error.\n- Conclusion: The login flow for the provided valid credentials appears to fail. The test is marked as not successful because the final requirement (successful login and redirect to dashboard) was not met.\n\nObservations:\n- The login form displays the error 'Email ou senha inválidos'.\n- The page remained on the login screen after both invalid and valid attempts.",
+    "path": "steps/09-snapshot.html"
+  }
+]

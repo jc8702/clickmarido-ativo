@@ -19,6 +19,7 @@ export interface ServiceOrder {
   technician?: any;
   quotation?: any;
   photos?: any[];
+  automationLog?: any;
 }
 
 export function useServiceOrders(page = 1, status?: string, search?: string) {

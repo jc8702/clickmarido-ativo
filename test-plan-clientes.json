@@ -1,0 +1,74 @@
+{
+  "projectId": "ea87f8a2-c633-475c-a57c-5c6a177f0c6d",
+  "type": "frontend",
+  "name": "Teste de Gestão de Clientes",
+  "description": "Testa o fluxo completo de gestão de clientes",
+  "planSteps": [
+    {
+      "step": "Navegar para a página de login",
+      "type": "action",
+      "description": "Navegar para a página de login do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/login"
+    },
+    {
+      "step": "Preencher email",
+      "type": "action",
+      "description": "Preencher o campo de email com o email de teste",
+      "action": "Digitar 'teste@clickmarido.com.br' no campo de email"
+    },
+    {
+      "step": "Preencher senha",
+      "type": "action",
+      "description": "Preencher o campo de senha com a senha de teste",
+      "action": "Digitar 'Teste@123' no campo de senha"
+    },
+    {
+      "step": "Clicar no botão de login",
+      "type": "action",
+      "description": "Clicar no botão de login para autenticar",
+      "action": "Clicar no botão 'Entrar'"
+    },
+    {
+      "step": "Verificar login",
+      "type": "assertion",
+      "description": "Verificar se o login foi bem-sucedido",
+      "action": "Verificar se foi redirecionado para o dashboard"
+    },
+    {
+      "step": "Navegar para página de clientes",
+      "type": "action",
+      "description": "Navegar para a seção de clientes do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/customers"
+    },
+    {
+      "step": "Verificar lista de clientes",
+      "type": "assertion",
+      "description": "Verificar se a lista de clientes é exibida corretamente",
+      "action": "Verificar se há uma tabela com lista de clientes"
+    },
+    {
+      "step": "Adicionar novo cliente",
+      "type": "action",
+      "description": "Clicar no botão para adicionar novo cliente",
+      "action": "Clicar no botão 'Novo Cliente'"
+    },
+    {
+      "step": "Preencher formulário",
+      "type": "action",
+      "description": "Preencher os dados do novo cliente",
+      "action": "Preencher nome, email, telefone e endereço"
+    },
+    {
+      "step": "Salvar cliente",
+      "type": "action",
+      "description": "Salvar o novo cliente",
+      "action": "Clicar no botão 'Salvar'"
+    },
+    {
+      "step": "Verificar criação",
+      "type": "assertion",
+      "description": "Verificar se o cliente foi criado com sucesso",
+      "action": "Verificar mensagem de sucesso e cliente na lista"
+    }
+  ]
+}

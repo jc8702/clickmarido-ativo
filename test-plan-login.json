@@ -1,0 +1,38 @@
+{
+  "projectId": "ea87f8a2-c633-475c-a57c-5c6a177f0c6d",
+  "type": "frontend",
+  "name": "Teste de Login",
+  "description": "Testa o fluxo de login com credenciais válidas e inválidas",
+  "planSteps": [
+    {
+      "step": "Navegar para a página de login",
+      "type": "action",
+      "description": "Navegar para a página de login do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/login"
+    },
+    {
+      "step": "Preencher email",
+      "type": "action",
+      "description": "Preencher o campo de email com um email válido",
+      "action": "Digitar 'teste@clickmarido.com.br' no campo de email"
+    },
+    {
+      "step": "Preencher senha",
+      "type": "action",
+      "description": "Preencher o campo de senha com a senha",
+      "action": "Digitar 'Teste@123' no campo de senha"
+    },
+    {
+      "step": "Clicar no botão de login",
+      "type": "action",
+      "description": "Clicar no botão de login para autenticar",
+      "action": "Clicar no botão 'Entrar'"
+    },
+    {
+      "step": "Verificar redirecionamento",
+      "type": "assertion",
+      "description": "Verificar se o login foi bem-sucedido e redirecionou para o dashboard",
+      "action": "Verificar se foi redirecionado para o dashboard"
+    }
+  ]
+}

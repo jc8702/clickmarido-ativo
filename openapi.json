@@ -1,0 +1,1536 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Click Marido CRM API",
+    "description": "API do CRM de Serviços ClickMarido - Sistema de gestão para empresas de serviços residenciais",
+    "version": "1.0.0",
+    "contact": {
+      "name": "ClickMarido Support",
+      "email": "support@clickmarido.com.br"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://clickmarido-ativo-frontend.vercel.app",
+      "description": "Produção (Vercel)"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "description": "Verifica se a API está funcionando. Não requer autenticação.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API funcionando",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login do usuário",
+        "description": "Autentica o usuário e retorna um token JWT.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "admin@clickmarido.com.br" },
+                  "password": { "type": "string", "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "description": "JWT token" },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string", "enum": ["ADMIN", "USER", "TECHNICIAN"] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Verificar token",
+        "description": "Verifica se o token JWT é válido.",
+        "responses": {
+          "200": {
+            "description": "Token válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Listar clientes",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Criar cliente",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente criado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Buscar cliente por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Customer" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Atualizar cliente",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CustomerInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cliente atualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Customers"],
+        "summary": "Excluir cliente",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Cliente excluído" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/quotations": {
+      "get": {
+        "tags": ["Quotations"],
+        "summary": "Listar orçamentos",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "EXPIRED"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de orçamentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Quotation" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Quotations"],
+        "summary": "Criar orçamento",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuotationInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Orçamento criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/quotations/{id}": {
+      "get": {
+        "tags": ["Quotations"],
+        "summary": "Buscar orçamento por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Orçamento encontrado" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Quotations"],
+        "summary": "Atualizar orçamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuotationInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Orçamento atualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Quotations"],
+        "summary": "Excluir orçamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Orçamento excluído" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/quotation-items": {
+      "get": {
+        "tags": ["Quotation Items"],
+        "summary": "Listar itens de orçamento",
+        "parameters": [
+          { "name": "quotationId", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de itens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/QuotationItem" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Quotation Items"],
+        "summary": "Adicionar item ao orçamento",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuotationItemInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Item criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/service-orders": {
+      "get": {
+        "tags": ["Service Orders"],
+        "summary": "Listar ordens de serviço",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ordens de serviço",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/ServiceOrder" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Service Orders"],
+        "summary": "Criar ordem de serviço",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ServiceOrderInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Ordem de serviço criada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/service-orders/{id}": {
+      "get": {
+        "tags": ["Service Orders"],
+        "summary": "Buscar ordem de serviço por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de serviço encontrada" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Service Orders"],
+        "summary": "Atualizar ordem de serviço",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ServiceOrderInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ordem de serviço atualizada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/service-orders/{id}/start": {
+      "put": {
+        "tags": ["Service Orders"],
+        "summary": "Iniciar ordem de serviço",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de serviço iniciada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/service-orders/{id}/complete": {
+      "put": {
+        "tags": ["Service Orders"],
+        "summary": "Concluir ordem de serviço",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de serviço concluída" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/payments": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Listar pagamentos",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pagamentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Payment" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Criar pagamento",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PaymentInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pagamento criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/payments/{id}/approve": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Aprovar pagamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pagamento aprovado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/payments/{id}/generate-pix": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Gerar PIX para pagamento",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "PIX gerado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Listar produtos",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Criar produto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Produto criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Buscar produto por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Produto encontrado" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Atualizar produto",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Produto atualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Excluir produto",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Produto excluído" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/vendors": {
+      "get": {
+        "tags": ["Vendors"],
+        "summary": "Listar fornecedores",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de fornecedores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Vendor" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Vendors"],
+        "summary": "Criar fornecedor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VendorInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Fornecedor criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/vendors/{id}": {
+      "get": {
+        "tags": ["Vendors"],
+        "summary": "Buscar fornecedor por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Fornecedor encontrado" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Vendors"],
+        "summary": "Atualizar fornecedor",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VendorInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Fornecedor atualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Vendors"],
+        "summary": "Excluir fornecedor",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Fornecedor excluído" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/purchase-orders": {
+      "get": {
+        "tags": ["Purchase Orders"],
+        "summary": "Listar ordens de compra",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "RECEIVED", "CANCELLED"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de ordens de compra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/PurchaseOrder" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Purchase Orders"],
+        "summary": "Criar ordem de compra",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PurchaseOrderInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Ordem de compra criada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/purchase-orders/{id}": {
+      "get": {
+        "tags": ["Purchase Orders"],
+        "summary": "Buscar ordem de compra por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de compra encontrada" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Purchase Orders"],
+        "summary": "Atualizar ordem de compra",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PurchaseOrderInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ordem de compra atualizada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/purchase-orders/{id}/emit": {
+      "post": {
+        "tags": ["Purchase Orders"],
+        "summary": "Emitir ordem de compra",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de compra emitida" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/purchase-orders/{id}/approve": {
+      "post": {
+        "tags": ["Purchase Orders"],
+        "summary": "Aprovar ordem de compra",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de compra aprovada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/purchase-orders/{id}/receive": {
+      "post": {
+        "tags": ["Purchase Orders"],
+        "summary": "Receber ordem de compra",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de compra recebida" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/purchase-orders/{id}/cancel": {
+      "post": {
+        "tags": ["Purchase Orders"],
+        "summary": "Cancelar ordem de compra",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Ordem de compra cancelada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/financial/dashboard": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Dashboard financeiro",
+        "description": "Retorna resumo financeiro (receitas, despesas, fluxo de caixa).",
+        "responses": {
+          "200": {
+            "description": "Dados do dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revenue": { "type": "number" },
+                    "expenses": { "type": "number" },
+                    "balance": { "type": "number" },
+                    "pendingPayments": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/invoices": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Listar faturas",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "PAID", "OVERDUE"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de faturas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Invoice" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Criar fatura",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InvoiceInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Fatura criada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/invoices/{id}": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Buscar fatura por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Fatura encontrada" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Financial"],
+        "summary": "Atualizar fatura",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/InvoiceInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Fatura atualizada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/invoices/{id}/pay": {
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Pagar fatura",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Fatura paga" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/expenses": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Listar despesas",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de despesas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Expense" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Financial"],
+        "summary": "Criar despesa",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExpenseInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Despesa criada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/expenses/{id}": {
+      "get": {
+        "tags": ["Financial"],
+        "summary": "Buscar despesa por ID",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Despesa encontrada" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Financial"],
+        "summary": "Atualizar despesa",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ExpenseInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Despesa atualizada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "delete": {
+        "tags": ["Financial"],
+        "summary": "Excluir despesa",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Despesa excluída" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dashboard principal",
+        "description": "Retorna dados consolidados do dashboard (clientes, orçamentos, OS, receita).",
+        "responses": {
+          "200": {
+            "description": "Dados do dashboard",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalCustomers": { "type": "integer" },
+                    "totalQuotations": { "type": "integer" },
+                    "totalServiceOrders": { "type": "integer" },
+                    "totalRevenue": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/warranties": {
+      "get": {
+        "tags": ["Warranties"],
+        "summary": "Listar garantias",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de garantias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Warranty" } },
+                    "meta": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Warranties"],
+        "summary": "Criar garantia",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WarrantyInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Garantia criada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/warranties/{id}/claim": {
+      "post": {
+        "tags": ["Warranties"],
+        "summary": "Reclamar garantia",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Garantia reclamada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/technicians": {
+      "get": {
+        "tags": ["Technicians"],
+        "summary": "Listar técnicos",
+        "responses": {
+          "200": {
+            "description": "Lista de técnicos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Technician" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Technicians"],
+        "summary": "Criar técnico",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TechnicianInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Técnico criado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": ["Upload"],
+        "summary": "Upload de arquivo",
+        "description": "Faz upload de um arquivo (imagem, documento).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Arquivo enviado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string", "format": "uri" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/webhooks/asaas": {
+      "post": {
+        "tags": ["Webhooks"],
+        "summary": "Webhook Asaas",
+        "description": "Recebe notificações de pagamento do Asaas.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Webhook processado" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido via POST /api/auth/login"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" },
+          "details": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "addresses": { "type": "array", "items": { "type": "object" } },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CustomerInput": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "name": { "type": "string", "minLength": 3 },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string", "pattern": "^\\+55\\d{10,11}$" },
+          "addresses": { "type": "array", "items": { "type": "object" }, "minItems": 1, "maxItems": 5 }
+        }
+      },
+      "Quotation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "customerId": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "EXPIRED"] },
+          "total": { "type": "number" },
+          "validUntil": { "type": "string", "format": "date-time" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/QuotationItem" } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "QuotationInput": {
+        "type": "object",
+        "required": ["customerId"],
+        "properties": {
+          "customerId": { "type": "string" },
+          "validUntil": { "type": "string", "format": "date-time" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/QuotationItemInput" } }
+        }
+      },
+      "QuotationItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "quotationId": { "type": "string" },
+          "description": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "unitPrice": { "type": "number" },
+          "total": { "type": "number" }
+        }
+      },
+      "QuotationItemInput": {
+        "type": "object",
+        "required": ["description", "quantity", "unitPrice"],
+        "properties": {
+          "description": { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "unitPrice": { "type": "number", "minimum": 0 }
+        }
+      },
+      "ServiceOrder": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "customerId": { "type": "string" },
+          "quotationId": { "type": "string" },
+          "technicianId": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"] },
+          "scheduledDate": { "type": "string", "format": "date-time" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ServiceOrderInput": {
+        "type": "object",
+        "required": ["customerId"],
+        "properties": {
+          "customerId": { "type": "string" },
+          "quotationId": { "type": "string" },
+          "technicianId": { "type": "string" },
+          "scheduledDate": { "type": "string", "format": "date-time" },
+          "description": { "type": "string" }
+        }
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "invoiceId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "amount": { "type": "number" },
+          "method": { "type": "string", "enum": ["PIX", "BOLETO", "CREDIT_CARD", "CASH"] },
+          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+          "paidAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PaymentInput": {
+        "type": "object",
+        "required": ["invoiceId", "customerId", "amount", "method"],
+        "properties": {
+          "invoiceId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "amount": { "type": "number", "minimum": 0.01 },
+          "method": { "type": "string", "enum": ["PIX", "BOLETO", "CREDIT_CARD", "CASH"] }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "sku": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "number" },
+          "cost": { "type": "number" },
+          "stock": { "type": "integer" },
+          "vendorId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["name", "sku", "price"],
+        "properties": {
+          "name": { "type": "string" },
+          "sku": { "type": "string" },
+          "description": { "type": "string" },
+          "price": { "type": "number", "minimum": 0 },
+          "cost": { "type": "number", "minimum": 0 },
+          "stock": { "type": "integer", "minimum": 0 },
+          "vendorId": { "type": "string" }
+        }
+      },
+      "Vendor": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "cnpj": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "classification": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "VendorInput": {
+        "type": "object",
+        "required": ["name", "cnpj"],
+        "properties": {
+          "name": { "type": "string" },
+          "cnpj": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" }
+        }
+      },
+      "PurchaseOrder": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "vendorId": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "APPROVED", "RECEIVED", "CANCELLED"] },
+          "total": { "type": "number" },
+          "expectedDate": { "type": "string", "format": "date-time" },
+          "receivedAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PurchaseOrderInput": {
+        "type": "object",
+        "required": ["vendorId"],
+        "properties": {
+          "vendorId": { "type": "string" },
+          "expectedDate": { "type": "string", "format": "date-time" },
+          "items": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "customerId": { "type": "string" },
+          "serviceOrderId": { "type": "string" },
+          "amount": { "type": "number" },
+          "status": { "type": "string", "enum": ["PENDING", "PAID", "OVERDUE"] },
+          "dueDate": { "type": "string", "format": "date-time" },
+          "paidAt": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "InvoiceInput": {
+        "type": "object",
+        "required": ["customerId", "amount", "dueDate"],
+        "properties": {
+          "customerId": { "type": "string" },
+          "serviceOrderId": { "type": "string" },
+          "amount": { "type": "number", "minimum": 0.01 },
+          "dueDate": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Expense": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "amount": { "type": "number" },
+          "category": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ExpenseInput": {
+        "type": "object",
+        "required": ["description", "amount", "category"],
+        "properties": {
+          "description": { "type": "string" },
+          "amount": { "type": "number", "minimum": 0.01 },
+          "category": { "type": "string" },
+          "date": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Warranty": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "serviceOrderId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" },
+          "status": { "type": "string", "enum": ["ACTIVE", "EXPIRED", "CLAIMED"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WarrantyInput": {
+        "type": "object",
+        "required": ["serviceOrderId", "customerId"],
+        "properties": {
+          "serviceOrderId": { "type": "string" },
+          "customerId": { "type": "string" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "endDate": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Technician": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "specialties": { "type": "array", "items": { "type": "string" } },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TechnicianInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "phone": { "type": "string" },
+          "specialties": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Dados inválidos",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Não autenticado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso não encontrado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -23,10 +23,32 @@ export default function ServiceOrderDetailPage() {
   const { mutateAsync: completeOrder, isPending: completing } = useCompleteServiceOrder();
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mediaList, setMediaList] = useState<any[]>([]);
 
   const goBack = useCallback(() => {
     router.push('/service-orders');
   }, [router]);
+
+  const fetchMedia = useCallback(async () => {
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/media?serviceOrderId=${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const result = await response.json();
+        setMediaList(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching media:', error);
+    }
+  }, [id, getToken]);
+
+  useEffect(() => {
+    if (id) {
+      fetchMedia();
+    }
+  }, [id, fetchMedia]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -89,9 +111,10 @@ export default function ServiceOrderDetailPage() {
       formData.append('file', file);
       formData.append('serviceOrderId', os.id);
       formData.append('type', 'antes');
+      formData.append('caption', 'Evidência fotográfica do serviço');
 
       const token = getToken();
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/media', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -102,11 +125,50 @@ export default function ServiceOrderDetailPage() {
         throw new Error(err.error || 'Erro ao enviar foto');
       }
       await mutate();
+      await fetchMedia();
       alert('Foto enviada com sucesso!');
     } catch (err: any) {
       alert('Erro ao enviar foto: ' + err.message);
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Checklist do Serviço
+  const defaultChecklist = [
+    { id: 1, label: 'Inspeção Inicial do Local', checked: false },
+    { id: 2, label: 'Materiais e Ferramentas Conferidos', checked: false },
+    { id: 3, label: 'Execução Técnica das Atividades', checked: false },
+    { id: 4, label: 'Limpeza e Organização Pós-Serviço', checked: false }
+  ];
+
+  const checklist = (os.automationLog as any)?.checklist || defaultChecklist;
+
+  const handleToggleChecklist = async (itemId: number) => {
+    try {
+      const updatedChecklist = checklist.map((item: any) =>
+        item.id === itemId ? { ...item, checked: !item.checked } : item
+      );
+      const token = getToken();
+      const response = await fetch(`/api/service-orders/${os.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          automationLog: {
+            ...((os.automationLog as any) || {}),
+            checklist: updatedChecklist,
+          },
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Erro ao salvar checklist');
+      }
+      await mutate();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -184,26 +246,74 @@ export default function ServiceOrderDetailPage() {
         </div>
       </div>
 
+      {/* Checklist de OS */}
       <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
-        <h3 className="font-semibold text-lg border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4 text-neutral-900 dark:text-neutral-100">Fotos do Serviço</h3>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleUpload}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
-          className="px-4 py-2 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-200 dark:hover:bg-neutral-600 disabled:opacity-50"
-        >
-          {uploading ? 'Enviando...' : 'Enviar Foto'}
-        </button>
-        {os.photos && os.photos.length > 0 ? (
-          <div className="mt-4 flex gap-4 flex-wrap">
-            {os.photos.map((photo: any) => (
-              <img key={photo.id} src={photo.url} alt={photo.fileName} className="w-24 h-24 object-cover rounded border" />
+        <h3 className="font-semibold text-lg border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4 text-neutral-900 dark:text-neutral-100">
+          Checklist de Execução da OS
+        </h3>
+        <div className="space-y-3">
+          {checklist.map((item: any) => (
+            <label
+              key={item.id}
+              className="flex items-center gap-3 p-3 rounded-lg border border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => handleToggleChecklist(item.id)}
+                className="w-5 h-5 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className={`text-sm font-medium text-neutral-800 dark:text-neutral-200 ${item.checked ? 'line-through text-neutral-400 dark:text-neutral-500' : ''}`}>
+                {item.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Fotos e Evidências */}
+      <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl shadow-sm border border-neutral-200 dark:border-neutral-700">
+        <h3 className="font-semibold text-lg border-b border-neutral-200 dark:border-neutral-700 pb-2 mb-4 text-neutral-900 dark:text-neutral-100">
+          Fotos e Evidências do Serviço
+        </h3>
+        <div className="flex gap-4 items-center">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {uploading ? 'Enviando...' : 'Enviar Foto'}
+          </button>
+        </div>
+
+        {/* Galeria Unificada */}
+        {((os.photos && os.photos.length > 0) || mediaList.length > 0) ? (
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {/* Fotos legadas da OS */}
+            {os.photos?.map((photo: any) => (
+              <div key={photo.id} className="relative group border rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                <img src={photo.url} alt={photo.fileName} className="w-full h-32 object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                  <span className="text-[10px] text-white truncate">{photo.fileName}</span>
+                </div>
+              </div>
+            ))}
+            {/* Novas mídias via /api/media */}
+            {mediaList.map((media: any) => (
+              <div key={media.id} className="relative group border rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+                <img src={media.fileUrl} alt={media.fileName} className="w-full h-32 object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                  <span className="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded self-start uppercase font-bold">{media.type}</span>
+                  <span className="text-[10px] text-white truncate">{media.caption || media.fileName}</span>
+                </div>
+              </div>
             ))}
           </div>
         ) : (

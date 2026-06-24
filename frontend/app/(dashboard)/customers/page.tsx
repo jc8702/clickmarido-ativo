@@ -38,9 +38,36 @@ export default function CustomersPage() {
   
   const { data, isLoading, mutate } = useCustomers(1, debouncedSearch);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [detailedCustomer, setDetailedCustomer] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState<'info' | 'orders' | 'financial'>('info');
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   useEscapeToClose(selectedCustomer !== null, () => setSelectedCustomer(null));
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setLoadingDetails(true);
+      setDetailedCustomer(null);
+      setActiveTab('info');
+      fetch(`/api/customers/${selectedCustomer.id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setDetailedCustomer(data);
+          setLoadingDetails(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setLoadingDetails(false);
+        });
+    } else {
+      setDetailedCustomer(null);
+    }
+  }, [selectedCustomer]);
 
   // Efeito para debounce da busca
   useEffect(() => {
@@ -245,60 +272,159 @@ export default function CustomersPage() {
               </button>
             </div>
 
-            <div className="p-6 flex-1 overflow-y-auto space-y-6">
-              {/* Informações Básicas */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Informações Básicas</h4>
-                <div className="bg-neutral-50 dark:bg-neutral-700/50 p-4 rounded-xl space-y-3">
-                  <div>
-                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Nome</label>
-                    <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">{selectedCustomer.name}</div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">E-mail</label>
-                    <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.email || 'Não informado'}</div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Telefone</label>
-                    <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.phone}</div>
-                  </div>
-                </div>
-              </div>
+            {/* Abas do Drawer */}
+            <div className="flex border-b border-neutral-100 dark:border-neutral-700 px-6 bg-neutral-50 dark:bg-neutral-850">
+              <button
+                onClick={() => setActiveTab('info')}
+                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+                  activeTab === 'info'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-850'
+                }`}
+              >
+                Informações
+              </button>
+              <button
+                onClick={() => setActiveTab('orders')}
+                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+                  activeTab === 'orders'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-850'
+                }`}
+              >
+                Ordens ({detailedCustomer?.serviceOrders?.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab('financial')}
+                className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors -mb-px ${
+                  activeTab === 'financial'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-850'
+                }`}
+              >
+                Financeiro ({detailedCustomer?.payments?.length || 0})
+              </button>
+            </div>
 
-              {/* Endereços */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Endereços Cadastrados</h4>
-                  <Badge variant="primary" size="sm">
-                    {getAddressesList(selectedCustomer.addresses).length}
-                  </Badge>
+            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+              {loadingDetails ? (
+                <div className="text-center py-12 text-sm text-neutral-500 dark:text-neutral-400">
+                  Carregando detalhes e histórico...
                 </div>
-                
-                <div className="space-y-3">
-                  {getAddressesList(selectedCustomer.addresses).map((addr, index) => (
-                    <div key={index} className="border border-neutral-150 dark:border-neutral-600 p-4 rounded-xl bg-white dark:bg-neutral-700 shadow-sm hover:border-neutral-300 dark:hover:border-neutral-500 transition-colors relative">
-                      <span className="absolute top-3 right-3 text-xs bg-neutral-100 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 px-2 py-0.5 rounded-full font-bold">
-                        {index === 0 ? 'Principal' : `Local ${index + 1}`}
-                      </span>
-                      <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                        {addr.street}, {addr.number}
+              ) : activeTab === 'info' ? (
+                <>
+                  {/* Informações Básicas */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Informações Básicas</h4>
+                    <div className="bg-neutral-50 dark:bg-neutral-700/50 p-4 rounded-xl space-y-3">
+                      <div>
+                        <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Nome</label>
+                        <div className="text-base font-bold text-neutral-900 dark:text-neutral-100">{selectedCustomer.name}</div>
                       </div>
-                      {addr.complement && (
-                        <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Compl: {addr.complement}</div>
-                      )}
-                      <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                        Bairro: {addr.neighborhood || 'N/A'} • {addr.city}/{addr.state}
+                      <div>
+                        <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">E-mail</label>
+                        <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.email || 'Não informado'}</div>
                       </div>
-                      <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">CEP: {addr.zip}</div>
+                      <div>
+                        <label className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Telefone</label>
+                        <div className="text-sm text-neutral-800 dark:text-neutral-200">{selectedCustomer.phone}</div>
+                      </div>
                     </div>
-                  ))}
-                  {getAddressesList(selectedCustomer.addresses).length === 0 && (
-                    <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-xl">
-                      Nenhum endereço associado.
-                    </p>
-                  )}
+                  </div>
+
+                  {/* Endereços */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Endereços Cadastrados</h4>
+                      <Badge variant="primary" size="sm">
+                        {getAddressesList(selectedCustomer.addresses).length}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {getAddressesList(selectedCustomer.addresses).map((addr, index) => (
+                        <div key={index} className="border border-neutral-150 dark:border-neutral-600 p-4 rounded-xl bg-white dark:bg-neutral-700 shadow-sm hover:border-neutral-300 dark:hover:border-neutral-500 transition-colors relative">
+                          <span className="absolute top-3 right-3 text-xs bg-neutral-100 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 px-2 py-0.5 rounded-full font-bold">
+                            {index === 0 ? 'Principal' : `Local ${index + 1}`}
+                          </span>
+                          <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                            {addr.street}, {addr.number}
+                          </div>
+                          {addr.complement && (
+                            <div className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">Compl: {addr.complement}</div>
+                          )}
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                            Bairro: {addr.neighborhood || 'N/A'} • {addr.city}/{addr.state}
+                          </div>
+                          <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">CEP: {addr.zip}</div>
+                        </div>
+                      ))}
+                      {getAddressesList(selectedCustomer.addresses).length === 0 && (
+                        <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4 bg-neutral-50 dark:bg-neutral-700/50 rounded-xl">
+                          Nenhum endereço associado.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : activeTab === 'orders' ? (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Histórico de OS</h4>
+                  <div className="space-y-3">
+                    {detailedCustomer?.serviceOrders && detailedCustomer.serviceOrders.length > 0 ? (
+                      detailedCustomer.serviceOrders.map((os: any) => (
+                        <div key={os.id} className="border border-neutral-200 dark:border-neutral-700 p-4 rounded-xl bg-white dark:bg-neutral-800 shadow-sm flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">{os.number}</div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(os.createdAt).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">Valor: R$ {(os.finalTotal || 0).toFixed(2)}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                              os.status === 'concluida' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {os.status}
+                            </span>
+                            <Link href={`/service-orders/${os.id}`} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                              Ver Detalhes &rarr;
+                            </Link>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-6 bg-neutral-50 dark:bg-neutral-750 rounded-xl">
+                        Nenhuma ordem de serviço registrada.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Histórico de Pagamentos</h4>
+                  <div className="space-y-3">
+                    {detailedCustomer?.payments && detailedCustomer.payments.length > 0 ? (
+                      detailedCustomer.payments.map((payment: any) => (
+                        <div key={payment.id} className="border border-neutral-200 dark:border-neutral-700 p-4 rounded-xl bg-white dark:bg-neutral-800 shadow-sm flex justify-between items-center">
+                          <div>
+                            <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">R$ {(payment.amount || 0).toFixed(2)}</div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(payment.createdAt).toLocaleDateString('pt-BR')}</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">Método: <span className="uppercase">{payment.method}</span></div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
+                            payment.status === 'pago' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {payment.status}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-6 bg-neutral-50 dark:bg-neutral-750 rounded-xl">
+                        Nenhum pagamento registrado.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50 flex gap-3">

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeamento de Módulos - Click Marido CRM/ERP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        section h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        section h3 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .module-card {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .module-card:hover {
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+        
+        .module-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .module-card .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.planning {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .module-card p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+        
+        .module-card ul {
+            list-style: none;
+            padding-left: 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .module-card ul li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .module-card ul li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+        
+        .suggestion-card {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .suggestion-card h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+        
+        .suggestion-card .priority {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            margin-right: 10px;
+        }
+        
+        .priority.critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .priority.high {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .priority.medium {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .priority.low {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .gap-analysis {
+            margin-top: 20px;
+        }
+        
+        .gap-item {
+            padding: 15px;
+            background: #fff8e1;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .gap-item strong {
+            color: #ff9800;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        table th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        table tr:hover {
+            background: #fafafa;
+        }
+        
+        .implementation-roadmap {
+            margin-top: 20px;
+        }
+        
+        .phase {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .phase h5 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .phase ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .phase ul li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #666;
+        }
+        
+        .phase ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #ffc107;
+            margin-top: 15px;
+        }
+        
+        .highlight strong {
+            color: #ff9800;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .warning {
+            background: #fef5e7;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Mapeamento de Módulos - Click Marido CRM/ERP</h1>
+            <p>Análise estruturada do sistema atual + sugestões de novos módulos e funcionalidades</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Modelos de Dados</h3>
+                <div class="number">15</div>
+                <p style="color: #999; font-size: 0.9em; margin-top: 5px;">Entidades no banco</p>
+            </div>
+            <div class="stat-card">
+                <h3>Módulos de Dashboard</h3>
+                <div class="number">16</div>
+                <p style="color: #999; font-size: 0.9em; margin-top: 5px;">Áreas de negócio</p>
+            </div>
+            <div class="stat-card">
+                <h3>Componentes UI</h3>
+                <div class="number">29</div>
+                <p style="color: #999; font-size: 0.9em; margin-top: 5px;">Componentes React</p>
+            </div>
+            <div class="stat-card">
+                <h3>Status de Implementação</h3>
+                <div class="number">66%</div>
+                <p style="color: #999; font-size: 0.9em; margin-top: 5px;">Conforme audit anterior</p>
+            </div>
+        </div>
+        
+        <!-- SEÇÃO 1: MÓDULOS IMPLEMENTADOS -->
+        <section>
+            <h2>📊 Módulos Implementados (16 áreas)</h2>
+            <p style="margin-bottom: 25px; color: #666;">Status atual: 66% de implementação. Todos os módulos abaixo têm roteamento no frontend, mas o backend ainda carece de integração completa.</p>
+            
+            <div class="module-grid">
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>📋 Ordens de Serviço</h4>
+                    <p>Núcleo do sistema - gerenciamento de trabalhos residenciais</p>
+                    <ul>
+                        <li>Criação e atribuição de OS</li>
+                        <li>Status workflow (OPEN → IN_PROGRESS → COMPLETED)</li>
+                        <li>Priorização (LOW/MEDIUM/HIGH/URGENT)</li>
+                        <li>Relação com cliente e técnico</li>
+                        <li>⚠️ Falta: Templates de OS, histórico de mudanças, fotos antes/depois</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>👥 Clientes</h4>
+                    <p>Gestão de dados e histórico de clientes residenciais</p>
+                    <ul>
+                        <li>CRUD básico (nome, email, phone, address)</li>
+                        <li>Ligação com ordens de serviço</li>
+                        <li>⚠️ Falta: Historiam de preferências, comunicação, agendamentos recentes</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>🔧 Técnicos</h4>
+                    <p>Gestão de equipe de profissionais</p>
+                    <ul>
+                        <li>CRUD básico (nome, email, phone, especialidade)</li>
+                        <li>Atribuição de OS</li>
+                        <li>⚠️ Falta: Agenda, disponibilidade em tempo real, avaliações</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>💰 Orçamentos</h4>
+                    <p>Geração e acompanhamento de quotes</p>
+                    <ul>
+                        <li>Modelo Quote com relação a ServiceOrder</li>
+                        <li>Serviços adicionados (QuoteService)</li>
+                        <li>Status workflow (PENDING)</li>
+                        <li>⚠️ Falta: Múltiplas versões, templates customizáveis, autoaprovação</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>💳 Financeiro / Pagamentos</h4>
+                    <p>Gestão de receitas e cobranças</p>
+                    <ul>
+                        <li>Modelo Payment (PENDING/PAID/OVERDUE/CANCELLED)</li>
+                        <li>6 métodos (CASH, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PIX, OTHER)</li>
+                        <li>⚠️ Falta: Integração bancária, recibos PDF, parcelamento, lembretes</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>📦 Serviços</h4>
+                    <p>Catálogo de serviços oferecidos</p>
+                    <ul>
+                        <li>Modelo Service (name, description, price, quantity)</li>
+                        <li>Relação com Quote via QuoteService</li>
+                        <li>⚠️ Falta: Categorização, imagens, histórico de preços, variações</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>🛠️ Materiais</h4>
+                    <p>Controle de inventário e materiais</p>
+                    <ul>
+                        <li>Rota no frontend implementada</li>
+                        <li>⚠️ Falta: Schema no banco, controle de estoque, fornecedores</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>📞 Agenda</h4>
+                    <p>Agendamento de visitas e trabalhos</p>
+                    <ul>
+                        <li>Rota no frontend implementada</li>
+                        <li>⚠️ Falta: Schema de appointments, integração com calendário, lembretes</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>📱 Conversas</h4>
+                    <p>Chat/mensagens com clientes e equipe</p>
+                    <ul>
+                        <li>Rota no frontend implementada</li>
+                        <li>⚠️ Falta: Schema, integração WhatsApp, real-time messaging</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>✅ Garantias</h4>
+                    <p>Registro e acompanhamento de garantias</p>
+                    <ul>
+                        <li>Modelo Warranty (ACTIVE/EXPIRED/CLAIMED/CANCELLED)</li>
+                        <li>Período startDate → endDate</li>
+                        <li>⚠️ Falta: Reclamações, notificações de expiração, histórico</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>🎁 Pós-Venda</h4>
+                    <p>Acompanhamento de satisfação e follow-up</p>
+                    <ul>
+                        <li>Rota no frontend implementada</li>
+                        <li>⚠️ Falta: Schema, pesquisas, lembretes automáticos</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>📈 Relatórios</h4>
+                    <p>Análise e relatórios de negócio</p>
+                    <ul>
+                        <li>Modelo Report (types: SERVICE_ORDERS, PAYMENTS, WARRANTIES, FINANCIAL, PERFORMANCE)</li>
+                        <li>⚠️ Falta: Dashboards visuais, gráficos, exportação</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status partial">Parcial</span>
+                    <h4>⚙️ Configurações</h4>
+                    <p>Gerenciamento de empresa e preferências</p>
+                    <ul>
+                        <li>Modelo Company (CNPJ, contato, endereço)</li>
+                        <li>⚠️ Falta: Customização de templates, integrações, webhooks</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status active">Implementado</span>
+                    <h4>👤 Usuários</h4>
+                    <p>Gerenciamento de acesso e permissões</p>
+                    <ul>
+                        <li>Modelo User com role-based access (USER/ADMIN/MANAGER)</li>
+                        <li>Autenticação JWT via AuthModule</li>
+                        <li>Reset de senha</li>
+                    </ul>
+                </div>
+                
+                <div class="module-card">
+                    <span class="status active">Implementado</span>
+                    <h4>🏢 Empresas</h4>
+                    <p>Suporte multi-tenancy</p>
+                    <ul>
+                        <li>Isolamento de dados por company</li>
+                        <li>CompanyContextGuard no backend</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        
+        <!-- SEÇÃO 2: GAPS CRÍTICOS -->
+        <section>
+            <h2>⚠️ Gaps Críticos do Sistema Atual</h2>
+            <p style="margin-bottom: 20px; color: #666;">Funcionalidades ausentes que impactam operações do dia a dia.</p>
+            
+            <div class="gap-analysis">
+                <div class="gap-item">
+                    <strong>1. Integração Backend Incompleta</strong><br>
+                    Os módulos comentados no <code>app.module.ts</code> não estão implementados. O frontend chama rotas que não existem no NestJS. Ação: Uncomment e criar os serviços.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>2. Sem Agendamento de Visitas</strong><br>
+                    Não há modelo Appointment. Impossível planejar cronograma de técnicos. Crítico para operação de reparos residenciais.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>3. Sem Controle de Inventário</strong><br>
+                    Módulo de materiais vazio. Impossível rastrear consumo de insumos, custos reais, reposição automática.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>4. Sem Integração WhatsApp/SMS</strong><br>
+                    Conversas devem ser internas. Sem API integrada para comunicação com clientes via WhatsApp/SMS.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>5. Dashboard Vazio</strong><br>
+                    Rota /dashboard existe mas sem KPIs visuais. Sem gráficos de receita, ordens abertas, performance de técnicos.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>6. Sem Fotos/Evidências</strong><br>
+                    Nenhum modelo para storage de imagens antes/depois. Crítico para garantias e justificativa de trabalho.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>7. Sem Integração Bancária/PIX</strong><br>
+                    Pagamentos são apenas registros. Sem confirmação automática via PIX, extratos bancários, conciliação.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>8. Sem Alertas/Notificações</strong><br>
+                    Sem sistema de notificações: técnico não recebe aviso de nova OS, cliente não sabe quando técnico chega.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>9. Sem Assinatura Digital/Aceite</strong><br>
+                    Cliente não assina orçamento. Sem prova de entrega do trabalho no local.
+                </div>
+                
+                <div class="gap-item">
+                    <strong>10. Auditoria Desativada</strong><br>
+                    Interceptors de logging/auditoria comentados. Impossível rastrear alterações críticas.
+                </div>
+            </div>
+        </section>
+        
+        <!-- SEÇÃO 3: SUGESTÕES DE NOVOS MÓDULOS -->
+        <section>
+            <h2>🚀 Sugestões de Novos Módulos e Funcionalidades</h2>
+            <p style="margin-bottom: 25px; color: #666;">Priorizado por impacto operacional e viabilidade. Baseado em padrões de negócio de serviços residenciais.</p>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority critical">CRÍTICO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 1-2</span>
+                </div>
+                <h4>1. Agendamento de Visitas (Appointments)</h4>
+                <p><strong>Por quê:</strong> Sem agenda, impossível organizar rota de técnicos. Operação fica manual e ineficiente.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelo Appointment:</strong> date, time, duration, status (SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED), relation a ServiceOrder + Technician</li>
+                    <li><strong>View Calendário:</strong> Visualização semanal/mensal com drag-drop de agendamentos</li>
+                    <li><strong>Notificações:</strong> Email/SMS para técnico 1h antes de começar</li>
+                    <li><strong>Geolocalização:</strong> Rastrear técnico durante visita (já tem GeolocationModule no backend)</li>
+                    <li><strong>Conflito Detection:</strong> Aviso se técnico tem duas visitas sobrepostas</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 20-30 horas | <strong>Banco:</strong> 1 novo modelo + 3 migrations</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority critical">CRÍTICO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 1-2</span>
+                </div>
+                <h4>2. Gerenciamento de Fotos/Evidências</h4>
+                <p><strong>Por quê:</strong> Documentação visual é prova de trabalho executado. Essencial para garantias e disputas.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelo Media:</strong> id, serviceOrderId, fileUrl, type (BEFORE, AFTER, PROGRESS), uploadedAt, uploadedByUserId</li>
+                    <li><strong>Upload com UI:</strong> Drag-drop na página de OS, pré-visualização, compressão cliente-side</li>
+                    <li><strong>Storage:</strong> Usar AWS S3 (Vercel + S3) ou GCP Cloud Storage (zero-budget: Google Drive API)</li>
+                    <li><strong>Galeria:</strong> Timeline de fotos antes/depois com timestamps</li>
+                    <li><strong>Mobile:</strong> Câmera nativa via PWA para app mobile</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 18-25 horas | <strong>Banco:</strong> 1 novo modelo</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority critical">CRÍTICO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 2-3</span>
+                </div>
+                <h4>3. Dashboard com KPIs Visuais</h4>
+                <p><strong>Por quê:</strong> Visão consolidada de métricas permite tomada de decisão rápida. Sem dados visuais, você opera cego.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Cards:</strong> Receita mês, ordens abertas, técnicos disponíveis, satisfação média</li>
+                    <li><strong>Gráficos:</strong> Receita por semana (linha), tipos de serviço (pizza), performance técnico (barras)</li>
+                    <li><strong>Filtros:</strong> Por período, técnico, tipo de serviço</li>
+                    <li><strong>Biblioteca:</strong> Usar Recharts (já no package.json) ou Chart.js</li>
+                    <li><strong>Dados em tempo real:</strong> Usar SWR/TanStack Query para refresh periódico</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 15-20 horas | <strong>Banco:</strong> Apenas queries otimizadas no backend</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority high">ALTO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 3-4</span>
+                </div>
+                <h4>4. Integração WhatsApp / SMS para Notificações</h4>
+                <p><strong>Por quê:</strong> Comunicação automática reduz no-show de clientes. WhatsApp é ubíquo no Brasil.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Provider abstrato:</strong> Interface que suporta múltiplos provedores (Twilio, AWS SNS, Vonage)</li>
+                    <li><strong>Triggers automáticos:</strong> Enviar SMS quando OS é criada, 1h antes de appointment, quando pagamento é recebido</li>
+                    <li><strong>Templates:</strong> Mensagens customizáveis por empresa</li>
+                    <li><strong>Log de mensagens:</strong> Modelo para rastrear quem recebeu o quê</li>
+                    <li><strong>Sugestão zero-cost:</strong> Usar Google Cloud Text-to-Speech + Twilio free trial (100 SMS grátis/mês)</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 25-35 horas | <strong>Banco:</strong> 1-2 novos modelos (Message, MessageLog)</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority high">ALTO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 4-5</span>
+                </div>
+                <h4>5. Controle de Inventário (Materiais)</h4>
+                <p><strong>Por quço:</strong> Rastreamento de gastos de materiais permite precificação correta e margem real.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelos:</strong> Material (name, category, costPrice, quantity, minStock, supplier), MaterialUsage (serviceOrderId, materialId, quantityUsed)</li>
+                    <li><strong>Alertas:</strong> Notificar quando estoque < minStock</li>
+                    <li><strong>Integração com OS:</strong> Ao completar OS, registrar materiais consumidos</li>
+                    <li><strong>Relatório:</strong> Custo de material por OS, ticket médio incluindo material</li>
+                    <li><strong>Importação:</strong> CSV para carga inicial de inventário</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 20-25 horas | <strong>Banco:</strong> 2 novos modelos + constraints</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority high">ALTO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 2-3</span>
+                </div>
+                <h4>6. Sistema de Alertas e Notificações</h4>
+                <p><strong>Por quê:</strong> Notificações impulsionam ações. Sem elas, tarefas caem no limbo.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelo Notification:</strong> userId, type, message, isRead, relatedEntityId, createdAt</li>
+                    <li><strong>Sistema de eventos:</strong> Usar @nestjs/event-emitter para disparar notificações em eventos (OS criada, pagamento recebido, garantia expirando)</li>
+                    <li><strong>UI:</strong> Bell icon no header, dropdown com notificações recentes, mark as read</li>
+                    <li><strong>Canais:</strong> In-app (banco de dados) + Email + Push (Service Worker)</li>
+                    <li><strong>Templates:</strong> Diferentes mensagens por tipo de evento</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 18-24 horas | <strong>Banco:</strong> 1-2 novos modelos</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority high">ALTO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 5-6</span>
+                </div>
+                <h4>7. Assinatura Digital e Aceite no Local</h4>
+                <p><strong>Por quê:</strong> Prova de entrega reduz disputas. Assinatura digital do cliente no tablet/mobile é proof-of-work.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelo SignatureRequest:</strong> serviceOrderId, signatureData (SVG), signerName, signedAt, ipAddress</li>
+                    <li><strong>Widget:</strong> Canvas para desenhar assinatura no mobile/tablet</li>
+                    <li><strong>Workflow:</strong> Ao clicar "Finalizar Trabalho", exibir tela de assinatura</li>
+                    <li><strong>PDF:</strong> Gerar recibo com assinatura embedded (já tem PdfModule)</li>
+                    <li><strong>Versão zero-cost:</strong> Usar canvas nativo + PDF gerado com pdfkit (npm package)</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 16-20 horas | <strong>Banco:</strong> 1 novo modelo</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority high">ALTO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 6-7</span>
+                </div>
+                <h4>8. Integração PIX / Conciliação Bancária</h4>
+                <p><strong>Por quê:</strong> PIX é padrão no Brasil. Confirmar pagamentos automáticamente reduz trabalho manual.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Gerar QR Code PIX:</strong> Para cada pagamento, gerar QR dinâmico (brcode) via Asaas ou Stripe</li>
+                    <li><strong>Webhook de confirmação:</strong> Provider envia POST quando PIX é pago → atualizar status Payment para PAID</li>
+                    <li><strong>Relatório:</strong> Extrato diário de PIX recebidos vs OS completadas</li>
+                    <li><strong>Providers zero-cost:</strong> Asaas (free até 500 transações) ou Stripe (2.9% + 0.30)</li>
+                    <li><strong>UI:</strong> Mostrar QR code na tela de pagamento, histórico de transações</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 25-35 horas | <strong>Banco:</strong> 0 novos modelos (adicionar campos em Payment)</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority medium">MÉDIO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 7-8</span>
+                </div>
+                <h4>9. Avaliação e Satisfação de Cliente</h4>
+                <p><strong>Por quê:</strong> Feedback contínuo melhora qualidade. NPS ajuda a identificar problemas sistemáticos.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelos:</strong> Review (serviceOrderId, rating 1-5, comment, createdAt), NPS (surveyId, clientId, score)</li>
+                    <li><strong>Trigger:</strong> Enviar link de avaliação por email 1 dia após OS completada</li>
+                    <li><strong>Dashboard:</strong> Rating médio por técnico, comentários recentes, NPS trend</li>
+                    <li><strong>Alertas:</strong> Se rating < 3, notificar gerente para follow-up</li>
+                    <li><strong>Integração:</strong> Relacionar reviews com técnico para identificar problemas</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 14-18 horas | <strong>Banco:</strong> 2 novos modelos</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority medium">MÉDIO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 8-9</span>
+                </div>
+                <h4>10. Relatórios Exportáveis (PDF, Excel, CSV)</h4>
+                <p><strong>Por quê:</strong> Exportação simplifica envio de dados para contador, gestor, ou análise externa.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Relatórios:</strong> Fluxo de caixa, receita por técnico, serviços mais vendidos, histórico de garantias</li>
+                    <li><strong>Formatos:</strong> PDF (pdfkit), Excel (xlsx), CSV</li>
+                    <li><strong>Filtros:</strong> Por período, técnico, serviço, cliente</li>
+                    <li><strong>Agendamento:</strong> Enviar relatório automático por email (segunda-feira 8h, por exemplo)</li>
+                    <li><strong>UI:</strong> Botão "Exportar" em cada relatório, preview antes de download</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 16-22 horas | <strong>Banco:</strong> 0 novos modelos (usar dados existentes)</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority medium">MÉDIO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 9-10</span>
+                </div>
+                <h4>11. Templates de OS e Documentos Customizáveis</h4>
+                <p><strong>Por quê:</strong> Documentos profissionais reforçam marca. Economia de tempo na repetição.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelos:</strong> Template (name, content, type: OS/QUOTE/INVOICE), TemplateVariable (templateId, variable, label)</li>
+                    <li><strong>Editor:</strong> Interface WYSIWYG para criar templates, preview com variáveis substituídas</li>
+                    <li><strong>Uso:</strong> Ao criar OS, selecionar template → preencher variáveis → gerar documento</li>
+                    <li><strong>Defaults:</strong> Incluir 3-4 templates padrão no setup</li>
+                    <li><strong>Exportação:</strong> Gerar PDF/Word de OS com template aplicado</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 18-25 horas | <strong>Banco:</strong> 2 novos modelos</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority medium">MÉDIO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 10-11</span>
+                </div>
+                <h4>12. Gestão de Fornecedores e Compras</h4>
+                <p><strong>Por quê:</strong> Centralizar contatos de fornecedores. Rastrear pedidos. Comparar preços.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelos:</strong> Supplier (name, phone, email, address, rating), PurchaseOrder (supplierId, items, totalValue, status, deliveryDate)</li>
+                    <li><strong>CRUD:</strong> Gerenciar fornecedores, criar pedidos, rastrear entrega</li>
+                    <li><strong>Integração:</strong> Vincular PurchaseOrder a MaterialUsage (quando material é consumido em OS)</li>
+                    <li><strong>Relatório:</strong> Custo de materiais por fornecedor, comparativo de preços</li>
+                    <li><strong>Alertas:</strong> Notificar quando estoque baixo (disparar compra automática)</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 20-28 horas | <strong>Banco:</strong> 2-3 novos modelos</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority low">BAIXO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 11-12</span>
+                </div>
+                <h4>13. App Mobile Nativo (React Native / Expo)</h4>
+                <p><strong>Por quê:</strong> Técnico precisa acessar agenda e registrar trabalho no local. PWA não substitui app.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Stack:</strong> React Native + Expo (multiplataforma Android/iOS, zero custo de build)</li>
+                    <li><strong>Funcionalidades:</strong> Agenda do dia, iniciar/finalizar OS, capturar fotos, assinar, offline-first</li>
+                    <li><strong>Offline:</strong> Usar WatermelonDB ou Realm para sincronizar quando online</li>
+                    <li><strong>Geolocalização:</strong> Mapear técnicos em tempo real (opcional: integrar Google Maps)</li>
+                    <li><strong>Biometria:</strong> Login por face/fingerprint</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 40-60 horas | <strong>Banco:</strong> 0 novos modelos (reutilizar APIs)</p>
+            </div>
+            
+            <div class="suggestion-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <span class="priority low">BAIXO</span>
+                    <span style="background: #f0f4ff; padding: 4px 10px; border-radius: 4px; font-size: 0.85em; color: #667eea;">Semana 12+</span>
+                </div>
+                <h4>14. IA para Estimativa de Preço e Categorização</h4>
+                <p><strong>Por quç:</strong> Automação de reparos similares. Sugestão de preço baseado em histórico.</p>
+                <p><strong>O que implementar:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Modelo de ML:</strong> Treinar com histórico de OS (descrição → categoria → preço médio)</li>
+                    <li><strong>API:</strong> Usar Google Gemini (free tier) ou OpenAI (GPT-4) para análise de descrição</li>
+                    <li><strong>Workflow:</strong> Usuário escreve descrição → IA sugere categoria, serviços, preço → confirmar e criar OS</li>
+                    <li><strong>Histórico:</strong> Rastrear acurácia da sugestão, reajustar modelo</li>
+                    <li><strong>Chatbot:</strong> Assistente para responder perguntas sobre disponibilidade, preço, prazo</li>
+                </ul>
+                <p style="margin-top: 15px; color: #666;"><strong>Esforço:</strong> 30-50 horas | <strong>Banco:</strong> 1 novo modelo (AIInteraction log)</p>
+            </div>
+        </section>
+        
+        <!-- SEÇÃO 4: ROADMAP DE IMPLEMENTAÇÃO -->
+        <section>
+            <h2>📅 Roadmap de Implementação Sugerido</h2>
+            <p style="margin-bottom: 25px; color: #666;">Sequência recomendada para máximo impacto operacional com mínimo de esforço.</p>
+            
+            <div class="phase">
+                <h5>🔴 FASE 1: Fundações (Semanas 1-2) - Crítica para operação</h5>
+                <ul>
+                    <li>Agendamento de Visitas (Appointments)</li>
+                    <li>Gerenciamento de Fotos/Evidências</li>
+                    <li>Sistema de Alertas e Notificações</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: Operação fica viável. Técnicos sabem o que fazer. Cliente vê prova de trabalho.</p>
+            </div>
+            
+            <div class="phase">
+                <h5>🟠 FASE 2: Visibilidade (Semanas 3-4) - Tomada de decisão</h5>
+                <ul>
+                    <li>Dashboard com KPIs Visuais</li>
+                    <li>Integração WhatsApp / SMS para Notificações</li>
+                    <li>Assinatura Digital e Aceite no Local</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: Você vê o negócio em tempo real. Clientes recebem atualizações automáticas. Prova de entrega elimina disputes.</p>
+            </div>
+            
+            <div class="phase">
+                <h5>🟡 FASE 3: Precisão Financeira (Semanas 5-6) - Lucro real</h5>
+                <ul>
+                    <li>Controle de Inventário (Materiais)</li>
+                    <li>Integração PIX / Conciliação Bancária</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: Margem real fica clara. Fluxo de caixa automático. Não há surpresas financeiras.</p>
+            </div>
+            
+            <div class="phase">
+                <h5>🟢 FASE 4: Qualidade e Escala (Semanas 7-9) - Crescimento</h5>
+                <ul>
+                    <li>Avaliação e Satisfação de Cliente</li>
+                    <li>Relatórios Exportáveis (PDF, Excel, CSV)</li>
+                    <li>Templates de OS e Documentos Customizáveis</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: Qualidade melhora. Documentos profissionais. Dados prontos para análise externa (contador, gestor).</p>
+            </div>
+            
+            <div class="phase">
+                <h5>🔵 FASE 5: Otimização e Ampliação (Semanas 10-11) - Eficiência</h5>
+                <ul>
+                    <li>Gestão de Fornecedores e Compras</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: Custos reduzem. Reabastecimento automático. Visibilidade de supply chain.</p>
+            </div>
+            
+            <div class="phase">
+                <h5>⚪ FASE 6: Canais Digitais (Semanas 12+) - Ambição</h5>
+                <ul>
+                    <li>App Mobile Nativo (React Native / Expo)</li>
+                    <li>IA para Estimativa de Preço e Categorização</li>
+                </ul>
+                <p style="margin-top: 10px; color: #666; font-weight: 600;">Impacto: App standalone. Automação inteligente. Escalabilidade para múltiplos técnicos/regiões.</p>
+            </div>
+            
+            <div class="highlight">
+                <strong>⏱️ Timeline Total:</strong> 12 semanas (~3 meses) para implementar tudo. Sequência é flexível: se faltam fontes no primeiro mês, pule app mobile para frente. Se precisa de receita imediata, foque em PIX + Dashboard primeiro.
+            </div>
+        </section>
+        
+        <!-- SEÇÃO 5: MATRIZ DE PRIORIZAÇÃO -->
+        <section>
+            <h2>🎯 Matriz de Priorização (Impacto vs Esforço)</h2>
+            <p style="margin-bottom: 25px; color: #666;">Use esta tabela para decidir por conta própria, conforme suas necessidades mudam.</p>
+            
+            <table>
+                <tr>
+                    <th>Módulo</th>
+                    <th>Impacto</th>
+                    <th>Esforço (horas)</th>
+                    <th>ROI (Impacto/Esforço)</th>
+                    <th>Prioridade</th>
+                </tr>
+                <tr>
+                    <td><strong>Agendamento de Visitas</strong></td>
+                    <td>⭐⭐⭐⭐⭐ Crítico</td>
+                    <td>20-30</td>
+                    <td><strong>Muito Alto</strong></td>
+                    <td>🔴 1º</td>
+                </tr>
+                <tr>
+                    <td><strong>Fotos/Evidências</strong></td>
+                    <td>⭐⭐⭐⭐⭐ Crítico</td>
+                    <td>18-25</td>
+                    <td><strong>Muito Alto</strong></td>
+                    <td>🔴 1º</td>
+                </tr>
+                <tr>
+                    <td><strong>Dashboard KPIs</strong></td>
+                    <td>⭐⭐⭐⭐⭐ Crítico</td>
+                    <td>15-20</td>
+                    <td><strong>Excelente</strong></td>
+                    <td>🔴 2º</td>
+                </tr>
+                <tr>
+                    <td><strong>Alertas/Notificações</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>18-24</td>
+                    <td><strong>Muito Alto</strong></td>
+                    <td>🔴 2º</td>
+                </tr>
+                <tr>
+                    <td><strong>WhatsApp/SMS</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>25-35</td>
+                    <td><strong>Alto</strong></td>
+                    <td>🟠 3º</td>
+                </tr>
+                <tr>
+                    <td><strong>Assinatura Digital</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>16-20</td>
+                    <td><strong>Muito Alto</strong></td>
+                    <td>🟠 3º</td>
+                </tr>
+                <tr>
+                    <td><strong>Inventário/Materiais</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>20-25</td>
+                    <td><strong>Alto</strong></td>
+                    <td>🟠 3º</td>
+                </tr>
+                <tr>
+                    <td><strong>PIX/Bancário</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>25-35</td>
+                    <td><strong>Alto</strong></td>
+                    <td>🟠 3º</td>
+                </tr>
+                <tr>
+                    <td><strong>Avaliação Cliente</strong></td>
+                    <td>⭐⭐⭐ Médio</td>
+                    <td>14-18</td>
+                    <td><strong>Muito Alto</strong></td>
+                    <td>🟡 4º</td>
+                </tr>
+                <tr>
+                    <td><strong>Relatórios Exportáveis</strong></td>
+                    <td>⭐⭐⭐ Médio</td>
+                    <td>16-22</td>
+                    <td><strong>Alto</strong></td>
+                    <td>🟡 4º</td>
+                </tr>
+                <tr>
+                    <td><strong>Templates Doc</strong></td>
+                    <td>⭐⭐⭐ Médio</td>
+                    <td>18-25</td>
+                    <td><strong>Médio</strong></td>
+                    <td>🟡 4º</td>
+                </tr>
+                <tr>
+                    <td><strong>Fornecedores/Compras</strong></td>
+                    <td>⭐⭐⭐ Médio</td>
+                    <td>20-28</td>
+                    <td><strong>Médio</strong></td>
+                    <td>🟡 5º</td>
+                </tr>
+                <tr>
+                    <td><strong>App Mobile</strong></td>
+                    <td>⭐⭐⭐⭐ Alto</td>
+                    <td>40-60</td>
+                    <td><strong>Médio</strong></td>
+                    <td>🔵 6º</td>
+                </tr>
+                <tr>
+                    <td><strong>IA/Automação</strong></td>
+                    <td>⭐⭐⭐ Médio</td>
+                    <td>30-50</td>
+                    <td><strong>Baixo</strong></td>
+                    <td>⚪ 7º</td>
+                </tr>
+            </table>
+        </section>
+        
+        <!-- SEÇÃO 6: RECOMENDAÇÕES FINAIS -->
+        <section>
+            <h2>💡 Recomendações Finais</h2>
+            
+            <div class="success">
+                <strong>✓ Seu sistema tem base sólida:</strong> Schema Prisma bem estruturado, autenticação funcionando, deploy configurado. A maioria dos gaps é funcionalidade de negócio, não arquitetura.
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Urgências detectadas:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Agendamento:</strong> Impossível operar reparos sem agenda. Implementar semana que vem.</li>
+                    <li><strong>Fotos:</strong> Sem evidências visuais, garantias caem em disputa. Prioridade máxima.</li>
+                    <li><strong>Backend desconectado:</strong> ~20 módulos comentados no app.module.ts. Frontend chama rotas que não existem. Risco de crash em produção.</li>
+                    <li><strong>Banco de dados solto:</strong> Ainda apontando para Supabase antigo. Neon não está configurado. Migrar antes do primeiro pagamento real.</li>
+                </ul>
+            </div>
+            
+            <h3 style="margin-top: 30px;">📋 Checklist para Próximas Duas Semanas:</h3>
+            <ul style="margin-left: 20px;">
+                <li><input type="checkbox"> 1. Configurar banco Neon (criar conta, copiar DATABASE_URL + DIRECT_URL para .env)</li>
+                <li><input type="checkbox"> 2. Implementar modelo Appointment + calendário visual</li>
+                <li><input type="checkbox"> 3. Implementar modelo Media + upload de fotos no frontend</li>
+                <li><input type="checkbox"> 4. Ativar AuditLog (uncomment interceptors no app.module.ts)</li>
+                <li><input type="checkbox"> 5. Criar modelo Notification + sistema de alertas básico (in-app)</li>
+                <li><input type="checkbox"> 6. Testar deploy end-to-end: criar OS → agendamento → foto → marcar como feito</li>
+                <li><input type="checkbox"> 7. Configurar GitHub Secrets para CI/CD automático</li>
+                <li><input type="checkbox"> 8. Backup da senha antigo do Supabase (antes de usar em produção, rotar credenciais)</li>
+            </ul>
+            
+            <h3 style="margin-top: 30px;">🔐 Nota Crítica de Segurança:</h3>
+            <div class="warning">
+                <strong>Sua senha Supabase está no histórico git:</strong> <code>Millena@@2017@@</code>. Antes de ir ao vivo:
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Mudar senha da conta Supabase antigo (se ainda ativa)</li>
+                    <li>Usar Neon novo sem expor credenciais em repositório</li>
+                    <li>Adicionar secrets no GitHub (VERCEL_TOKEN, DATABASE_URL privado)</li>
+                    <li>Considerar <code>git filter-repo</code> para limpar histórico (reescreve repo, todos re-clonam)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <footer>
+            <p>Análise completa do Click Marido CRM/ERP • Gerada em 23/06/2026</p>
+            <p>Dúvidas ou ajustes? Revise a sugestão conforme sua capacidade técnica e orçamento.</p>
+        </footer>
+    </div>
+</body>
+</html>

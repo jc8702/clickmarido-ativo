@@ -37,7 +37,11 @@ export async function GET(
 
     const customer = await prisma.customer.findUnique({
       where: { id },
-      include: { quotations: true },
+      include: {
+        quotations: true,
+        serviceOrders: { orderBy: { createdAt: 'desc' } },
+        payments: { orderBy: { createdAt: 'desc' } },
+      },
     });
 
     if (!customer) {

@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Aguardando aprovação do plano de varredura e melhorias do financeiro e operacional.
+- **Status Atual:** Melhorias financeiras e operacionais implementadas (Fases 1-8).
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 22/06/2026 - 16:55
+- **Última Atualização:** 23/06/2026 - 22:55
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,18 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 23/06/2026 - 22:50
+- **Melhorias Financeiras e Operacionais (Fases 1-8) Concluídas**:
+  - Implementação de fechamento de modais com Escape (ESC) utilizando hook customizado.
+  - Modelagem e integração da categoria FERRAMENTAS em Produtos e centros de custo no banco de dados.
+  - Correção dos cálculos de saldos e despesas na Dashboard Financeira.
+  - Implementação completa do CRUD de despesas (edição e exclusão).
+  - Correção de métodos HTTP ausentes (DELETE e PUT) para orçamentos e pagamentos.
+
+### 23/06/2026 - 18:38
+- **Auditoria da Fase 1 (Nível 1 — Crítico)**:
+  - Realizada auditoria completa dos 10 itens do Nível 1 no `REGISTRO_IMPLEMENTACAO.md`, confrontando com a estrutura física de arquivos, banco Neon e rotas de API.
 
 ### 22/06/2026 - 16:55
 - **Criação do Plano de Varredura e Melhorias Financeiro-Operacional**:
@@ -223,13 +235,9 @@ npm run dev
 
 ## Próximos Passos
 
-1. **Obter aprovação do usuário** sobre o plano de varredura e melhorias financeiro e operacional (`implementation_plan.md`).
-2. **Executar a Fase 1**: Padronizar tecla `Escape` em modais e criar hook `useEscapeToClose` para Drawers.
-3. **Executar a Fase 2 e 3**: Adicionar a categoria `FERRAMENTAS` e centros de custo ao banco (Prisma/Neon) e criar fonte única `finance-options.ts`.
-4. **Executar a Fase 4**: Corrigir saldo, calcular despesas pendentes e agrupar dados do Dashboard Financeiro no backend e frontend sem cache.
-5. **Executar a Fase 5**: Habilitar a baixa e detalhes de faturas manuais e criar a API de recebimento `/pay`.
-6. **Executar a Fase 6**: Implementar o CRUD completo de despesas (Editar/Excluir) e as integrações com fluxo de caixa.
-7. **Compilar e validar estática de tipos** (`npm run build`).
+1. **Deploy em Produção**: Garantir que as últimas alterações de melhorias do financeiro e operacional estejam refletidas na Vercel.
+2. **Homologação e Testes**: Validar o fluxo de despesas e os cálculos da dashboard com dados reais.
+3. **Módulo de Relatórios**: Iniciar planejamento de relatórios avançados ou PDF generation (se necessário).
 
 ---
 

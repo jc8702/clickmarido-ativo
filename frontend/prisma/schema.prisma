@@ -16,6 +16,8 @@ model User {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  uploadedMedia Media[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -30,6 +32,8 @@ model Technician {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   serviceOrders ServiceOrder[]
+  appointments   Appointment[]
+  reviews        Review[]
 
   @@map("technicians")
 }
@@ -47,6 +51,9 @@ model Customer {
   payments   Payment[]
   serviceOrders ServiceOrder[]
   invoices   Invoice[]
+  appointments Appointment[]
+  reviews    Review[]
+  nps        NPS[]
 
   // Financeiro
   creditLimit       Float?    @default(0)
@@ -163,6 +170,9 @@ model ServiceOrder {
   technician     Technician?       @relation(fields: [technicianId], references: [id])
   photos         ServiceOrderPhoto[]
   purchaseOrders PurchaseOrder[]
+  appointments   Appointment[]
+  media          Media[]
+  reviews        Review[]
 
   // Automação
   automationLog     Json?
@@ -546,4 +556,158 @@ model AuditLog {
   @@index([entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================
+// NOVOS MÓDULOS - FASE 1
+// ============================================
+
+model Appointment {
+  id             String   @id @default(cuid())
+  
+  // Campos
+  date           DateTime
+  duration       Int      // minutos
+  status         String   @default("agendada") @db.VarChar(20) // agendada, confirmada, em_andamento, concluida, cancelada, nao_compareceu
+  notes          String?  @db.Text
+  location       String   @db.VarChar(500)
+  
+  // Relações
+  serviceOrderId String
+  technicianId   String
+  customerId     String
+  
+  // Audit
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  technician     Technician   @relation(fields: [technicianId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  
+  @@unique([technicianId, date]) // Evita duplas
+  @@index([serviceOrderId])
+  @@index([technicianId])
+  @@index([customerId])
+  @@index([date])
+  @@index([status])
+  @@map("appointments")
+}
+
+model Media {
+  id             String   @id @default(cuid())
+  
+  // Arquivo
+  fileUrl        String   @db.Text
+  fileName       String   @db.VarChar(255)
+  fileSize       Int      // bytes
+  mimeType       String   @db.VarChar(50) // image/jpeg, image/png
+  
+  // Tipo
+  type           String   @default("geral") @db.VarChar(20) // antes, depois, progresso, problema, solucao
+  caption        String?  @db.VarChar(500)
+  geoLocation    String?  @db.VarChar(100) // latitude,longitude
+  
+  // Relações
+  serviceOrderId String
+  uploadedByUserId String
+  
+  // Audit
+  uploadedAt     DateTime @default(now())
+  deletedAt      DateTime?
+  
+  // Relations
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  uploadedBy     User         @relation(fields: [uploadedByUserId], references: [id])
+  
+  @@index([serviceOrderId])
+  @@index([uploadedByUserId])
+  @@index([type])
+  @@map("media")
+}
+
+model Notification {
+  id               String   @id @default(cuid())
+  
+  // Usuário
+  userId           String
+  
+  // Conteúdo
+  type             String   @db.VarChar(50) // os_criada, os_atualizada, os_concluida, agendamento_criado, lembrete_agendamento, pagamento_recebido, pagamento_atrasado, garantia_expirando, nova_avaliacao, estoque_baixo
+  title            String   @db.VarChar(255)
+  message          String   @db.Text
+  
+  // Referência
+  relatedEntityId  String?  @db.VarChar(100)
+  relatedEntityType String? @db.VarChar(50) // service_order, payment, warranty, appointment
+  
+  // Status
+  isRead           Boolean  @default(false)
+  readAt           DateTime?
+  
+  // Canais
+  sentViaEmail     Boolean  @default(false)
+  sentViaSMS       Boolean  @default(false)
+  sentViaPush      Boolean  @default(false)
+  
+  // Audit
+  createdAt        DateTime @default(now())
+  
+  // Relations
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isRead])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  
+  // Relações
+  serviceOrderId String
+  customerId     String
+  technicianId   String
+  
+  // Conteúdo
+  rating         Int      // 1-5
+  comment        String?  @db.Text
+  photos         Json?    // Array de URLs de fotos
+  
+  // Audit
+  createdAt      DateTime @default(now())
+  
+  // Relations
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  technician     Technician   @relation(fields: [technicianId], references: [id])
+  
+  @@unique([serviceOrderId]) // Uma review por OS
+  @@index([customerId])
+  @@index([technicianId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model NPS {
+  id        String   @id @default(cuid())
+  
+  // Usuário
+  clientId  String
+  
+  // Score
+  score     Int      // 0-10
+  feedback  String?  @db.Text
+  
+  // Audit
+  createdAt DateTime @default(now())
+  
+  // Relations
+  customer  Customer @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  @@index([clientId])
+  @@index([score])
+  @@map("nps_surveys")
 }

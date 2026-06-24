@@ -1,0 +1,56 @@
+{
+  "projectId": "ea87f8a2-c633-475c-a57c-5c6a177f0c6d",
+  "type": "frontend",
+  "name": "Teste de Dashboard",
+  "description": "Testa a exibição e funcionalidades do dashboard principal",
+  "planSteps": [
+    {
+      "step": "Navegar para a página de login",
+      "type": "action",
+      "description": "Navegar para a página de login do sistema",
+      "action": "Navegar para https://clickmarido-ativo-frontend.vercel.app/login"
+    },
+    {
+      "step": "Preencher email",
+      "type": "action",
+      "description": "Preencher o campo de email com o email de teste",
+      "action": "Digitar 'teste@clickmarido.com.br' no campo de email"
+    },
+    {
+      "step": "Preencher senha",
+      "type": "action",
+      "description": "Preencher o campo de senha com a senha de teste",
+      "action": "Digitar 'Teste@123' no campo de senha"
+    },
+    {
+      "step": "Clicar no botão de login",
+      "type": "action",
+      "description": "Clicar no botão de login para autenticar",
+      "action": "Clicar no botão 'Entrar'"
+    },
+    {
+      "step": "Verificar login",
+      "type": "assertion",
+      "description": "Verificar se o login foi bem-sucedido",
+      "action": "Verificar se foi redirecionado para o dashboard"
+    },
+    {
+      "step": "Verificar elementos do dashboard",
+      "type": "assertion",
+      "description": "Verificar se os elementos principais do dashboard estão visíveis",
+      "action": "Verificar se há gráficos, cards de resumo e menu de navegação"
+    },
+    {
+      "step": "Testar menu de navegação",
+      "type": "action",
+      "description": "Clicar em diferentes opções do menu",
+      "action": "Clicar nas opções do menu: Clientes, Orçamentos, Ordens de Serviço"
+    },
+    {
+      "step": "Verificar responsividade",
+      "type": "assertion",
+      "description": "Verificar se o dashboard se adapta a diferentes tamanhos de tela",
+      "action": "Redimensionar a janela e verificar o layout responsivo"
+    }
+  ]
+}

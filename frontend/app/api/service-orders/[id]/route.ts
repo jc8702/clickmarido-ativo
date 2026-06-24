@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { technicianId, scheduledTime, address, notes, finalTotal, status } = body;
+    const { technicianId, scheduledTime, address, notes, finalTotal, status, automationLog } = body;
 
     const updateData: any = {};
     if (technicianId !== undefined) updateData.technicianId = technicianId;
@@ -71,6 +71,7 @@ export async function PUT(
     if (notes !== undefined) updateData.notes = notes;
     if (finalTotal !== undefined) updateData.finalTotal = Number(finalTotal);
     if (status !== undefined) updateData.status = status;
+    if (automationLog !== undefined) updateData.automationLog = automationLog;
 
     // Fetch current order to track status change
     const currentOrder = await prisma.serviceOrder.findUniqueOrThrow({

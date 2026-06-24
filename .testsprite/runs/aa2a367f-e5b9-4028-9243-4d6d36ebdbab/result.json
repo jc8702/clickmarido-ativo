@@ -1,0 +1,20 @@
+{
+  "testId": "9b12c47d-9dd4-4787-b894-3012322e07a7",
+  "status": "blocked",
+  "startedAt": "2026-06-23T11:15:48.618Z",
+  "finishedAt": "2026-06-23T11:18:55.279Z",
+  "videoUrl": "https://testsprite-videos.s3.us-east-1.amazonaws.com/54e8f458-e0b1-703f-daf7-bc57ff0ffaab/1782213531842849//tmp/6622bb4c-0cb9-485d-8d3f-3bc0eeffb7bf/result.webm",
+  "failureAnalysisUrl": null,
+  "snapshotId": "snap_ffe0c1e0d2e9e8ee",
+  "runIdIfAvailable": "aa2a367f-e5b9-4028-9243-4d6d36ebdbab",
+  "codeVersion": "v1",
+  "targetUrl": "https://clickmarido-ativo-frontend.vercel.app",
+  "targetUrlSource": "run",
+  "failedStepIndex": 8,
+  "failureKind": null,
+  "summary": {
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0
+  }
+}
