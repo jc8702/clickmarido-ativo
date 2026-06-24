@@ -21,6 +21,11 @@ export default function PrintQuotationPage() {
       }
     };
     window.addEventListener('keydown', handleEscape);
+    
+    // Força light mode removendo classe dark do html, já que o tailwind injeta lá
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 

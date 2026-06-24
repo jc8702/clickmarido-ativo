@@ -674,6 +674,75 @@ export default function ChatPage() {
     setChatSearch('');
   };
 
+  // Efeito para auto enviar o anexo do orçamento gerado na tela de impressão
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoAttach = urlParams.get('autoAttach');
+    const targetPhone = urlParams.get('phone');
+    const pendingPdf = sessionStorage.getItem('auto_attach_pdf');
+    const pendingPdfName = sessionStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
+
+    if (autoAttach === 'true' && targetPhone && pendingPdf) {
+      const jid = `${targetPhone}@s.whatsapp.net`;
+      
+      // Cria o chat virtual se não existir, para poder exibir a mensagem
+      setChats(prev => {
+        if (prev.some(c => c.id === jid)) return prev;
+        return [{
+          id: jid,
+          name: targetPhone,
+          unreadCount: 0,
+          lastMessage: 'Enviando orçamento...',
+          updatedAt: (Date.now() / 1000).toString()
+        }, ...prev];
+      });
+      setSelectedChat({ id: jid, name: targetPhone, unreadCount: 0, lastMessage: '', updatedAt: (Date.now()/1000).toString() });
+      setSidebarMode('chats');
+
+      // Otimista
+      const optimisticMsg = {
+        id: `optimistic-doc-auto-${Date.now()}`,
+        fromMe: true,
+        body: `📄 Enviando orçamento: ${pendingPdfName}...`,
+        timestamp: Date.now() / 1000
+      };
+      setChatMessages(prev => [...prev, optimisticMsg]);
+
+      // Enviar de fato
+      apiFetch(`/message/sendDocument/${INSTANCE_NAME}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          number: targetPhone,
+          options: { delay: 1200 },
+          mediaMessage: {
+            mediatype: 'document',
+            fileName: pendingPdfName,
+            media: pendingPdf
+          }
+        })
+      }).then(res => {
+        if (res.ok) {
+          setChats(prev => prev.map(c => c.id === jid ? { ...c, lastMessage: `📄 ${pendingPdfName}`, updatedAt: (Date.now()/1000).toString() } : c));
+          toast.success('Orçamento enviado com sucesso!');
+        } else {
+          toast.error('Falha ao enviar o orçamento em anexo.');
+          setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+        }
+      }).catch(err => {
+        console.error(err);
+        toast.error('Erro ao enviar anexo.');
+        setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+      }).finally(() => {
+        sessionStorage.removeItem('auto_attach_pdf');
+        sessionStorage.removeItem('auto_attach_name');
+        
+        // Limpar URL
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      });
+    }
+  }, [apiFetch]);
+
   // Auto-selecionar chat via URL Params (ex: integração de orçamentos)
   useEffect(() => {
     if (typeof window !== 'undefined') {
