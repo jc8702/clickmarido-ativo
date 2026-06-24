@@ -130,6 +130,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         category: parsed.category || '',
         active: parsed.active ?? true,
         vendorId: newVendorId,
+        quantity: parsed.quantity,
+        minStock: parsed.minStock,
+        estimatedTime: parsed.estimatedTime,
+        imageUrl: parsed.imageUrl || null,
       },
       include: {
         vendor: true,

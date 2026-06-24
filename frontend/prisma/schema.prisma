@@ -138,10 +138,16 @@ model Product {
   updatedAt       DateTime          @updatedAt
   quotationItems  QuotationItem[]
   purchaseOrderItems PurchaseOrderItem[]
+  productUsages   ProductUsage[]
 
   // Fornecedor padrão associado ao SKU
   vendorId        String?
   vendor          Vendor?           @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+
+  quantity        Int               @default(0)   // Apenas se type == 'PECA'
+  minStock        Int               @default(0)   // Alerta se quantity <= minStock
+  estimatedTime   Int?              @default(60)  // Em minutos, padrão 1h
+  imageUrl        String?           @db.Text
 
   @@index([sku])
   @@index([type])
@@ -173,6 +179,8 @@ model ServiceOrder {
   appointments   Appointment[]
   media          Media[]
   reviews        Review[]
+  signature      SignatureRequest?
+  productUsages  ProductUsage[]
 
   // Automação
   automationLog     Json?
@@ -710,4 +718,44 @@ model NPS {
   @@index([clientId])
   @@index([score])
   @@map("nps_surveys")
+}
+
+model MessageLog {
+  id        String   @id @default(cuid())
+  phone     String   @db.VarChar(20)
+  template  String   @db.VarChar(50)
+  status    String   @db.VarChar(20) // SENT, FAILED
+  error     String?  @db.Text
+  variables Json
+  createdAt DateTime @default(now())
+  
+  @@map("message_logs")
+}
+
+model SignatureRequest {
+  id             String       @id @default(cuid())
+  serviceOrderId String       @unique
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  signatureData  String       @db.Text // Canvas drawing em Data URI (Base64)
+  signerName     String       @db.VarChar(255)
+  signedAt       DateTime     @default(now())
+  ipAddress      String?      @db.VarChar(50)
+  userAgent      String?      @db.VarChar(255)
+  createdAt      DateTime     @default(now())
+
+  @@map("signature_requests")
+}
+
+model ProductUsage {
+  id             String       @id @default(cuid())
+  serviceOrderId String
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantityUsed   Float        @default(1)
+  createdAt      DateTime     @default(now())
+
+  @@index([serviceOrderId])
+  @@index([productId])
+  @@map("product_usages")
 }

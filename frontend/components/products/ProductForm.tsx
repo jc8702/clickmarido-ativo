@@ -35,10 +35,15 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
       category: '',
       active: true,
       vendorId: '',
+      quantity: initialData?.quantity || 0,
+      minStock: initialData?.minStock || 0,
+      estimatedTime: initialData?.estimatedTime || 60,
+      imageUrl: initialData?.imageUrl || '',
     }
   });
 
   const category = watch('category');
+  const productType = watch('type');
   const [nextSku, setNextSku] = useState<any>(null);
 
   // Estados e Logica do Fornecedor Inline
@@ -214,6 +219,59 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
             <option value="kit">Kit</option>
           </select>
           {errors.unit && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.unit.message}</p>}
+        </div>
+
+        {productType === 'PECA' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Estoque Atual</label>
+              <input
+                {...register('quantity', { valueAsNumber: true })}
+                type="number"
+                min="0"
+                className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                placeholder="0"
+              />
+              {errors.quantity && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.quantity.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Estoque Mínimo (Alerta)</label>
+              <input
+                {...register('minStock', { valueAsNumber: true })}
+                type="number"
+                min="0"
+                className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                placeholder="0"
+              />
+              {errors.minStock && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.minStock.message}</p>}
+            </div>
+          </>
+        )}
+
+        {productType === 'SERVICO' && (
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Tempo Estimado (minutos)</label>
+            <input
+              {...register('estimatedTime', { valueAsNumber: true })}
+              type="number"
+              min="1"
+              className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+              placeholder="60"
+            />
+            {errors.estimatedTime && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.estimatedTime.message}</p>}
+          </div>
+        )}
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">URL da Imagem / Ícone</label>
+          <input
+            {...register('imageUrl')}
+            type="text"
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+            placeholder="Ex: https://link-da-imagem.com/foto.jpg"
+          />
+          {errors.imageUrl && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.imageUrl.message}</p>}
         </div>
 
         <div className="md:col-span-2">

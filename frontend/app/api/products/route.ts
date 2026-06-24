@@ -166,6 +166,10 @@ export async function POST(request: NextRequest) {
         category: parsed.category || '',
         active: parsed.active ?? true,
         vendorId: parsed.vendorId && parsed.vendorId.trim() !== '' ? parsed.vendorId : null,
+        quantity: parsed.quantity,
+        minStock: parsed.minStock,
+        estimatedTime: parsed.estimatedTime,
+        imageUrl: parsed.imageUrl || null,
       },
       include: {
         vendor: true,

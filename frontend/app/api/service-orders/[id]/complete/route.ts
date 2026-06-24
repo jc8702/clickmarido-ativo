@@ -47,6 +47,15 @@ export async function PATCH(
       include: { customer: true, technician: true },
     });
 
+    // TRIGGER: Automação ao concluir OS
+    try {
+      const { handleServiceOrderCompleted } = await import('@/app/api/automations/service-order-completed');
+      const result = await handleServiceOrderCompleted(id);
+      console.log('[AUTOMATION TRIGGER] Service order completed:', result);
+    } catch (error) {
+      console.error('[AUTOMATION ERROR] Failed to trigger service order automation:', error);
+    }
+
     return NextResponse.json(order);
 
   } catch (error: any) {

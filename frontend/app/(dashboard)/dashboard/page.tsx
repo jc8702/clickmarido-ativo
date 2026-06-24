@@ -8,6 +8,20 @@ import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { CardShimmer } from '@/components/Shimmer';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+} from 'recharts';
 
 interface Order {
   id: string;
@@ -21,6 +35,26 @@ interface Service {
   count: number;
 }
 
+interface RevenueHistoryItem {
+  name: string;
+  receita: number;
+}
+
+interface ServiceDistributionItem {
+  name: string;
+  value: number;
+}
+
+interface TechnicianPerformanceItem {
+  name: string;
+  valor: number;
+}
+
+interface OrderStatusDistributionItem {
+  status: string;
+  count: number;
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const authUser = user as { name?: string; email: string; role: string } | null;
@@ -30,8 +64,13 @@ export default function Dashboard() {
     ordersInProgress: 0,
     conversionRate: 0,
     customersTotal: 0,
+    availableTechnicians: 0,
     lastOrders: [] as Order[],
     topServices: [] as Service[],
+    revenueHistory: [] as RevenueHistoryItem[],
+    servicesDistribution: [] as ServiceDistributionItem[],
+    technicianPerformance: [] as TechnicianPerformanceItem[],
+    ordersStatusDistribution: [] as OrderStatusDistributionItem[],
   });
   const [loading, setLoading] = useState(true);
 
@@ -194,6 +233,112 @@ export default function Dashboard() {
                 {stat.trend}
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Gráficos de Análise */}
+        {!loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+            {/* Histórico de Faturamento (Linha) */}
+            <Card className="lg:col-span-2 border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
+              <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Evolução do Faturamento</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Faturamento líquido semanal das últimas 8 semanas</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.revenueHistory}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6347F9" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#6347F9" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="name" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E5E5" />
+                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Receita']} />
+                    <Area type="monotone" dataKey="receita" stroke="#6347F9" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {/* Status das Ordens (Donut) */}
+            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
+              <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Status das Ordens</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Distribuição atual de ordens de serviço</p>
+              <div className="h-72 flex flex-col justify-center items-center relative">
+                <ResponsiveContainer width="100%" height="80%">
+                  <PieChart>
+                    <Pie
+                      data={stats.ordersStatusDistribution}
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={4}
+                      dataKey="count"
+                      nameKey="status"
+                    >
+                      {stats.ordersStatusDistribution?.map((entry: any, index: number) => {
+                        const colors = ['#6347F9', '#FB8500', '#1FAA63', '#EF4444'];
+                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                      })}
+                    </Pie>
+                    <Tooltip formatter={(value, name) => [value, statusLabels[name as string] || name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                {/* Legendas customizadas */}
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-4 text-[10px] font-bold text-neutral-500">
+                  {stats.ordersStatusDistribution?.map((entry: any, index: number) => {
+                    const colors = ['#6347F9', '#FB8500', '#1FAA63', '#EF4444'];
+                    return (
+                      <div key={index} className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+                        <span>{statusLabels[entry.status] || entry.status}: {entry.count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Mais Gráficos: Categorias e Técnicos */}
+        {!loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            {/* Categorias de Serviços (Pizza) */}
+            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
+              <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Receita por Categoria</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Distribuição financeira de serviços nos últimos 6 meses</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.servicesDistribution}>
+                    <XAxis dataKey="name" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="#888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Valor']} />
+                    <Bar dataKey="value" fill="#6347F9" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {/* Produtividade de Técnicos (Barras Horizontais) */}
+            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
+              <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Performance de Técnicos</h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Faturamento gerado por cada técnico com ordens concluídas</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.technicianPerformance} layout="vertical">
+                    <XAxis type="number" stroke="#888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
+                    <YAxis dataKey="name" type="category" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Total OS']} />
+                    <Bar dataKey="valor" fill="#1FAA63" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
           </div>
         )}
 

@@ -28,95 +28,160 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // 1. Total de Clientes
-    const customersTotal = await prisma.customer.count();
-
-    // 2. Todos os Orçamentos
-    const allQuotations = await prisma.quotation.findMany({
-      include: {
-        customer: true,
-        items: {
-          include: { product: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // 3. Datas para filtro mensal
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // 4. Receita este mês (orçamentos aceitos/aprovados criados este mês)
-    const receivedThisMonth = allQuotations
-      .filter(q => 
-        (q.status === 'aceito' || q.status === 'aprovado') && 
-        new Date(q.createdAt) >= startOfMonth
-      )
-      .reduce((sum, q) => sum + q.total, 0);
+    // 1. Clientes Totais
+    const customersTotal = await prisma.customer.count();
 
-    // 5. Faturamento Pendente (orçamentos enviados/pendentes)
-    const pendingAmount = allQuotations
-      .filter(q => q.status === 'enviado' || q.status === 'pendente')
-      .reduce((sum, q) => sum + q.total, 0);
+    // 2. Faturamento Real Recebido este mês (da tabela de Pagamentos confirmados)
+    const paymentsThisMonth = await prisma.payment.aggregate({
+      where: {
+        status: 'confirmado',
+        createdAt: { gte: startOfMonth }
+      },
+      _sum: { amount: true }
+    });
+    const receivedThisMonth = paymentsThisMonth._sum.amount || 0;
 
-    // 6. Ordens / Serviços Em Progresso (orçamentos enviados ou pendentes)
-    const ordersInProgress = allQuotations.filter(
-      q => q.status === 'enviado' || q.status === 'pendente'
-    ).length;
+    // 3. Faturamento Pendente (da tabela de Pagamentos pendentes)
+    const paymentsPending = await prisma.payment.aggregate({
+      where: {
+        status: 'pendente'
+      },
+      _sum: { amount: true }
+    });
+    const pendingAmount = paymentsPending._sum.amount || 0;
 
-    // 7. Taxa de Conversão ((Aceitos / Total) * 100)
-    const totalQuotations = allQuotations.length;
-    const approvedQuotations = allQuotations.filter(
-      q => q.status === 'aceito' || q.status === 'aprovado'
-    ).length;
+    // 4. Ordens / Serviços Em Progresso (agendadas e em progresso)
+    const ordersInProgress = await prisma.serviceOrder.count({
+      where: {
+        status: { in: ['agendada', 'em_progresso'] }
+      }
+    });
+
+    // 5. Técnicos disponíveis ativos
+    const availableTechnicians = await prisma.technician.count({
+      where: { active: true }
+    });
+
+    // 6. Taxa de Conversão de Orçamentos ((Aprovados / Total) * 100)
+    const totalQuotations = await prisma.quotation.count();
+    const approvedQuotations = await prisma.quotation.count({
+      where: {
+        status: { in: ['aceito', 'aprovado'] }
+      }
+    });
     const conversionRate = totalQuotations > 0 
       ? Math.round((approvedQuotations / totalQuotations) * 100) 
       : 0;
 
-    // 8. Últimas Ordens (Mapeando os últimos 5 orçamentos para o formato do dashboard)
-    const lastOrders = allQuotations.slice(0, 5).map(q => {
-      // Mapear status do orçamento para status do serviço/ordem
-      let serviceStatus = 'agendada';
-      if (q.status === 'aceito' || q.status === 'aprovado') {
-        serviceStatus = 'concluida';
-      } else if (q.status === 'enviado') {
-        serviceStatus = 'em_progresso';
-      } else if (q.status === 'rejeitado') {
-        serviceStatus = 'cancelada';
-      }
+    // 7. Últimas 5 Ordens de Serviço reais
+    const lastOrdersDb = await prisma.serviceOrder.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { customer: true }
+    });
+    const lastOrders = lastOrdersDb.map(so => ({
+      id: so.id,
+      customer_name: so.customer?.name || 'Cliente',
+      amount: so.finalTotal,
+      status: so.status,
+    }));
 
-      return {
-        id: q.id,
-        customer_name: q.customer?.name || 'Cliente',
-        amount: q.total,
-        status: serviceStatus,
-      };
+    // 8. Histórico de faturamento semanal (últimas 8 semanas)
+    const eightWeeksAgo = new Date(now.getTime() - 56 * 24 * 60 * 60 * 1000);
+    const recentPayments = await prisma.payment.findMany({
+      where: {
+        status: 'confirmado',
+        createdAt: { gte: eightWeeksAgo }
+      },
+      select: { amount: true, createdAt: true }
     });
 
-    // 9. Top Serviços mais requisitados (Agregando itens dos orçamentos)
+    const revenueHistory = [];
+    for (let i = 7; i >= 0; i--) {
+      const start = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+      const end = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+      
+      const sum = recentPayments
+        .filter(p => p.createdAt >= start && p.createdAt < end)
+        .reduce((acc, p) => acc + p.amount, 0);
+
+      const label = `${start.getDate().toString().padStart(2, '0')}/${(start.getMonth() + 1).toString().padStart(2, '0')}`;
+      revenueHistory.push({ name: label, receita: sum });
+    }
+
+    // 9. Distribuição de Serviços por Categoria (receita de serviços por categoria nos últimos 6 meses)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const approvedQuotationsWithItems = await prisma.quotation.findMany({
+      where: {
+        status: { in: ['aceito', 'aprovado'] },
+        createdAt: { gte: sixMonthsAgo }
+      },
+      include: {
+        items: {
+          include: { product: true }
+        }
+      }
+    });
+
+    const categoryRevenue: Record<string, number> = {};
     const serviceCounts: Record<string, number> = {};
-    allQuotations.forEach(q => {
+
+    approvedQuotationsWithItems.forEach(q => {
       if (q.items && Array.isArray(q.items)) {
-        q.items.forEach((item: any) => {
-          const productType = item.product?.type;
-          if (productType === 'PECA') return;
-          const name = item.product?.name || item.name;
-          if (name) {
-            serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + (item.quantity || 1);
+        q.items.forEach((item) => {
+          if (item.product?.type === 'SERVICO') {
+            const cat = item.product.category || 'Geral';
+            const value = item.quantity * item.unitPrice;
+            categoryRevenue[cat] = (categoryRevenue[cat] || 0) + value;
+
+            const name = item.product.name || 'Serviço';
+            serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + item.quantity;
           }
         });
       }
     });
 
-    const aggregatedServices = Object.entries(serviceCounts).map(([name, count]) => ({
+    const servicesDistribution = Object.entries(categoryRevenue).map(([name, value]) => ({
       name,
-      count,
+      value: Number(value.toFixed(2))
     }));
 
-    // Ordena de forma decrescente por quantidade de pedidos
-    aggregatedServices.sort((a, b) => b.count - a.count);
+    const topServices = Object.entries(serviceCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
 
-    const topServices = aggregatedServices.slice(0, 5);
+    // 10. Performance do Técnico (receita de OS concluídas agrupadas por técnico)
+    const completedOrders = await prisma.serviceOrder.findMany({
+      where: { status: 'concluida' },
+      include: { technician: true }
+    });
+
+    const techRevenue: Record<string, number> = {};
+    completedOrders.forEach(order => {
+      const techName = order.technician?.name || 'Sem Técnico';
+      techRevenue[techName] = (techRevenue[techName] || 0) + order.finalTotal;
+    });
+
+    const technicianPerformance = Object.entries(techRevenue).map(([name, valor]) => ({
+      name,
+      valor: Number(valor.toFixed(2))
+    }));
+
+    // 11. Distribuição de Ordens por Status
+    const ordersStatusDb = await prisma.serviceOrder.groupBy({
+      by: ['status'],
+      _count: { id: true }
+    });
+
+    const ordersStatusDistribution = ordersStatusDb.map(item => ({
+      status: item.status,
+      count: item._count.id
+    }));
 
     return NextResponse.json({
       success: true,
@@ -126,8 +191,13 @@ export async function GET(request: NextRequest) {
         ordersInProgress,
         conversionRate,
         customersTotal,
+        availableTechnicians,
         lastOrders,
         topServices,
+        revenueHistory,
+        servicesDistribution,
+        technicianPerformance,
+        ordersStatusDistribution
       },
     });
 

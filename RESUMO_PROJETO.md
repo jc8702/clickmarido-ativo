@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Melhorias financeiras e operacionais implementadas (Fases 1-8).
+- **Status Atual:** Fase 2 (Visibilidade, logs de WhatsApp, assinatura digital e materiais) concluída. Próxima etapa: Planejamento da Fase 3 (Relatórios e Configurações).
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 23/06/2026 - 22:55
+- **Última Atualização:** 23/06/2026 - 23:20
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,19 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 23/06/2026 - 23:20
+- **Implementação Completa da Fase 2 (Nível 2 — Alto Impacto) Concluída**:
+  - Dashboard operacional com gráficos Recharts exibindo faturamento semanal, status de OS, receita por categorias e performance de técnicos.
+  - Assinatura digital com Canvas integrada ao fluxo de finalização das Ordens de Serviço (OS).
+  - Lançamento de consumo de peças e abatimento de estoque automático com alertas de estoque baixo no encerramento de OS.
+  - Gravação automática de logs persistentes de mensagens enviadas via WhatsApp (`MessageLog`).
+  - Execução bem-sucedida do build de produção (`npm run build`) com zero erros.
+
+### 23/06/2026 - 23:10
+- **Planejamento da Fase 2 (Nível 2 — Alto Impacto) Elaborado**:
+  - Detalhamento do plano técnico englobando gráficos estatísticos, logs e triggers de WhatsApp, assinatura digital com canvas no local, cadastro de serviços ampliado e estoque de materiais.
+  - Criação do arquivo de plano oficial na conversa.
 
 ### 23/06/2026 - 22:50
 - **Melhorias Financeiras e Operacionais (Fases 1-8) Concluídas**:

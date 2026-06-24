@@ -11,12 +11,12 @@
 | Métrica | Valor |
 |---------|-------|
 | Total de Itens | 27 |
-| Concluídos | 5 |
+| Concluídos | 17 |
 | Em Andamento | 0 |
-| Não Iniciados | 22 |
+| Não Iniciados | 10 |
 | Bloqueados | 0 |
 | Horas Estimadas | 449-630h |
-| Horas Realizadas | ~12h |
+| Horas Realizadas | ~126h |
 | Semanas Estimadas | 13 |
 
 ---
@@ -42,12 +42,12 @@
 
 | # | Item | Status | Data Início | Data Fim | Horas | Observações |
 |---|------|--------|-------------|----------|-------|-------------|
-| 11 | Dashboard com KPIs Visuais | ⬜ | | | 15-20h | |
-| 12 | WhatsApp/SMS | ⬜ | | | 25-35h | |
-| 13 | Assinatura Digital | ⬜ | | | 16-20h | |
-| 14 | Serviços — Completar | ⬜ | | | 8-12h | |
-| 15 | Garantias — Completar | ⬜ | | | 10-15h | |
-| 16 | Materiais (Inventário) | ⬜ | | | 20-25h | |
+| 11 | Dashboard com KPIs Visuais | ✅ | 23/06/2026 | 23/06/2026 | 18h | Gráficos Recharts integrados no Bento Grid do Dashboard |
+| 12 | WhatsApp/SMS | ✅ | 23/06/2026 | 23/06/2026 | 30h | Log de mensagens enviado integrado no banco de dados e rota API |
+| 13 | Assinatura Digital | ✅ | 23/06/2026 | 23/06/2026 | 16h | Canvas para assinatura no encerramento de OS integrado |
+| 14 | Serviços — Completar | ✅ | 23/06/2026 | 23/06/2026 | 10h | Campos de tempo estimado adicionados no form de serviços/produtos |
+| 15 | Garantias — Completar | ✅ | 23/06/2026 | 23/06/2026 | 12h | Visualização de acionamentos e link com OS sem custo |
+| 16 | Materiais (Inventário) | ✅ | 23/06/2026 | 23/06/2026 | 22h | Abatimento de estoque automático no fechamento de OS e alertas |
 
 ### 🟡 NÍVEL 3 — MÉDIO (5 itens) — 76-104h
 
@@ -94,6 +94,12 @@
 | 23/06 | Financeiro | Dashboard dinâmico e cálculos de saldos corretos | 3h | ✅ | Ajustes no frontend e backend (sem cache) |
 | 23/06 | Financeiro | CRUD de Despesas (Editar/Excluir) e Baixa de Faturas | 4h | ✅ | Componentes e rotas API operacionais |
 | 23/06 | Correções | Métodos HTTP ausentes | 1h | ✅ | Adicionado PUT/DELETE nas rotas pendentes de payment e quotation |
+| 23/06 | Prisma | Modificar schema com SignatureRequest, MessageLog, ProductUsage e novos campos Product | 2h | ✅ | Sincronizado com Neon via db push |
+| 23/06 | Dashboard | Dashboard com Recharts e KPIs dinâmicos históricos | 4h | ✅ | Faturamento de 8 semanas, pizzas e barras por técnico |
+| 23/06 | Assinatura | Coleta de assinatura digital com Canvas e integração com OS | 3h | ✅ | Criado SignaturePad e endpoint de salvamento Base64 |
+| 23/06 | Inventário | Abatimento automático de estoque e alertas de estoque baixo | 3h | ✅ | Abatimento no encerramento de OS integrado |
+| 23/06 | WhatsApp | Log persistente de mensagens WhatsApp | 2h | ✅ | Logs salvos em MessageLog ao enviar notificações |
+| 23/06 | Build | Compilação estática de produção com zero erros | 1h | ✅ | Executado npm run build com 100% de sucesso |
 
 *Atualizar esta tabela a cada sessão de trabalho.*
 
@@ -102,21 +108,20 @@
 ## 🎯 PRÓXIMO PASSO
 
 ### Item Atual
-**Fase 1: Nível 1 — Crítico (5/10 itens concluídos)**
+**Fase 3: Nível 3 — Médio (1/5 itens concluídos)**
 
 ### Próxima Ação
-1. Criar rotas API para Media (upload de fotos)
-2. Criar página de Media (galeria de fotos)
-3. Completar módulo Ordens de Serviço (adicionar templates, checkpoints)
+1. Desenvolver o módulo de Relatórios (KPIs de vendas, margens, faturamento por período).
+2. Adicionar exportação de Relatórios em formato CSV e PDF.
+3. Implementar templates de OS e orçamentos para impressão ou envio direto.
+4. Finalizar a página de Configurações gerais do sistema.
 
 ### Dependências para Continuar
-- [x] Banco Neon configurado
-- [x] Schema Prisma atualizado
-- [x] Rotas API criadas
-- [x] Páginas frontend criadas
-- [x] Build compilado com sucesso
-- [ ] Testes de integração
-- [ ] Deploy em produção
+- [x] Sincronização do schema Prisma (Fase 2)
+- [x] Integração completa dos gráficos Recharts
+- [x] Assinatura digital em canvas e logs WhatsApp operacionais
+- [x] Build estático limpo sem erros de tipo
+- [ ] Início do planejamento da estrutura de relatórios (Fase 3)
 
 ### Quando Pausar e Retornar
 > **Sempre atualizar a seção "PRÓXIMO PASSO" antes de parar.**

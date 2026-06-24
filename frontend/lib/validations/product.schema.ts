@@ -10,6 +10,10 @@ export const productSchema = z.object({
   category: z.string().max(200, 'Categoria muito longa').optional(),
   active: z.boolean().optional(),
   vendorId: z.string().optional().nullable().or(z.literal('')),
+  quantity: z.number().int().min(0),
+  minStock: z.number().int().min(0),
+  estimatedTime: z.number().int().min(1),
+  imageUrl: z.string().optional().nullable().or(z.literal('')),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;
