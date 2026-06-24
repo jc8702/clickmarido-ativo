@@ -157,6 +157,9 @@ export default function ChatPage() {
   const [loadingContacts, setLoadingContacts] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
+  const lastMessageCountRef = useRef<number>(0);
 
   // Função para fazer scroll para baixo
   const scrollToBottom = useCallback(() => {
@@ -327,45 +330,52 @@ export default function ChatPage() {
   }, []);
 
   // Carregar mensagens de uma conversa selecionada
-  const loadMessages = useCallback(async (chatId: string) => {
-    setLoadingMessages(true);
+  const loadMessages = useCallback(async (chatId: string, silent = false) => {
+    if (!silent) setLoadingMessages(true);
     try {
-      const res = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
+      // Tentar endpoint de mensagens (v2 e v1.8.x)
+      let data: any = null;
+      const resPost = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
         method: 'POST',
         body: JSON.stringify({
           where: { key: { remoteJid: chatId } },
-          limit: 40
+          limit: 60
         })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        // Evolution API retorna uma lista de mensagens
-        const list = (data.records || data || []).map((m: any) => {
+      }).catch(() => null);
+
+      if (resPost && resPost.ok) {
+        data = await resPost.json();
+      } else {
+        // Fallback: endpoint GET (alguns forks da Evolution API)
+        const resGet = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}?remoteJid=${encodeURIComponent(chatId)}&limit=60`).catch(() => null);
+        if (resGet && resGet.ok) data = await resGet.json();
+      }
+
+      if (data) {
+        const rawList = data.records || data.messages || data || [];
+        const list = (Array.isArray(rawList) ? rawList : []).map((m: any) => {
           let ts = m.messageTimestamp;
-          if (!ts && m.createdAt) {
-            ts = new Date(m.createdAt).getTime() / 1000;
-          }
-          if (!ts) {
-            ts = Date.now() / 1000;
-          }
-          
+          if (!ts && m.createdAt) ts = new Date(m.createdAt).getTime() / 1000;
+          if (!ts) ts = Date.now() / 1000;
           return {
-            id: m.key?.id || String(Math.random()),
-            fromMe: m.key?.fromMe ?? false,
+            id: m.key?.id || m.id || String(Math.random()),
+            fromMe: m.key?.fromMe ?? m.fromMe ?? false,
             body: getMessageBody(m),
             timestamp: ts,
           };
         });
-        
-        // Garantir ordenação cronológica estrita crescente (antigas no topo, novas embaixo)
         list.sort((a: any, b: any) => a.timestamp - b.timestamp);
-        
-        setChatMessages(list);
+
+        // Só atualiza se houver mensagens novas (evita re-render desnecessário)
+        if (list.length !== lastMessageCountRef.current || !silent) {
+          lastMessageCountRef.current = list.length;
+          setChatMessages(list);
+        }
       }
     } catch (err) {
       console.error('Error loading messages:', err);
     } finally {
-      setLoadingMessages(false);
+      if (!silent) setLoadingMessages(false);
     }
   }, [apiFetch]);
 
@@ -374,36 +384,58 @@ export default function ChatPage() {
     e.preventDefault();
     if (!newMessageText.trim() || !selectedChat) return;
 
-    const textToSend = newMessageText;
+    const textToSend = newMessageText.trim();
     setNewMessageText('');
 
-    try {
-      const res = await apiFetch(`/message/sendText/${INSTANCE_NAME}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          number: selectedChat.id.split('@')[0],
-          text: textToSend
-        })
-      });
+    // Adicionar localmente imediatamente para feedback instantâneo (optimistic UI)
+    const optimisticMsg = {
+      id: `optimistic-${Date.now()}`,
+      fromMe: true,
+      body: textToSend,
+      timestamp: Date.now() / 1000
+    };
+    setChatMessages(prev => [...prev, optimisticMsg]);
 
-      if (res.ok) {
-        // Adicionar localmente para feedback instantâneo
-        setChatMessages(prev => [
-          ...prev,
-          {
-            id: String(Math.random()),
-            fromMe: true,
-            body: textToSend,
-            timestamp: Date.now() / 1000
-          }
-        ]);
-        // Atualizar lista de chats
-        setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, lastMessage: textToSend, updatedAt: (Date.now() / 1000).toString() } : c));
-      } else {
-        toast.error('Erro ao enviar mensagem');
+    const phoneNumber = selectedChat.id.split('@')[0];
+
+    // Tentar múltiplos formatos de body (v1.8.x e v2 da Evolution API)
+    const payloads = [
+      // Formato v2 / mais recente
+      { number: phoneNumber, textMessage: { text: textToSend } },
+      // Formato v1.x legado
+      { number: phoneNumber, text: textToSend },
+      // Formato alternativo com options
+      { number: phoneNumber, options: { delay: 1200 }, textMessage: { text: textToSend } },
+    ];
+
+    let sent = false;
+    for (const payload of payloads) {
+      try {
+        const res = await apiFetch(`/message/sendText/${INSTANCE_NAME}`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          sent = true;
+          // Atualizar lista de chats com a última mensagem
+          setChats(prev => prev.map(c =>
+            c.id === selectedChat.id
+              ? { ...c, lastMessage: textToSend, updatedAt: (Date.now() / 1000).toString() }
+              : c
+          ));
+          break;
+        }
+        const errBody = await res.text();
+        console.warn(`Payload rejeitado (${res.status}):`, errBody);
+      } catch (err) {
+        console.error('Erro de rede ao tentar payload:', err);
       }
-    } catch (err) {
-      toast.error('Erro de conexão ao enviar mensagem');
+    }
+
+    if (!sent) {
+      // Reverter mensagem optimista se todos os formatos falharam
+      setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+      toast.error('Falha ao enviar mensagem. Verifique se o WhatsApp está conectado.');
     }
   };
 
@@ -437,27 +469,48 @@ export default function ChatPage() {
     setChatSearch('');
   };
 
-  // Poll de status a cada 10 segundos
+  // Poll de status a cada 15 segundos
   useEffect(() => {
     checkConnectionStatus();
-    const interval = setInterval(checkConnectionStatus, 10000);
+    const interval = setInterval(checkConnectionStatus, 15000);
     return () => clearInterval(interval);
   }, [checkConnectionStatus]);
 
-  // Carregar conversas quando pareado
+  // Carregar conversas quando pareado + polling a cada 30s para novos chats
   useEffect(() => {
     if (connected) {
       loadChats();
       loadCrmContacts();
+      // Polling da lista de chats para detectar novos contatos/mensagens
+      chatPollingRef.current = setInterval(() => {
+        loadChats();
+      }, 30000);
+      return () => {
+        if (chatPollingRef.current) clearInterval(chatPollingRef.current);
+      };
     }
   }, [connected, loadChats, loadCrmContacts]);
 
-  // Carregar mensagens quando um chat é selecionado
+  // Carregar mensagens quando um chat é selecionado + polling a cada 4s para receber em tempo real
   useEffect(() => {
     if (selectedChat) {
+      lastMessageCountRef.current = 0;
       loadMessages(selectedChat.id);
+      // Polling de mensagens para receber em tempo real
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      pollingRef.current = setInterval(() => {
+        loadMessages(selectedChat.id, true); // silent = não mostra loading
+      }, 4000);
+      return () => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+      };
+    } else {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     }
-  }, [selectedChat, loadMessages]);
+  }, [selectedChat?.id, loadMessages]);
 
   const filteredChats = chats.filter(chat => 
     chat.name.toLowerCase().includes(chatSearch.toLowerCase()) || 
