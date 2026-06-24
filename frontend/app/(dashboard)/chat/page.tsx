@@ -159,7 +159,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
-  const lastMessageCountRef = useRef<number>(0);
+  const lastMessageIdsRef = useRef<string>('');
 
   // Função para fazer scroll para baixo
   const scrollToBottom = useCallback(() => {
@@ -329,65 +329,79 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Carregar mensagens de uma conversa selecionada — com filtragem rigorosa por remoteJid
+  // Carregar mensagens de uma conversa selecionada — estratégia de 3 camadas
   const loadMessages = useCallback(async (chatId: string, silent = false) => {
     if (!silent) setLoadingMessages(true);
     try {
-      // Normalizar o chatId para comparação (remover sufixo @s.whatsapp.net ou @g.us)
       const phoneNumber = chatId.split('@')[0];
+      // Últimos 8 dígitos para matching fuzzy (lida com 9º dígito Brasil)
+      const last8 = phoneNumber.slice(-8);
 
-      // Endpoint POST com filtro por remoteJid
-      let data: any = null;
-      const resPost = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          where: { key: { remoteJid: chatId } },
-          limit: 80
-        })
-      }).catch(() => null);
+      let rawList: any[] = [];
 
-      if (resPost && resPost.ok) {
-        data = await resPost.json();
-      } else {
-        // Fallback endpoint GET
-        const resGet = await apiFetch(
-          `/chat/findMessages/${INSTANCE_NAME}?remoteJid=${encodeURIComponent(chatId)}&limit=80`
-        ).catch(() => null);
-        if (resGet && resGet.ok) data = await resGet.json();
+      // ── Estratégia 1: filtro por remoteJid direto (campo de primeiro nível) ──
+      const tryFetch = async (body: object): Promise<any[]> => {
+        const res = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
+          method: 'POST',
+          body: JSON.stringify(body)
+        }).catch(() => null);
+        if (!res || !res.ok) return [];
+        const d = await res.json();
+        const arr = d.records || d.messages || d || [];
+        return Array.isArray(arr) ? arr : [];
+      };
+
+      // Tenta filtro por campo direto remoteJid
+      rawList = await tryFetch({ where: { remoteJid: chatId }, limit: 100 });
+
+      // ── Estratégia 2: filtro por key.remoteJid (nested) ──
+      if (rawList.length === 0) {
+        rawList = await tryFetch({ where: { key: { remoteJid: chatId } }, limit: 100 });
       }
 
-      if (data) {
-        const rawList = data.records || data.messages || data || [];
+      // ── Estratégia 3: busca geral + filtragem 100% client-side ──
+      if (rawList.length === 0) {
+        rawList = await tryFetch({ limit: 200 });
+      }
 
-        const list = (Array.isArray(rawList) ? rawList : [])
-          // ====== FILTRAGEM RIGOROSA: só mensagens deste chat ======
-          .filter((m: any) => {
-            const jid = m.key?.remoteJid || m.remoteJid || '';
-            if (!jid) return false; // descartar se não tiver jid
-            const jidPhone = jid.split('@')[0];
-            // Aceitar se o número bate exatamente com o chat selecionado
-            return jidPhone === phoneNumber;
-          })
-          // =========================================================
-          .map((m: any) => {
-            let ts = m.messageTimestamp;
-            if (!ts && m.createdAt) ts = new Date(m.createdAt).getTime() / 1000;
-            if (!ts) ts = Date.now() / 1000;
-            return {
-              id: m.key?.id || m.id || String(Math.random()),
-              fromMe: m.key?.fromMe ?? m.fromMe ?? false,
-              body: getMessageBody(m),
-              timestamp: ts,
-            };
-          });
+      // ── Filtragem client-side robusta ──
+      const filtered = rawList.filter((m: any) => {
+        // Pegar JID de todas as posições possíveis
+        const jid = m.key?.remoteJid || m.remoteJid || m.chatId || '';
+        if (!jid) return false;
+        const jidPhone = jid.split('@')[0];
+        // Match exato OU últimos 8 dígitos (lida com variação do 9º dígito)
+        return jidPhone === phoneNumber || jidPhone.slice(-8) === last8;
+      });
 
-        list.sort((a: any, b: any) => a.timestamp - b.timestamp);
+      // ── Mapear e deduplicar por ID ──
+      const seen = new Set<string>();
+      const list = filtered
+        .map((m: any) => {
+          let ts = m.messageTimestamp;
+          if (!ts && m.createdAt) ts = new Date(m.createdAt).getTime() / 1000;
+          if (!ts) ts = Date.now() / 1000;
+          const id = m.key?.id || m.id || `rnd-${Math.random()}`;
+          return {
+            id,
+            fromMe: m.key?.fromMe ?? m.fromMe ?? false,
+            body: getMessageBody(m),
+            timestamp: ts,
+          };
+        })
+        .filter((m) => {
+          if (seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
 
-        // Só atualiza se houver mensagens novas (evita re-render desnecessário)
-        if (list.length !== lastMessageCountRef.current || !silent) {
-          lastMessageCountRef.current = list.length;
-          setChatMessages(list);
-        }
+      list.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Atualizar state apenas quando os IDs mudarem (evita re-renders desnecessários)
+      const newIds = list.map(m => m.id).join(',');
+      if (newIds !== lastMessageIdsRef.current) {
+        lastMessageIdsRef.current = newIds;
+        setChatMessages(list);
       }
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -514,7 +528,7 @@ export default function ChatPage() {
     if (selectedChat) {
       // Limpar mensagens do chat anterior IMEDIATAMENTE ao trocar de contato
       setChatMessages([]);
-      lastMessageCountRef.current = 0;
+      lastMessageIdsRef.current = '';
 
       // Cancelar polling anterior
       if (pollingRef.current) {
@@ -542,7 +556,7 @@ export default function ChatPage() {
     } else {
       // Chat deselecionado: limpar tudo
       setChatMessages([]);
-      lastMessageCountRef.current = 0;
+      lastMessageIdsRef.current = '';
       if (pollingRef.current) {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
