@@ -90,6 +90,7 @@ export default function ChatPage() {
   const [newMessageText, setNewMessageText] = useState('');
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [chatSearch, setChatSearch] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -201,12 +202,20 @@ export default function ChatPage() {
         const data = await res.json();
         // Normalizar dados da Evolution API
         const list = (data || []).map((c: any) => {
-          const chatDate = c.updatedAt || c.createdAt || (c.lastMessage?.messageTimestamp ? new Date(c.lastMessage.messageTimestamp * 1000).toISOString() : new Date().toISOString());
+          // Determinar data de forma robusta
+          let chatDate = c.updatedAt || c.createdAt;
+          if (!chatDate && c.lastMessage?.messageTimestamp) {
+            chatDate = c.lastMessage.messageTimestamp;
+          }
+          if (!chatDate) {
+            chatDate = Date.now() / 1000;
+          }
+          
           return {
             id: c.id || c.jid,
             name: c.name || c.id?.split('@')[0] || 'Contato',
             unreadCount: c.unreadCount || 0,
-            lastMessage: c.lastMessage?.message?.conversation || c.lastMessage?.message?.extendedTextMessage?.text || 'Sem mensagens',
+            lastMessage: getMessageBody(c.lastMessage),
             updatedAt: chatDate,
           };
         });
@@ -218,8 +227,8 @@ export default function ChatPage() {
           if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
           if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
           
-          const dateA = new Date(a.updatedAt).getTime() || 0;
-          const dateB = new Date(b.updatedAt).getTime() || 0;
+          const dateA = parseToDate(a.updatedAt).getTime() || 0;
+          const dateB = parseToDate(b.updatedAt).getTime() || 0;
           return dateB - dateA;
         });
 
@@ -246,12 +255,22 @@ export default function ChatPage() {
       if (res.ok) {
         const data = await res.json();
         // Evolution API retorna uma lista de mensagens
-        const list = (data.records || data || []).map((m: any) => ({
-          id: m.key?.id || String(Math.random()),
-          fromMe: m.key?.fromMe ?? false,
-          body: m.message?.conversation || m.message?.extendedTextMessage?.text || '[Mídia ou Mensagem Especial]',
-          timestamp: m.messageTimestamp || m.createdAt ? new Date(m.createdAt).getTime() / 1000 : Date.now() / 1000,
-        }));
+        const list = (data.records || data || []).map((m: any) => {
+          let ts = m.messageTimestamp;
+          if (!ts && m.createdAt) {
+            ts = new Date(m.createdAt).getTime() / 1000;
+          }
+          if (!ts) {
+            ts = Date.now() / 1000;
+          }
+          
+          return {
+            id: m.key?.id || String(Math.random()),
+            fromMe: m.key?.fromMe ?? false,
+            body: getMessageBody(m),
+            timestamp: ts,
+          };
+        });
         
         // Garantir ordenação cronológica estrita crescente (antigas no topo, novas embaixo)
         list.sort((a: any, b: any) => a.timestamp - b.timestamp);
@@ -323,6 +342,11 @@ export default function ChatPage() {
       loadMessages(selectedChat.id);
     }
   }, [selectedChat, loadMessages]);
+
+  const filteredChats = chats.filter(chat => 
+    chat.name.toLowerCase().includes(chatSearch.toLowerCase()) || 
+    chat.id.toLowerCase().includes(chatSearch.toLowerCase())
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -423,27 +447,46 @@ export default function ChatPage() {
           {apiOnline === true && connected && (
             <>
               {/* Lista de Conversas (Col 1) */}
-              <Card className="flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-white dark:bg-neutral-900">
-                <div className="p-3.5 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-neutral-50/50 dark:bg-neutral-800/30 flex justify-between items-center">
+              <Card className="flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-white dark:bg-[#111b21]">
+                <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex justify-between items-center">
                   <h3 className="font-bold text-xs text-neutral-700 dark:text-neutral-300">
-                    Conversas Ativas ({chats.length})
+                    Conversas Ativas ({filteredChats.length})
                   </h3>
                   <button onClick={loadChats} className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                     🔄 Atualizar
                   </button>
                 </div>
+                
+                {/* Campo de Pesquisa de Contatos estilo WhatsApp */}
+                <div className="p-2 border-b border-neutral-100 dark:border-neutral-800 bg-[#f0f2f5] dark:bg-[#111b21] flex items-center">
+                  <div className="flex-1 relative">
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Pesquisar ou começar uma nova conversa"
+                      value={chatSearch}
+                      onChange={(e) => setChatSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-[#202c33] border-none rounded-lg text-xs text-neutral-850 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                    />
+                  </div>
+                </div>
+
                 <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/50">
                   {loadingChats ? (
                     <div className="p-4 text-center text-xs text-neutral-400">Carregando chats...</div>
-                  ) : chats.length === 0 ? (
+                  ) : filteredChats.length === 0 ? (
                     <div className="p-4 text-center text-xs text-neutral-400">Nenhuma conversa encontrada.</div>
                   ) : (
-                    chats.map((chat) => (
+                    filteredChats.map((chat) => (
                       <div
                         key={chat.id}
                         onClick={() => setSelectedChat(chat)}
                         className={`p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3 ${
-                          selectedChat?.id === chat.id ? 'bg-[#efeae2]/40 dark:bg-[#2a3942]/20 border-r-4 border-emerald-500' : ''
+                          selectedChat?.id === chat.id ? 'bg-[#efeae2]/45 dark:bg-[#2a3942]/20 border-l-4 border-emerald-500' : ''
                         }`}
                       >
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(chat.name)}`}>
@@ -514,7 +557,7 @@ export default function ChatPage() {
                               >
                                 <p className="pr-10 break-words">{msg.body}</p>
                                 <span className={`text-[9px] absolute bottom-1 right-2 ${msg.fromMe ? 'text-neutral-500/80 dark:text-neutral-300/80' : 'text-neutral-400/80'}`}>
-                                  {new Date(msg.timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {formatChatTime(msg.timestamp)}
                                 </span>
                               </div>
                             </div>
