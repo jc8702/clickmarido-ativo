@@ -2,10 +2,10 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Fase 5 (App Móvel e IA de Precificação) concluída e implantada. Sistema 100% operacional.
-- **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 24/06/2026 - 09:50
-- **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
+- **Status Atual:** Fase 6 (Expansão, Escala e Segurança) concluída. Sistema 100% integrado e operacional.
+- **Objetivo Central:** CRM para serviços residenciais (com suporte multi-user)
+- **Última Atualização:** 24/06/2026 - 14:00
+- **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias)
 
 ## Arquitetura Final
 
@@ -40,16 +40,22 @@ Vercel (Deploy)
 - [x] Fluxo completo de acionamento de garantias gerando reparo de R$ 0,00
 - [x] Módulo Financeiro completo (Controle de saldos, faturas e despesas)
 
-## Funcionalidades Futuras (Roadmap)
-
-- [ ] PDF generation
-- [ ] WhatsApp API automatizada
-- [ ] Dashboard analytics
-- [ ] Multi-user
-- [ ] File uploads
-- [ ] Relatórios avançados
+- [x] Geração de PDF Premium (A4)
+- [x] WhatsApp Hub Local (Evolution API de graça)
+- [x] Dashboard de Auditoria & NPS
+- [x] Multi-User & Gerenciamento de Usuários
+- [x] Upload de Fotos no Google Drive (Service Account)
+- [x] Relatórios e Faturamentos Avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 14:00
+- **Implementação da Fase 6 (Expansão, Escala e Segurança) Concluída:**
+  - **Pilar 1: PDFs Premium (A4):** Redesenhadas por completo as páginas de impressão de OS (`print/service-order/[id]/page.tsx`) e Orçamentos (`print/quotation/[id]/page.tsx`) com visual executivo premium, fontes Outfit/Inter, selo gráfico de garantia de 90 dias e assinatura digital SVG do cliente.
+  - **Pilar 2: WhatsApp Hub Local (Zero-Cost):** Refatorado `lib/notifications/whatsapp.ts` direcionando os envios automáticos para a Evolution API local de graça, convertendo os antigos templates da Meta para texto formatado em português.
+  - **Pilar 3: Suporte Multi-User:** Desenvolvidos endpoints API `/api/users` e `/api/users/[id]` e a tela visual de controle administrativo `/users` (UsersPage) permitindo CRUD de colaboradores com proteção de nível de cargo (admin/manager). Adicionado o link "Usuários" na Sidebar lateral.
+  - **Pilar 4: Upload no Google Drive via Service Account:** Refatorado `lib/google-drive.ts` para autenticação com Service Account via JWT assinado com `crypto` nativo, ajustando o endpoint `/api/upload` para enviar buffers direto para o Drive e retornar a URL curta, com fallback Base64.
+  - **Correções de Tipos:** Injetada a declaração ausente de `decodeToken` na rota global de OS.
 
 ### 24/06/2026 - 09:50
 - **Saneamento de Segurança Crítica Concluído:**

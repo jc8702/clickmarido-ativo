@@ -5,6 +5,17 @@ import * as jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
+function decodeToken(request: NextRequest): { userId: string; email: string; role: string } | null {
+  if (!JWT_SECRET) return null;
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    return jwt.verify(authHeader.substring(7), JWT_SECRET) as any;
+  } catch {
+    return null;
+  }
+}
+
 function validateToken(request: NextRequest) {
   if (!JWT_SECRET) return null;
   const authHeader = request.headers.get('authorization');
@@ -34,7 +45,8 @@ async function generateOSNumber(): Promise<string> {
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {
-    if (!validateToken(request)) {
+    const user = decodeToken(request);
+    if (!user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
@@ -48,7 +60,22 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const where: any = {};
     if (status) where.status = status;
-    if (technicianId) where.technicianId = technicianId;
+    
+    // Filtro rígido para multi-user (técnico vê apenas suas próprias OS)
+    if (user.role === 'technician') {
+      const tech = await prisma.technician.findFirst({
+        where: { email: user.email, active: true },
+        select: { id: true },
+      });
+      if (tech) {
+        where.technicianId = tech.id;
+      } else {
+        where.technicianId = 'non-existent';
+      }
+    } else if (technicianId) {
+      where.technicianId = technicianId;
+    }
+
     if (search) {
       where.OR = [
         { number: { contains: search, mode: 'insensitive' } },
@@ -83,8 +110,14 @@ export async function GET(request: NextRequest): Promise<Response> {
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    if (!validateToken(request)) {
+    const user = decodeToken(request);
+    if (!user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Apenas administradores e managers podem criar OS
+    if (user.role === 'technician') {
+      return NextResponse.json({ error: 'Acesso negado: apenas administradores podem criar Ordens de Serviço' }, { status: 403 });
     }
 
     const body = await request.json();

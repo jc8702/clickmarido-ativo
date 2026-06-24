@@ -5,13 +5,12 @@ import { sendWhatsAppNotification } from '@/lib/notifications/whatsapp';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-function validateToken(request: NextRequest) {
+function decodeToken(request: NextRequest): { userId: string; email: string; role: string } | null {
   if (!JWT_SECRET) return null;
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   try {
-    jwt.verify(authHeader.substring(7), JWT_SECRET);
-    return true;
+    return jwt.verify(authHeader.substring(7), JWT_SECRET) as any;
   } catch {
     return null;
   }
@@ -25,7 +24,8 @@ export async function GET(
 ): Promise<Response> {
   const { id } = await params;
   try {
-    if (!validateToken(request)) {
+    const user = decodeToken(request);
+    if (!user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
@@ -45,6 +45,17 @@ export async function GET(
       return NextResponse.json({ error: 'Ordem de serviço não encontrada' }, { status: 404 });
     }
 
+    // Regra multi-user: Técnico só acessa sua própria OS
+    if (user.role === 'technician') {
+      const tech = await prisma.technician.findFirst({
+        where: { email: user.email, active: true },
+        select: { id: true },
+      });
+      if (!tech || order.technicianId !== tech.id) {
+        return NextResponse.json({ error: 'Acesso negado: esta Ordem de Serviço pertence a outro técnico' }, { status: 403 });
+      }
+    }
+
     return NextResponse.json(order);
 
   } catch (error) {
@@ -59,12 +70,38 @@ export async function PUT(
 ): Promise<Response> {
   const { id } = await params;
   try {
-    if (!validateToken(request)) {
+    const user = decodeToken(request);
+    if (!user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Fetch current order to track status change and check access
+    const currentOrder = await prisma.serviceOrder.findUnique({
+      where: { id },
+    });
+
+    if (!currentOrder) {
+      return NextResponse.json({ error: 'OS não encontrada' }, { status: 404 });
     }
 
     const body = await request.json();
     const { technicianId, scheduledTime, address, notes, finalTotal, status, automationLog } = body;
+
+    // Regra multi-user para técnicos no PUT
+    if (user.role === 'technician') {
+      const tech = await prisma.technician.findFirst({
+        where: { email: user.email, active: true },
+        select: { id: true },
+      });
+      if (!tech || currentOrder.technicianId !== tech.id) {
+        return NextResponse.json({ error: 'Acesso negado: esta Ordem de Serviço pertence a outro técnico' }, { status: 403 });
+      }
+
+      // Bloquear campos administrativos
+      if (technicianId !== undefined || scheduledTime !== undefined || address !== undefined || notes !== undefined || finalTotal !== undefined) {
+        return NextResponse.json({ error: 'Acesso negado: técnicos podem alterar apenas o status e o checklist' }, { status: 403 });
+      }
+    }
 
     const updateData: any = {};
     if (technicianId !== undefined) updateData.technicianId = technicianId;
@@ -74,11 +111,6 @@ export async function PUT(
     if (finalTotal !== undefined) updateData.finalTotal = Number(finalTotal);
     if (status !== undefined) updateData.status = status;
     if (automationLog !== undefined) updateData.automationLog = automationLog;
-
-    // Fetch current order to track status change
-    const currentOrder = await prisma.serviceOrder.findUniqueOrThrow({
-      where: { id },
-    });
 
     const order = await prisma.serviceOrder.update({
       where: { id },
@@ -177,8 +209,14 @@ export async function DELETE(
 ): Promise<Response> {
   const { id } = await params;
   try {
-    if (!validateToken(request)) {
+    const user = decodeToken(request);
+    if (!user) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Apenas admins e managers podem excluir OS
+    if (user.role === 'technician') {
+      return NextResponse.json({ error: 'Acesso negado: apenas administradores podem excluir Ordens de Serviço' }, { status: 403 });
     }
 
     const oldValue = await prisma.serviceOrder.findUnique({

@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 interface AuditParams {
   request: NextRequest;
-  entity: 'quotation' | 'payment' | 'service_order';
+  entity: 'quotation' | 'payment' | 'service_order' | 'user';
   entityId: string;
   action: 'created' | 'updated' | 'deleted' | 'automation_triggered' | string;
   oldValue?: any;
