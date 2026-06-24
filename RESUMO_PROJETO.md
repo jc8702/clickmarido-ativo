@@ -4,8 +4,8 @@
 
 - **Status Atual:** Fase 6 (Expansão, Escala e Segurança) concluída. Sistema 100% integrado e operacional.
 - **Objetivo Central:** CRM para serviços residenciais (com suporte multi-user)
-- **Última Atualização:** 24/06/2026 - 12:12
-- **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias)
+- **Última Atualização:** 24/06/2026 - 12:55
+- **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias) + Expo Updates (EAS)
 
 ## Arquitetura Final
 
