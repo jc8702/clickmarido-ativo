@@ -34,15 +34,34 @@ export default function PrintQuotationPage() {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('autoDownload') === 'true') {
         // Aguarda um instante para garantir a renderização completa das fontes
-        setTimeout(() => {
+        setTimeout(async () => {
           handleDownloadPDF();
           
           const redirectToChat = urlParams.get('redirectToChat');
           if (redirectToChat) {
-             setTimeout(() => {
-                const message = `Olá! Segue em anexo o seu orçamento solicitado.`;
-                window.location.href = `/chat?phone=${redirectToChat}&text=${encodeURIComponent(message)}`;
-             }, 1500); // dá um tempo pro download iniciar no navegador
+             const element = document.getElementById('pdf-content');
+             if (element) {
+               const opt = {
+                 margin: 10,
+                 filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
+                 image: { type: 'jpeg', quality: 0.98 },
+                 html2canvas: { scale: 2, useCORS: true, logging: false },
+                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+               };
+               try {
+                 // @ts-ignore
+                 const pdfBase64Url = await window.html2pdf().from(element).set(opt).outputPdf('datauristring');
+                 const pureBase64 = pdfBase64Url.split(',')[1];
+                 
+                 sessionStorage.setItem('auto_attach_pdf', pureBase64);
+                 sessionStorage.setItem('auto_attach_name', opt.filename);
+                 
+                 const message = `Olá! Segue em anexo a nossa proposta comercial #${quote.id.slice(0, 8).toUpperCase()}. Qualquer dúvida, estamos à disposição.`;
+                 window.location.href = `/chat?phone=${redirectToChat}&autoAttach=true&text=${encodeURIComponent(message)}`;
+               } catch (err) {
+                 console.error('Erro ao gerar base64 para redirecionamento:', err);
+               }
+             }
           }
         }, 1000);
       }
@@ -175,14 +194,14 @@ export default function PrintQuotationPage() {
       <div className="max-w-[210mm] mx-auto mb-6 flex justify-between items-center px-4 print:hidden">
         <button 
           onClick={() => router.back()} 
-          className="px-4 py-2 bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold rounded-2xl border border-neutral-200 shadow-xs transition-all"
+          className="px-4 py-2 bg-[#ffffff] hover:bg-[#f5f5f5] text-[#1f2937] text-xs font-bold rounded-2xl border border-[#e5e7eb] shadow-xs transition-all"
         >
           &larr; Voltar
         </button>
         <div className="flex gap-2">
           <button 
             onClick={() => window.print()} 
-            className="px-4 py-2 bg-white hover:bg-neutral-100 text-neutral-800 text-xs font-bold rounded-2xl border border-neutral-200 shadow-xs transition-all flex items-center gap-1.5"
+            className="px-4 py-2 bg-[#ffffff] hover:bg-[#f5f5f5] text-[#1f2937] text-xs font-bold rounded-2xl border border-[#e5e7eb] shadow-xs transition-all flex items-center gap-1.5"
           >
             <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -192,7 +211,7 @@ export default function PrintQuotationPage() {
           <button 
             onClick={handleDownloadPDF} 
             disabled={!libLoaded}
-            className="px-4 py-2 bg-white hover:bg-neutral-100 text-purple-600 text-xs font-bold rounded-2xl border border-purple-200 shadow-xs transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="px-4 py-2 bg-[#ffffff] hover:bg-[#f5f5f5] text-[#9333ea] text-xs font-bold rounded-2xl border border-[#d8b4fe] shadow-xs transition-all disabled:opacity-50 flex items-center gap-1.5"
           >
             Baixar PDF Premium
           </button>
@@ -265,18 +284,18 @@ export default function PrintQuotationPage() {
           {quote.notes && (
             <div className="mb-8">
               <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title mb-2">Escopo dos Serviços / Observações</h3>
-              <div className="bg-neutral-50/30 p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-neutral-700 leading-relaxed font-medium italic">
+              <div className="bg-[#fafafa] p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-[#374151] leading-relaxed font-medium italic">
                 "{quote.notes}"
               </div>
             </div>
           )}
 
           {/* Selo e Informação de Garantia Assegurada */}
-          <div className="flex items-center gap-4 bg-purple-50/40 border border-purple-100/50 p-4 rounded-2xl mb-8">
-            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-lg flex-shrink-0">🛡️</div>
+          <div className="flex items-center gap-4 bg-[#fdf4ff] border border-[#f3e8ff] p-4 rounded-2xl mb-8">
+            <div className="w-10 h-10 rounded-full bg-[#f3e8ff] flex items-center justify-center text-lg flex-shrink-0">🛡️</div>
             <div>
-              <h4 className="text-xs font-bold text-purple-950 uppercase tracking-wide font-title">Garantia Click Marido</h4>
-              <p className="text-[10px] text-purple-800 leading-normal font-medium">
+              <h4 className="text-xs font-bold text-[#3b0764] uppercase tracking-wide font-title">Garantia Click Marido</h4>
+              <p className="text-[10px] text-[#6b21a8] leading-normal font-medium">
                 Todo serviço contratado conta com a nossa <strong>Garantia de 90 dias</strong>, garantindo sua total tranquilidade contra falhas de material ou mão de obra.
               </p>
             </div>
@@ -284,24 +303,24 @@ export default function PrintQuotationPage() {
 
           {/* Tabela de Serviços e Peças */}
           <div className="mb-8">
-            <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title mb-3">Serviços Propostos</h3>
-            <div className="border border-neutral-200/70 rounded-2xl overflow-hidden shadow-xs">
+            <h3 className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider font-title mb-3">Serviços Propostos</h3>
+            <div className="border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-purple-950 text-white font-bold font-title">
+                  <tr className="bg-[#6b21a8] text-[#ffffff] font-bold font-title">
                     <th className="p-3.5 pl-5">Descrição do Item / Serviço</th>
                     <th className="p-3.5 text-center w-20">Qtd</th>
                     <th className="p-3.5 text-right w-36">Preço Unitário</th>
                     <th className="p-3.5 text-right pr-5 w-36">Subtotal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100">
+                <tbody className="divide-y divide-[#f3f4f6]">
                   {items.map((item: any, idx: number) => (
-                    <tr key={`quote-item-${idx}`} className="hover:bg-neutral-50/40">
-                      <td className="p-3.5 pl-5 font-semibold text-neutral-800">{item.description}</td>
-                      <td className="p-3.5 text-center text-neutral-600 font-medium">{item.quantity}</td>
-                      <td className="p-3.5 text-right text-neutral-600 font-medium">R$ {(item.price || 0).toFixed(2)}</td>
-                      <td className="p-3.5 text-right pr-5 font-bold text-neutral-800">R$ {((item.price || 0) * item.quantity).toFixed(2)}</td>
+                    <tr key={`quote-item-${idx}`} className="bg-[#ffffff]">
+                      <td className="p-3.5 pl-5 font-semibold text-[#1f2937]">{item.description}</td>
+                      <td className="p-3.5 text-center text-[#4b5563] font-medium">{item.quantity}</td>
+                      <td className="p-3.5 text-right text-[#4b5563] font-medium">R$ {(item.price || 0).toFixed(2)}</td>
+                      <td className="p-3.5 text-right pr-5 font-bold text-[#1f2937]">R$ {((item.price || 0) * item.quantity).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -311,18 +330,18 @@ export default function PrintQuotationPage() {
 
           {/* Resumo Financeiro */}
           <div className="flex justify-end mb-8">
-            <div className="w-[280px] space-y-2 bg-neutral-50/40 p-4 rounded-2xl border border-neutral-100 text-xs">
-              <div className="flex justify-between text-neutral-500 font-medium">
+            <div className="w-[280px] space-y-2 bg-[#f9fafb] p-4 rounded-2xl border border-[#f3f4f6] text-xs">
+              <div className="flex justify-between text-[#6b7280] font-medium">
                 <span>Subtotal Estimado:</span>
                 <span>R$ {(quote.total || 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-neutral-500 font-medium">
+              <div className="flex justify-between text-[#6b7280] font-medium">
                 <span>Descontos:</span>
                 <span>R$ 0,00</span>
               </div>
-              <div className="flex justify-between text-sm font-black border-t border-neutral-200/60 pt-2 text-neutral-800 font-title">
+              <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-2 text-[#1f2937] font-title">
                 <span>Total Estimado:</span>
-                <span className="text-purple-600 text-sm">R$ {(quote.total || 0).toFixed(2)}</span>
+                <span className="text-[#9333ea] text-sm">R$ {(quote.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -331,8 +350,8 @@ export default function PrintQuotationPage() {
         {/* Rodapé da Proposta */}
         <div>
           {/* Termos e Garantias */}
-          <div className="bg-neutral-50 p-4.5 rounded-2xl border border-neutral-150 text-[10px] text-neutral-500 leading-relaxed mb-8 font-medium">
-            <h4 className="font-bold text-neutral-700 uppercase tracking-wider mb-1 font-title">Garantia e Termos de Contratação</h4>
+          <div className="bg-[#f9fafb] p-4.5 rounded-2xl border border-[#f3f4f6] text-[10px] text-[#6b7280] leading-relaxed mb-8 font-medium">
+            <h4 className="font-bold text-[#374151] uppercase tracking-wider mb-1 font-title">Garantia e Termos de Contratação</h4>
             1. Esta proposta comercial é válida por 15 dias a contar da data de emissão.
             <br />
             2. Todos os serviços executados possuem a garantia estabelecida de 90 dias a contar da conclusão, cobrindo exclusivamente vícios ou defeitos do serviço prestado (CDC art. 26).
@@ -341,11 +360,11 @@ export default function PrintQuotationPage() {
           </div>
 
           {/* Assinatura de Aceite */}
-          <div className="border-t border-dashed border-neutral-200 pt-8 flex justify-between items-center text-center">
-            <div className="w-[45%] border-t border-neutral-300 pt-2.5 text-[10px] text-neutral-400 font-semibold uppercase tracking-wider font-title">
+          <div className="border-t border-dashed border-[#e5e7eb] pt-8 flex justify-between items-center text-center">
+            <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
               Assinatura do Técnico / Emissor
             </div>
-            <div className="w-[45%] border-t border-neutral-300 pt-2.5 text-[10px] text-neutral-400 font-semibold uppercase tracking-wider font-title">
+            <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
               De Acordo do Cliente
             </div>
           </div>

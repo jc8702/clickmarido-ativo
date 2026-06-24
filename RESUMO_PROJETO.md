@@ -370,6 +370,8 @@ npm run dev
 ---
 
 **Documentação gerada automaticamente. Atualizar conforme mudanças.**
+- **24/06/2026 - 17:25**: Correção definitiva do Light Mode no PDF de orçamento. Substituição das classes semânticas do Tailwind (`bg-white`, `text-neutral-900`) por valores em Hex (`bg-[#ffffff]`, `text-[#111827]`) anulando definitivamente qualquer CSS global ou injeção de classes `.dark`. Adicionado legenda com o número do orçamento junto com o envio do arquivo em anexo no WhatsApp de forma automática (via `caption`).
+  - Arquivos modificados: `frontend/app/print/quotation/[id]/page.tsx`, `frontend/app/(dashboard)/chat/page.tsx`
 - **24/06/2026 - 16:55**: Correção final no tema escuro da página de impressão: adicionado hook para remover a classe `dark` diretamente da tag `html` para evitar conflito com overrides de css global. Corrigido a função de auto-anexar que havia falhado no replace anterior no chat.
   - Arquivos modificados: `frontend/app/print/quotation/[id]/page.tsx`, `frontend/app/(dashboard)/chat/page.tsx`
 - **24/06/2026 - 16:50**: Removidas classes dark mode da página de impressão de orçamento para garantir fundo branco (light mode). Adicionado botão "Aprovar e Enviar no WhatsApp" na tela de impressão, o qual gera o PDF, salva no `sessionStorage` e abre o chat para anexo e envio automático ao cliente.
