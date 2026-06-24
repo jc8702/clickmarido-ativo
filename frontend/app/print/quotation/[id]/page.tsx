@@ -45,7 +45,7 @@ export default function PrintQuotationPage() {
                  margin: 10,
                  filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
                  image: { type: 'jpeg', quality: 1.0 },
-                 html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                 html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                  pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                };
@@ -77,7 +77,7 @@ export default function PrintQuotationPage() {
       margin: 10,
       filename: `Orcamento_Click_Marido_${quote?.id?.slice(0, 8) || 'PROP'}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
@@ -102,7 +102,7 @@ export default function PrintQuotationPage() {
       margin: 10,
       filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
-      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', windowWidth: 794 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
@@ -232,10 +232,10 @@ export default function PrintQuotationPage() {
         </div>
       </div>
 
-      {/* Conteúdo Otimizado para Folha A4 (210mm x 297mm) */}
+      {/* Conteúdo Otimizado para Folha A4 exata (794px x 1123px) */}
       <div 
         id="pdf-content" 
-        className="w-[210mm] min-h-[297mm] mx-auto bg-[#ffffff] text-[#111827] p-[10mm] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
+        className="w-[794px] min-h-[1123px] mx-auto bg-[#ffffff] text-[#111827] p-[40px] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
       >
         <div>
           {/* Header do Documento */}
