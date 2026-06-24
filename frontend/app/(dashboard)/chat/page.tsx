@@ -613,6 +613,41 @@ export default function ChatPage() {
     setChatSearch('');
   };
 
+  // Auto-selecionar chat via URL Params (ex: integração de orçamentos)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const phoneParam = urlParams.get('phone');
+      const textParam = urlParams.get('text');
+      
+      if (phoneParam) {
+        const jid = `${phoneParam}@s.whatsapp.net`;
+        const virtualChat: Chat = {
+          id: jid,
+          name: phoneParam,
+          unreadCount: 0,
+          lastMessage: 'Nova conversa iniciada pelo sistema',
+          updatedAt: (Date.now() / 1000).toString()
+        };
+        
+        setChats(prev => {
+          if (prev.some(c => c.id === jid)) return prev;
+          return [virtualChat, ...prev];
+        });
+        
+        setSelectedChat(virtualChat);
+        setSidebarMode('chats');
+        
+        if (textParam) {
+          setNewMessageText(textParam);
+        }
+        
+        // Remove params da URL para não re-abrir caso a página recarregue
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   // Poll de status a cada 15 segundos
   useEffect(() => {
     checkConnectionStatus();

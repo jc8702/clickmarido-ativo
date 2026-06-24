@@ -49,6 +49,16 @@ Vercel (Deploy)
 
 ## Histórico de Evolução
 
+### 24/06/2026 - 16:08
+- **Integração Orçamento -> WhatsApp:**
+  - O botão "Enviar ao Cliente" na aba de orçamentos agora pega o telefone cadastrado do cliente, gera a URL do PDF Premium e redireciona automaticamente o usuário para o módulo WhatsApp (`/chat`).
+  - No módulo WhatsApp, foi implementada lógica na montagem da tela (`useEffect` com `URLSearchParams`) para ler o telefone, iniciar uma conversa com esse número (seja ele um contato já conhecido ou não) e preencher automaticamente a caixa de texto com a mensagem e o link do orçamento, pronto para o envio com 1 clique.
+
+### 24/06/2026 - 15:56
+- **Correção Visual no Chat e Deploy Mobile:**
+  - **Layout Saltando:** Corrigido o bug na tela de chat onde, ao enviar uma mensagem, o container inteiro da página subia em telas não-desktop ou em browsers que tratam o `scrollIntoView` afetando o scroll raiz. Alterado para rolar apenas a propriedade `scrollTop` do container de mensagens específico, resolvendo o espaço vazio inferior e garantindo que o chat pareça nativo.
+  - **Deploy:** Commit e push realizados para Vercel (`main`) e deploy simultâneo da versão atualizada do frontend no aplicativo híbrido rodando comando `eas update --auto` para atualizar todas as plataformas do React Native via OTA.
+
 ### 24/06/2026 - 15:28
 - **Correção do Recebimento de Mensagens e Melhorias de UI no Chat:**
   - **Problema do 9º dígito BR:** Ajustada a lógica de `loadMessages` para buscar mensagens tanto do número original quanto da variação sem o 9º dígito (últimos 8 dígitos para fuzzy matching), resolvendo o problema de mensagens recebidas não aparecerem no chat.

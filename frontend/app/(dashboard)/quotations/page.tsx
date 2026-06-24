@@ -170,10 +170,27 @@ export default function QuotationsPage() {
     setDragOverStatus(null);
   };
 
-  const handleSend = async (id: string) => {
+  const handleSend = async (id: string, customerPhone?: string) => {
     setActionLoading(true);
     try {
       await updateStatus(id, 'enviado');
+      
+      if (customerPhone) {
+        const cleanPhone = customerPhone.replace(/\D/g, '');
+        if (cleanPhone) {
+          const origin = window.location.origin;
+          const pdfUrl = `${origin}/print/quotation/${id}`;
+          const message = `Olá! Segue o link para o seu orçamento:\n${pdfUrl}`;
+          window.location.href = `/chat?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+        } else {
+          alert('Telefone do cliente inválido.');
+        }
+      } else {
+        alert('O cliente não possui um telefone cadastrado.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao enviar o orçamento.');
     } finally {
       setActionLoading(false);
     }
@@ -481,7 +498,7 @@ export default function QuotationsPage() {
                 {selectedQuotation.status === 'rascunho' && (
                   <Button
                     className="flex-1"
-                    onClick={() => handleSend(selectedQuotation.id)}
+                    onClick={() => handleSend(selectedQuotation.id, selectedQuotation.customer?.phone)}
                     isLoading={actionLoading}
                   >
                     Enviar ao Cliente
