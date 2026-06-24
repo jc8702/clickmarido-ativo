@@ -555,6 +555,7 @@ export default function ChatPage() {
                       <h4 className="font-bold text-neutral-800 dark:text-neutral-200 mb-1">WhatsApp Web Emulado</h4>
                       <p className="text-xs max-w-xs leading-relaxed text-neutral-500 dark:text-neutral-400">Selecione uma conversa ativa ao lado para visualizar o histórico de mensagens e responder em tempo real.</p>
                     </div>
+                  </div>
                 )}
               </Card>
             </>
