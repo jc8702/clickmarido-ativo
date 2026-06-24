@@ -160,7 +160,7 @@ export default function ChatPage() {
   // Mapa de JID/telefone -> nome real (da Evolution API)
   const [contactsMap, setContactsMap] = useState<Record<string, string>>({});
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdsRef = useRef<string>('');
@@ -168,7 +168,9 @@ export default function ChatPage() {
 
   // Função para fazer scroll para baixo
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, []);
 
   // Rolar para o fim sempre que as mensagens forem carregadas ou atualizadas
@@ -1102,7 +1104,7 @@ export default function ChatPage() {
                     </div>
 
                     {/* Timeline de Mensagens com Doodle */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2 relative custom-scrollbar">
+                    <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-2 relative custom-scrollbar">
                       {/* Padrão de Fundo do WhatsApp */}
                       <div className="absolute inset-0 whatsapp-doodle pointer-events-none" />
                       
@@ -1117,7 +1119,6 @@ export default function ChatPage() {
                         ) : (
                           renderMessages()
                         )}
-                        <div ref={messagesEndRef} />
                       </div>
                     </div>
 
