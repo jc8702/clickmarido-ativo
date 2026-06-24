@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -19,11 +18,7 @@ function validateToken(request: NextRequest) {
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteParams
-): Promise<Response> {
-  const { id } = await params;
+async function handleCompleteOS(request: NextRequest, id: string): Promise<Response> {
   try {
     if (!validateToken(request)) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -31,6 +26,7 @@ export async function PATCH(
 
     const body = await request.json();
     const finalTotal = body.final_total || body.finalTotal;
+    const { signerName, signatureData, notes } = body;
 
     const updateData: any = {
       status: 'concluida',
@@ -39,6 +35,10 @@ export async function PATCH(
 
     if (finalTotal && !isNaN(finalTotal)) {
       updateData.finalTotal = Number(finalTotal);
+    }
+
+    if (notes) {
+      updateData.notes = notes;
     }
 
     const oldValue = await prisma.serviceOrder.findUnique({
@@ -50,6 +50,23 @@ export async function PATCH(
       data: updateData,
       include: { customer: true, technician: true },
     });
+
+    // Salvar Assinatura do Cliente
+    if (signerName && signatureData) {
+      await prisma.signatureRequest.deleteMany({
+        where: { serviceOrderId: id },
+      });
+
+      await prisma.signatureRequest.create({
+        data: {
+          serviceOrderId: id,
+          signatureData,
+          signerName,
+          ipAddress: request.headers.get('x-forwarded-for') || null,
+          userAgent: request.headers.get('user-agent') || null,
+        },
+      });
+    }
 
     // TRIGGER: Automação ao concluir OS
     try {
@@ -84,12 +101,26 @@ export async function PATCH(
     return NextResponse.json(order);
 
   } catch (error: any) {
-    console.error('PATCH /api/service-orders/[id]/complete error:', error);
+    console.error('Complete OS error:', error);
     if (error.code === 'P2025') {
       return NextResponse.json({ error: 'Ordem de serviço não encontrada' }, { status: 404 });
     }
     return NextResponse.json({ error: 'Erro ao concluir OS' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<Response> {
+  const { id } = await params;
+  return handleCompleteOS(request, id);
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<Response> {
+  const { id } = await params;
+  return handleCompleteOS(request, id);
 }

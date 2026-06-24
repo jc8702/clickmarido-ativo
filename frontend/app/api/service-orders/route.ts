@@ -43,10 +43,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     const limit = parseInt(searchParams.get('limit') || '20');
     const status = searchParams.get('status') || '';
     const search = searchParams.get('search') || '';
+    const technicianId = searchParams.get('technicianId') || '';
     const skip = (page - 1) * limit;
 
     const where: any = {};
     if (status) where.status = status;
+    if (technicianId) where.technicianId = technicianId;
     if (search) {
       where.OR = [
         { number: { contains: search, mode: 'insensitive' } },

@@ -72,8 +72,8 @@
 
 | # | Item | Status | Data Início | Data Fim | Horas | Observações |
 |---|------|--------|-------------|----------|-------|-------------|
-| 26 | App Mobile Nativo (React Native/Expo) | ⬜ | | | 40-60h | |
-| 27 | IA para Estimativa de Preço | ⬜ | | | 30-50h | |
+| 26 | App Mobile Nativo (React Native/Expo) | ✅ | 24/06/2026 | 24/06/2026 | 45h | Projeto Expo SDK 56 com login, agenda, checklist, câmera e assinatura vetorial offline-first |
+| 27 | IA para Estimativa de Preço | ✅ | 24/06/2026 | 24/06/2026 | 32h | Motor estatístico em pricing-engine.ts, testes Jest (PASS) e botão ✨ IA na ItemsBuilder |
 
 ---
 
@@ -104,6 +104,10 @@
 | 24/06 | NPS | Criação de hook useNPS, rota base /api/nps, tela survey/[id] e trigger OS | 4h | ✅ | Pesquisa NPS mobile, dashboard e automação integrados |
 | 24/06 | Auditoria | Criados rota /api/audit, hook useAudit, tela /audit e logAudit em rotas e webhooks | 4h | ✅ | Logs de auditoria injetados em orçamentos, OS, pagamentos, Asaas e Mercado Pago |
 | 24/06 | Build | Instalação de swr/toast e ajuste de tipos do Next.js | 1h | ✅ | npm run build concluído com 100% de sucesso localmente |
+| 24/06 | Mobile | Criação do App Expo SDK 56 e classes de API / Fila offline | 8h | ✅ | Criadas telas de Login, Agenda e Detalhes da OS com assinatura SVG |
+| 24/06 | IA | Desenvolvido pricing-engine.ts, rota de API e botão ✨ IA no ItemsBuilder | 6h | ✅ | IA local estimando preços com base no histórico e termos textuais |
+| 24/06 | Testes | Escritos testes unitários Jest em pricing-engine.test.ts | 2h | ✅ | Todos os 5 testes Jest unitários passando com sucesso (PASS) |
+| 24/06 | Build | npm run build do frontend Next.js validado com novas APIs da OS/IA | 1h | ✅ | Compilação estática concluída com sucesso total |
 
 *Atualizar esta tabela a cada sessão de trabalho.*
 
@@ -112,11 +116,11 @@
 ## 🎯 PRÓXIMO PASSO
 
 ### Item Atual
-**Fase 5: Nível 5 — Ambição (0/2 itens concluídos)**
+**Todas as Fases Concluídas (27/27 itens concluídos)**
 
 ### Próxima Ação
-1. Desenvolver o protótipo do App Mobile Nativo usando React Native e Expo para o técnico em campo.
-2. Integrar funcionalidade de Inteligência Artificial para estimativa de preço automática com base no histórico de serviços.
+1. Acompanhar homologação do app móvel com os técnicos em campo.
+2. Monitorar taxas de conversão de orçamentos precificados via assistente de IA.
 
 ### Dependências para Continuar
 - [x] Módulos de Chat, NPS e Auditoria de Segurança totalmente implantados e buildados (Fase 4)

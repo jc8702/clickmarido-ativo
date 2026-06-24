@@ -46,6 +46,15 @@ export async function POST(request: NextRequest) {
       { expiresIn: JWT_EXPIRATION }
     );
 
+    let technicianId: string | null = null;
+    const tech = await prisma.technician.findFirst({
+      where: { email: user.email, active: true },
+      select: { id: true },
+    });
+    if (tech) {
+      technicianId = tech.id;
+    }
+
     return NextResponse.json({
       token,
       user: {
@@ -53,6 +62,7 @@ export async function POST(request: NextRequest) {
         name: user.name,
         email: user.email,
         role: user.role,
+        technicianId,
       },
     });
 

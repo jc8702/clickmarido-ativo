@@ -33,6 +33,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    let technicianId: string | null = null;
+    const tech = await prisma.technician.findFirst({
+      where: { email: user.email, active: true },
+      select: { id: true },
+    });
+    if (tech) {
+      technicianId = tech.id;
+    }
+
     return NextResponse.json({
       valid: true,
       user: {
@@ -40,6 +49,7 @@ export async function GET(request: NextRequest) {
         name: user.name,
         email: user.email,
         role: user.role,
+        technicianId,
       },
     });
 
