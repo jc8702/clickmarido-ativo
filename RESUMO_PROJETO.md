@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Fase 2 (Visibilidade, logs de WhatsApp, assinatura digital e materiais) concluída. Próxima etapa: Planejamento da Fase 3 (Relatórios e Configurações).
+- **Status Atual:** Fase 4 (Chat, Pós-Venda e Auditoria) iniciada. Deploy intermediário para homologação das bases estruturais e interface do Chat.
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 23/06/2026 - 23:20
+- **Última Atualização:** 24/06/2026 - 00:30
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,24 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 00:30
+- **Início da Fase 4 (Nível 4 — Interações & Pós-Venda) e Deploy de Homologação**:
+  - Implementado o módulo de Conversas/Chat: criada tela `/chat` e endpoints `/api/messages` integrados ao `MessageLog` e `sendWhatsAppNotification`.
+  - Instaladas dependências necessárias `react-hot-toast` e `swr` no frontend.
+  - Criado o hook `hooks/useMessages` e ajustado o tipo de retorno das rotas de API para Promise<Response> para sanar bugs do compilador de tipos do Next.js.
+  - Correção nas propriedades do `TableShimmer` e na chamada do hook `useEscapeToClose` no ChatPage.
+  - Criado o hook `hooks/useNPS` e rotas de base em `/api/nps` preparando a infraestrutura de pós-venda.
+  - Sucesso de 100% no build local do Next.js. Deploy intermediário sendo enviado para a Vercel.
+
+### 23/06/2026 - 23:30
+- **Implementação Completa da Fase 3 (Nível 3 — Médio) Concluída**:
+  - Modelagem do modelo `CompanySettings` para salvar dados cadastrais, valor de hora técnica e comissões da Click Marido.
+  - Criado o endpoint `/api/settings` e a página `/settings` para gerenciamento das taxas e configurações da empresa.
+  - Desenvolvida a página de Relatórios Avançados (`/reports`) com gráficos Recharts para Fluxo de Caixa Diário e Produtividade de Técnicos.
+  - Criada API `/api/reports` para agregação de dados e exportação de relatórios em CSV.
+  - Implementado layout nativo de impressão formatada em A4 para Ordens de Serviço (OS) e Orçamentos usando CSS Media Print e `window.print()`.
+  - Execução bem-sucedida do build de produção com TypeScript 100% correto e deploy efetuado no GitHub.
 
 ### 23/06/2026 - 23:20
 - **Implementação Completa da Fase 2 (Nível 2 — Alto Impacto) Concluída**:

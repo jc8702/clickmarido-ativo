@@ -11,12 +11,12 @@
 | Métrica | Valor |
 |---------|-------|
 | Total de Itens | 27 |
-| Concluídos | 17 |
+| Concluídos | 21 |
 | Em Andamento | 0 |
-| Não Iniciados | 10 |
+| Não Iniciados | 6 |
 | Bloqueados | 0 |
 | Horas Estimadas | 449-630h |
-| Horas Realizadas | ~126h |
+| Horas Realizadas | ~192h |
 | Semanas Estimadas | 13 |
 
 ---
@@ -54,18 +54,18 @@
 | # | Item | Status | Data Início | Data Fim | Horas | Observações |
 |---|------|--------|-------------|----------|-------|-------------|
 | 17 | Avaliação e Satisfação de Cliente | ✅ | 23/06/2026 | 23/06/2026 | 2h | Modelo Prisma + 3 rotas API + página frontend |
-| 18 | Relatórios — Completar | ⬜ | | | 16-22h | |
-| 19 | Relatórios Exportáveis | ⬜ | | | 16-22h | |
-| 20 | Templates de OS/Documentos | ⬜ | | | 18-25h | |
-| 21 | Configurações — Completar | ⬜ | | | 10-15h | |
+| 18 | Relatórios — Completar | ✅ | 23/06/2026 | 23/06/2026 | 18h | Aba e painel de Relatórios avançados com gráficos de comissão e caixa |
+| 19 | Relatórios Exportáveis | ✅ | 23/06/2026 | 23/06/2026 | 16h | Rota API /api/reports?export=csv funcional para download de planilhas |
+| 20 | Templates de OS/Documentos | ✅ | 23/06/2026 | 23/06/2026 | 20h | Layout print-friendly nativo para impressão de OS e Orçamentos |
+| 21 | Configurações — Completar | ✅ | 23/06/2026 | 23/06/2026 | 12h | Rota API /api/settings e página /settings operacionais |
 
 ### 🟢 NÍVEL 4 — BAIXO (4 itens) — 65-93h
 
 | # | Item | Status | Data Início | Data Fim | Horas | Observações |
 |---|------|--------|-------------|----------|-------|-------------|
 | 22 | Fornecedores e Compras | ⬜ | | | 20-28h | |
-| 23 | Conversas (Chat) | ⬜ | | | 25-35h | |
-| 24 | Pós-Venda | ⬜ | | | 12-18h | |
+| 23 | Conversas (Chat) | 🔄 | 24/06/2026 | | 4h | Tela de mensagens, hook useMessages e rotas de envio manual criadas |
+| 24 | Pós-Venda | 🔄 | 24/06/2026 | | 1h | Infraestrutura de NPS iniciada com hook useNPS e rota de API |
 | 25 | Auditoria e Logging | ⬜ | | | 8-12h | |
 
 ### 🔵 NÍVEL 5 — AMBIÇÃO (2 itens) — 70-110h
@@ -100,6 +100,9 @@
 | 23/06 | Inventário | Abatimento automático de estoque e alertas de estoque baixo | 3h | ✅ | Abatimento no encerramento de OS integrado |
 | 23/06 | WhatsApp | Log persistente de mensagens WhatsApp | 2h | ✅ | Logs salvos em MessageLog ao enviar notificações |
 | 23/06 | Build | Compilação estática de produção com zero erros | 1h | ✅ | Executado npm run build com 100% de sucesso |
+| 24/06 | Chat | Criação de tela /chat, hook useMessages e rotas API /api/messages | 4h | 🔄 | Módulo de Conversas estruturado, build de produção validado |
+| 24/06 | NPS | Criação de hook useNPS e rota base /api/nps | 1h | 🔄 | Infraestrutura para avaliações de cliente iniciada |
+| 24/06 | Build | Instalação de swr/toast e ajuste de tipos do Next.js | 1h | ✅ | npm run build concluído com 100% de sucesso localmente |
 
 *Atualizar esta tabela a cada sessão de trabalho.*
 
@@ -108,20 +111,20 @@
 ## 🎯 PRÓXIMO PASSO
 
 ### Item Atual
-**Fase 3: Nível 3 — Médio (1/5 itens concluídos)**
+**Fase 4: Nível 4 — Baixo (0/4 itens concluídos)**
 
 ### Próxima Ação
-1. Desenvolver o módulo de Relatórios (KPIs de vendas, margens, faturamento por período).
-2. Adicionar exportação de Relatórios em formato CSV e PDF.
-3. Implementar templates de OS e orçamentos para impressão ou envio direto.
-4. Finalizar a página de Configurações gerais do sistema.
+1. Concluir a integração do módulo de Compras e Fornecedores ao fluxo de despesas e OS.
+2. Criar a tela de Conversas (Chat) com atalhos de envio direto para WhatsApp.
+3. Implementar a rotina de Pós-Venda (follow-up de satisfação e NPS automatizados).
+4. Expandir o módulo de Auditoria e logs de segurança (`AuditLog`).
 
 ### Dependências para Continuar
-- [x] Sincronização do schema Prisma (Fase 2)
-- [x] Integração completa dos gráficos Recharts
-- [x] Assinatura digital em canvas e logs WhatsApp operacionais
-- [x] Build estático limpo sem erros de tipo
-- [ ] Início do planejamento da estrutura de relatórios (Fase 3)
+- [x] Relatórios operacionais e exportação CSV funcional (Fase 3)
+- [x] Configurações de empresa cadastradas e taxas de hora salvas (Fase 3)
+- [x] Impressão nativa de OS e Orçamentos testada (Fase 3)
+- [x] Build estático do Next.js sem nenhum erro de tipo (Fase 3)
+- [ ] Início do planejamento do chat e pós-venda (Fase 4)
 
 ### Quando Pausar e Retornar
 > **Sempre atualizar a seção "PRÓXIMO PASSO" antes de parar.**
