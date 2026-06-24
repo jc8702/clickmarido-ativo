@@ -66,7 +66,7 @@
 | 22 | Fornecedores e Compras | ✅ | 22/06/2026 | 22/06/2026 | 24h | Modelo Prisma, APIs REST, Drawer de histórico de SKU e fluxo financeiro integrado |
 | 23 | Conversas (Chat) | ✅ | 24/06/2026 | 24/06/2026 | 5h | Tela de histórico, hook useMessages e rota de envio manual operacionais |
 | 24 | Pós-Venda | ✅ | 24/06/2026 | 24/06/2026 | 4h | NPS completo. Página survey/[id], dashboard /nps e gatilho de WhatsApp na OS |
-| 25 | Auditoria e Logging | ✅ | 24/06/2026 | 24/06/2026 | 3h | Timeline em /audit com expander JSON e logAudit injetado em rotas críticas |
+| 25 | Auditoria e Logging | ✅ | 24/06/2026 | 24/06/2026 | 4h | Timeline em /audit com expander JSON e logAudit injetado em rotas e webhooks (Asaas/MP) |
 
 ### 🔵 NÍVEL 5 — AMBIÇÃO (2 itens) — 70-110h
 
@@ -102,7 +102,7 @@
 | 23/06 | Build | Compilação estática de produção com zero erros | 1h | ✅ | Executado npm run build com 100% de sucesso |
 | 24/06 | Chat | Criação de tela /chat, hook useMessages e rotas API /api/messages | 4h | ✅ | Módulo de Conversas concluído e build validado |
 | 24/06 | NPS | Criação de hook useNPS, rota base /api/nps, tela survey/[id] e trigger OS | 4h | ✅ | Pesquisa NPS mobile, dashboard e automação integrados |
-| 24/06 | Auditoria | Criados rota /api/audit, hook useAudit, tela /audit e logAudit em rotas | 3h | ✅ | Logs de auditoria injetados em orçamentos, OS e pagamentos |
+| 24/06 | Auditoria | Criados rota /api/audit, hook useAudit, tela /audit e logAudit em rotas e webhooks | 4h | ✅ | Logs de auditoria injetados em orçamentos, OS, pagamentos, Asaas e Mercado Pago |
 | 24/06 | Build | Instalação de swr/toast e ajuste de tipos do Next.js | 1h | ✅ | npm run build concluído com 100% de sucesso localmente |
 
 *Atualizar esta tabela a cada sessão de trabalho.*
