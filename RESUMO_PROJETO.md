@@ -4,7 +4,7 @@
 
 - **Status Atual:** Fase 5 (App Móvel e IA de Precificação) concluída e implantada. Sistema 100% operacional.
 - **Objetivo Central:** CRM para serviços residenciais (1 usuário solo)
-- **Última Atualização:** 24/06/2026 - 00:40
+- **Última Atualização:** 24/06/2026 - 09:50
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel
 
 ## Arquitetura Final
@@ -50,6 +50,14 @@ Vercel (Deploy)
 - [ ] Relatórios avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 09:50
+- **Saneamento de Segurança Crítica Concluído:**
+  - Removida senha estática codificada (`Millena@@2017@@`) do script `seed-users.js` e substituída pela variável de ambiente `SEED_ADMIN_PASSWORD` com fallback seguro.
+  - Atualizado `.env.example` com a documentação da nova chave.
+  - Atualizado o status de segurança e os bloqueios em `REGISTRO_IMPLEMENTACAO.md` como resolvidos.
+  - Executados testes de build de produção (`npm run build`) e testes Jest (100% PASS, 17 testes bem-sucedidos).
+  - Enviadas as alterações de configuração remota móvel (EAS/Expo) e segurança para o repositório remoto.
 
 ### 24/06/2026 - 11:47
 - **Deploy de Produção Web (Vercel) Concluído**:
