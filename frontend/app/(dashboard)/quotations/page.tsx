@@ -179,8 +179,11 @@ export default function QuotationsPage() {
         const cleanPhone = customerPhone.replace(/\D/g, '');
         if (cleanPhone) {
           const origin = window.location.origin;
-          const pdfUrl = `${origin}/print/quotation/${id}`;
-          const message = `Olá! Segue o link para o seu orçamento:\n${pdfUrl}`;
+          // Abre o PDF em uma nova aba com o parâmetro para baixar automaticamente
+          window.open(`${origin}/print/quotation/${id}?autoDownload=true`, '_blank');
+          
+          const message = `Olá! Segue em anexo o seu orçamento solicitado.`;
+          // Redireciona a aba atual para o chat para que o usuário possa anexar o PDF
           window.location.href = `/chat?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
         } else {
           alert('Telefone do cliente inválido.');

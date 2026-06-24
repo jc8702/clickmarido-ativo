@@ -23,6 +23,26 @@ export default function PrintQuotationPage() {
     return () => window.removeEventListener('keydown', handleEscape);
   }, []);
 
+  useEffect(() => {
+    if (libLoaded && quote) {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoDownload') === 'true') {
+        // Aguarda um instante para garantir a renderização completa das fontes
+        setTimeout(() => {
+          handleDownloadPDF();
+          
+          const redirectToChat = urlParams.get('redirectToChat');
+          if (redirectToChat) {
+             setTimeout(() => {
+                const message = `Olá! Segue em anexo o seu orçamento solicitado.`;
+                window.location.href = `/chat?phone=${redirectToChat}&text=${encodeURIComponent(message)}`;
+             }, 1500); // dá um tempo pro download iniciar no navegador
+          }
+        }, 1000);
+      }
+    }
+  }, [libLoaded, quote]);
+
   const handleDownloadPDF = () => {
     const element = document.getElementById('pdf-content');
     if (!element) return;

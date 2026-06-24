@@ -583,6 +583,67 @@ export default function ChatPage() {
     }
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSendDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    if (!selectedChat) return;
+
+    const phoneNumber = selectedChat.id.split('@')[0];
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Url = event.target?.result as string;
+      // Remover o prefixo data:mime/type;base64,
+      const pureBase64 = base64Url.split(',')[1];
+      
+      const optimisticMsg = {
+        id: `optimistic-doc-${Date.now()}`,
+        fromMe: true,
+        body: `📄 Enviando arquivo: ${file.name}...`,
+        timestamp: Date.now() / 1000
+      };
+      setChatMessages(prev => [...prev, optimisticMsg]);
+
+      try {
+        const payload = {
+          number: phoneNumber,
+          options: { delay: 1200 },
+          mediaMessage: {
+            mediatype: 'document',
+            fileName: file.name,
+            media: pureBase64
+          }
+        };
+
+        const res = await apiFetch(`/message/sendDocument/${INSTANCE_NAME}`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          setChats(prev => prev.map(c =>
+            c.id === selectedChat.id
+              ? { ...c, lastMessage: `📄 ${file.name}`, updatedAt: (Date.now() / 1000).toString() }
+              : c
+          ));
+        } else {
+          setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+          toast.error('Falha ao enviar documento. Verifique a API.');
+        }
+      } catch (err) {
+        setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+        toast.error('Erro de rede ao enviar documento.');
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // reset input
+    e.target.value = '';
+  };
+
+
   // Selecionar um contato do CRM para iniciar chat
   const handleSelectCrmCustomer = (cust: any) => {
     const formattedPhone = cust.phone ? cust.phone.replace(/\D/g, '') : '';
@@ -1159,11 +1220,28 @@ export default function ChatPage() {
 
                     {/* Barra de Input para Enviar Mensagem */}
                     <form onSubmit={handleSendMessage} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-center border-t border-neutral-200/50 dark:border-neutral-800/50 z-10 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
+                        title="Anexar arquivo (PDF, imagens, etc)"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleSendDocument}
+                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                      />
                       <div className="flex-1">
                         <input
                           required
                           type="text"
-                          placeholder="Mensagem"
+                          placeholder="Digite uma mensagem..."
                           value={newMessageText}
                           onChange={(e) => setNewMessageText(e.target.value)}
                           className="w-full px-4 py-2.5 bg-white dark:bg-[#2a3942] border-none rounded-lg text-[14px] text-neutral-850 dark:text-[#e9edef] placeholder-[#667781] dark:placeholder-[#8696a0] focus:outline-none focus:ring-0 shadow-sm"

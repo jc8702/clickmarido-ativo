@@ -364,3 +364,7 @@ npm run dev
 ---
 
 **DocumentaÃ§Ã£o gerada automaticamente. Atualizar conforme mudanÃ§as.**
+- **24/06/2026 - 16:30**: Substituído o link no fluxo de envio de orçamento. O 'Enviar ao Cliente' agora redireciona e baixa o PDF gerado automaticamente e, em seguida, abre o Chat.
+  - Arquivos modificados: frontend/app/(dashboard)/quotations/page.tsx, frontend/app/print/quotation/[id]/page.tsx
+- **24/06/2026 - 16:30**: Adicionada a função de anexar e enviar arquivos (PDF, imagens, docs) via botão paperclip no módulo de chat usando o endpoint /message/sendDocument da Evolution API.
+  - Arquivos modificados: frontend/app/(dashboard)/chat/page.tsx
