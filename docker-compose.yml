@@ -21,6 +21,19 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  evolution-api:
+    image: evoapicloud/evolution-api:v1.8.2
+    container_name: evolution-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTHENTICATION_API_KEY=clickmarido_key
+      - TEMPLATE_ENABLED=true
+    volumes:
+      - evolution_instances:/evolution/instances
+
 volumes:
   postgres_data:
   redis_data:
+  evolution_instances:

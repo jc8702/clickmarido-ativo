@@ -164,6 +164,7 @@ export default function ChatPage() {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdsRef = useRef<string>('');
+  const lastQrGenerationRef = useRef<number>(0);
 
   // Função para fazer scroll para baixo
   const scrollToBottom = useCallback(() => {
@@ -227,6 +228,7 @@ export default function ChatPage() {
       // Se a instância não existe, criar uma nova
       if (data.status === 404 || data.error === 'Not Found' || (data.response?.message && data.response.message[0]?.includes('does not exist'))) {
         setConnected(false);
+        lastQrGenerationRef.current = Date.now();
         const createRes = await apiFetch('/instance/create', {
           method: 'POST',
           body: JSON.stringify({
@@ -247,21 +249,27 @@ export default function ChatPage() {
       if (data.instance?.state === 'open' || data.state === 'open') {
         setConnected(true);
         setQrCode(null);
+        lastQrGenerationRef.current = 0;
       } else {
         setConnected(false);
-        // Tentar obter ou gerar QR Code se não estiver conectado
-        const connectRes = await apiFetch(`/instance/connect/${INSTANCE_NAME}`, { method: 'POST' }).catch(() => null);
-        if (connectRes && connectRes.ok) {
-          const connectData = await connectRes.json();
-          const qr = connectData.base64 || connectData.qrcode?.base64 || connectData.code || null;
-          setQrCode(qr);
+        // Evitar gerar QR Codes repetitivos em intervalos curtos (cooldown de 50s) para não interromper a leitura do usuário
+        const now = Date.now();
+        const timeSinceLastGen = now - lastQrGenerationRef.current;
+        if (!qrCode || timeSinceLastGen > 50000) {
+          lastQrGenerationRef.current = now;
+          const connectRes = await apiFetch(`/instance/connect/${INSTANCE_NAME}`, { method: 'POST' }).catch(() => null);
+          if (connectRes && connectRes.ok) {
+            const connectData = await connectRes.json();
+            const qr = connectData.base64 || connectData.qrcode?.base64 || connectData.code || null;
+            setQrCode(qr);
+          }
         }
       }
     } catch (err) {
       setApiOnline(false);
       setConnected(false);
     }
-  }, [apiFetch]);
+  }, [apiFetch, qrCode]);
 
   // Carregar lista de conversas/chats
   const loadChats = useCallback(async () => {
@@ -428,12 +436,35 @@ export default function ChatPage() {
         return extractMessages(d);
       };
 
+      // Gerar variação do número (problema do 9º dígito no Brasil)
+      const isBR = phoneNumber.startsWith('55') && phoneNumber.length >= 12;
+      let altChatId = '';
+      if (isBR) {
+        const ddd = phoneNumber.slice(2, 4);
+        const rest = phoneNumber.slice(4);
+        if (rest.length === 9) {
+          altChatId = `55${ddd}${rest.slice(1)}@s.whatsapp.net`;
+        } else if (rest.length === 8) {
+          altChatId = `55${ddd}9${rest}@s.whatsapp.net`;
+        }
+      }
+
       // Estratégia 1 — filtro Prisma por remoteJid (campo direto)
-      rawList = await tryPost({ where: { remoteJid: chatId }, limit: 100 });
+      let list1 = await tryPost({ where: { remoteJid: chatId }, limit: 100 });
+      let list2: any[] = [];
+      if (altChatId) {
+        list2 = await tryPost({ where: { remoteJid: altChatId }, limit: 100 });
+      }
+      
+      rawList = [...list1, ...list2];
 
       // Estratégia 2 — filtro Prisma JSON nested
       if (rawList.length === 0) {
-        rawList = await tryPost({ where: { key: { path: ['remoteJid'], equals: chatId } }, limit: 100 });
+        list1 = await tryPost({ where: { key: { path: ['remoteJid'], equals: chatId } }, limit: 100 });
+        if (altChatId) {
+          list2 = await tryPost({ where: { key: { path: ['remoteJid'], equals: altChatId } }, limit: 100 });
+        }
+        rawList = [...list1, ...list2];
       }
 
       // Estratégia 3 — sem filtro servidor + filtragem 100% client-side
@@ -694,19 +725,19 @@ export default function ChatPage() {
           )}
           <div className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'} mb-1`}>
             <div
-              className={`max-w-[70%] lg:max-w-[60%] rounded-lg px-3 py-1.5 text-xs shadow-sm relative leading-relaxed message-bubble ${
+              className={`max-w-[75%] lg:max-w-[65%] rounded-lg px-3 py-1.5 shadow-sm relative leading-relaxed message-bubble ${
                 msg.fromMe
-                  ? 'bg-[#d9fdd3] text-neutral-850 dark:bg-[#005c4b] dark:text-neutral-100 rounded-tr-none message-bubble-me'
-                  : 'bg-white text-neutral-850 dark:bg-[#202c33] dark:text-neutral-100 rounded-tl-none message-bubble-other'
+                  ? 'bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none message-bubble-me'
+                  : 'bg-white dark:bg-[#202c33] rounded-tl-none message-bubble-other'
               }`}
             >
               {!msg.fromMe && selectedChat?.id.includes('@g.us') && msg.sender && (
-                <div className="text-[11px] font-bold text-[#128c7e] dark:text-[#00a884] mb-0.5 truncate max-w-[200px]">
+                <div className="text-[12px] font-bold text-[#128c7e] dark:text-[#53bdeb] mb-0.5 truncate max-w-[200px]">
                   {msg.pushName || msg.sender.split('@')[0]}
                 </div>
               )}
-              <p className="pr-12 break-words text-[13px]">{msg.body}</p>
-              <span className="text-[9px] absolute bottom-1 right-2 text-neutral-400 dark:text-neutral-400/80 shrink-0 select-none">
+              <p className="pr-12 break-words text-[14px] leading-5 text-[#111b21] dark:text-[#e9edef]">{msg.body}</p>
+              <span className="text-[10px] absolute bottom-1 right-2 text-[#667781] dark:text-[#a6b0b6] shrink-0 select-none">
                 {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
@@ -817,7 +848,7 @@ export default function ChatPage() {
 
           {/* Diagnóstico da API Offline */}
           {apiOnline === false && (
-            <Card className="p-8 flex flex-col items-center justify-center text-center space-y-6 bg-gradient-to-b from-neutral-50 dark:from-neutral-800/20 to-white dark:to-neutral-900">
+            <Card className="p-8 flex flex-col items-center justify-center text-center space-y-6 bg-gradient-to-b from-neutral-50 dark:from-neutral-800/20 to-white dark:to-neutral-900 border border-neutral-200/60 dark:border-neutral-800/60 shadow-xl">
               <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-400">
                 <svg className="w-8 h-8 animate-bounce-subtle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -826,18 +857,24 @@ export default function ChatPage() {
               <div className="max-w-md space-y-2">
                 <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">Serviço de WhatsApp Local Desconectado</h2>
                 <p className="text-xs text-neutral-500 leading-relaxed">
-                  Para utilizar o Chat de WhatsApp gratuitamente sem pagar por APIs oficiais, você precisa rodar a Evolution API localmente na sua máquina usando o Docker.
+                  Para utilizar o Chat de WhatsApp gratuitamente sem pagar por APIs oficiais, o contêiner Docker da **Evolution API** precisa estar ativo localmente na sua máquina com volume de dados persistente para manter a sessão conectada.
                 </p>
               </div>
 
-              {/* Bloco de Código com Comando Docker */}
-              <div className="w-full max-w-lg bg-neutral-900 text-neutral-200 p-4 rounded-xl text-left font-mono text-xs overflow-x-auto border border-neutral-800 shadow-inner">
-                <p className="text-neutral-500 mb-1"># Execute este comando no terminal para iniciar o serviço:</p>
-                <p className="text-purple-400 select-all">docker run -d --name evolution-api -p 8080:8080 -e AUTHENTICATION_API_KEY=clickmarido_key -e TEMPLATE_ENABLED=true evoapicloud/evolution-api:v1.8.2</p>
+              {/* Bloco de Código com Comando Docker Compose e Script */}
+              <div className="w-full max-w-lg bg-neutral-950 text-neutral-200 p-4 rounded-xl text-left font-mono text-xs overflow-x-auto border border-neutral-800/80 shadow-inner space-y-4">
+                <div>
+                  <p className="text-emerald-500 font-bold mb-1"># Opção 1: Execute o script de inicialização rápida na raiz do projeto:</p>
+                  <p className="text-neutral-100 select-all font-semibold bg-neutral-900 px-2 py-1 rounded border border-neutral-800 inline-block">iniciar-whatsapp.bat</p>
+                </div>
+                <div className="border-t border-neutral-850 pt-3">
+                  <p className="text-purple-400 font-bold mb-1"># Opção 2: Ou inicie o Docker Compose persistente no terminal:</p>
+                  <p className="text-neutral-100 select-all font-semibold bg-neutral-900 px-2 py-1 rounded border border-neutral-800 inline-block">docker compose up -d evolution-api</p>
+                </div>
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={checkConnectionStatus} size="sm">
+                <Button onClick={checkConnectionStatus} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow">
                   🔄 Verificar Conexão Novamente
                 </Button>
               </div>
@@ -965,8 +1002,8 @@ export default function ChatPage() {
                         <div
                           key={chat.id}
                           onClick={() => setSelectedChat(chat)}
-                          className={`p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3 ${
-                            selectedChat?.id === chat.id ? 'bg-[#efeae2]/45 dark:bg-[#2a3942]/20 border-l-4 border-emerald-500' : ''
+                          className={`p-3 cursor-pointer hover:bg-[#f5f6f6] dark:hover:bg-[#202c33] transition-colors flex items-center gap-3 border-b border-neutral-100 dark:border-neutral-800/50 ${
+                            selectedChat?.id === chat.id ? 'bg-[#f0f2f5] dark:bg-[#2a3942]' : ''
                           }`}
                         >
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(resolveName(chat))}`}>
@@ -1090,18 +1127,18 @@ export default function ChatPage() {
                         <input
                           required
                           type="text"
-                          placeholder="Digite uma mensagem..."
+                          placeholder="Mensagem"
                           value={newMessageText}
                           onChange={(e) => setNewMessageText(e.target.value)}
-                          className="w-full px-4 py-2.5 bg-white dark:bg-[#2a3942] border-none rounded-full text-xs text-neutral-850 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                          className="w-full px-4 py-2.5 bg-white dark:bg-[#2a3942] border-none rounded-lg text-[14px] text-neutral-850 dark:text-[#e9edef] placeholder-[#667781] dark:placeholder-[#8696a0] focus:outline-none focus:ring-0 shadow-sm"
                         />
                       </div>
                       <button 
                         type="submit" 
-                        className="w-10 h-10 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-full flex items-center justify-center shadow-md shrink-0"
+                        className="p-2 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
                       >
-                        <svg className="w-4 h-4 rotate-45 transform translate-x-[-1px] translate-y-[1px]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                         </svg>
                       </button>
                     </form>

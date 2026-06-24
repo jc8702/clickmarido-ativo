@@ -2,9 +2,9 @@
 
 ## Informações Gerais
 
-- **Status Atual:** Fase 6 (Expansão, Escala e Segurança) concluída. Sistema 100% integrado e operacional.
+- **Status Atual:** Fase 6 concluída. Persistência local da Evolution API e auto-conexão configuradas com sucesso.
 - **Objetivo Central:** CRM para serviços residenciais (com suporte multi-user)
-- **Última Atualização:** 24/06/2026 - 13:15
+- **Última Atualização:** 24/06/2026 - 15:16
 - **Stack Final:** Next.js 15 + Prisma + PostgreSQL (Neon) na Vercel + Evolution API Local (WhatsApp) + Google Drive Service Account (Mídias) + Expo Updates (EAS)
 
 ## Arquitetura Final
@@ -48,6 +48,28 @@ Vercel (Deploy)
 - [x] Relatórios e Faturamentos Avançados
 
 ## Histórico de Evolução
+
+### 24/06/2026 - 15:28
+- **Correção do Recebimento de Mensagens e Melhorias de UI no Chat:**
+  - **Problema do 9º dígito BR:** Ajustada a lógica de `loadMessages` para buscar mensagens tanto do número original quanto da variação sem o 9º dígito (últimos 8 dígitos para fuzzy matching), resolvendo o problema de mensagens recebidas não aparecerem no chat.
+  - **Refinamento Visual WhatsApp Web:** Melhorada a interface da tela de chat para maior fidelidade com o WhatsApp original:
+    - Ocultado o JID cru para mostrar apenas nome/telefone limpo.
+    - Otimização do preenchimento e centralização da lista de chats laterais (removido borda lateral, ajustes na cor de hover `#2a3942`).
+    - Botão de envio substituído pelo ícone de 'avião de papel' do Lucide React, translúcido.
+    - Tamanho das fontes dos balões reduzido para `14px` e timestamps para `11px`.
+
+### 24/06/2026 - 15:16
+- **Persistência de Sessões e Correção de Expiração do WhatsApp (Evolution API):**
+  - **Docker Compose:** Adicionado o serviço `evolution-api` com volume nomeado `evolution_instances` apontado para `/evolution/instances` e política `restart: unless-stopped` no `docker-compose.yml` da raiz do projeto. Isso garante que a sessão do WhatsApp se mantenha conectada e inicie automaticamente com o computador, sem exigir novos QR Codes.
+  - **Script Auxiliar:** Criado o script [iniciar-whatsapp.bat](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/iniciar-whatsapp.bat) para iniciar a Evolution API local de forma rápida e persistente.
+  - **Melhorias de Instabilidade do QR Code:** Ajustada a lógica do `checkConnectionStatus` no frontend [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/chat/page.tsx) aplicando um cooldown de 50 segundos para não regenerar o QR Code a cada 15 segundos enquanto o usuário tenta escanear.
+  - **Build:** Compilado e testado localmente via `npm run build` com sucesso de 100%.
+
+### 24/06/2026 - 15:05
+- **Deploy de Evolução WhatsApp Web Clone Concluído:**
+  - Código fonte (Fase 1 e 2 do clone de WhatsApp) assinado e submetido para a branch `main` no GitHub.
+  - Vercel CI/CD disparado automaticamente. Executado deploy manual via Vercel CLI com `--prod` para garantia.
+  - Sincronização em 8s, suporte avançado a grupos com extração de `pushName` nativo e botão integrado "Añadir CRM".
 
 ### 24/06/2026 - 13:35
 - **Correção crítica de envio e recebimento de mensagens no WhatsApp Hub:**
