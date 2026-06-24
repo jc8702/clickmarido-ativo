@@ -17,6 +17,28 @@ const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
 const INSTANCE_NAME = 'clickmarido_instance';
 
 // Helpers para estilo WhatsApp
+const parseToDate = (val: any): Date => {
+  if (!val) return new Date();
+  if (val instanceof Date) return val;
+  
+  if (typeof val === 'number') {
+    if (val < 9999999999) return new Date(val * 1000);
+    return new Date(val);
+  }
+  
+  if (typeof val === 'string') {
+    const num = Number(val);
+    if (!isNaN(num)) {
+      if (num < 9999999999) return new Date(num * 1000);
+      return new Date(num);
+    }
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d;
+  }
+  
+  return new Date();
+};
+
 const getAvatarColor = (name: string) => {
   const colors = [
     'bg-[#df5138]', 'bg-[#54be54]', 'bg-[#e2a82b]', 'bg-[#9158e2]', 
@@ -39,11 +61,10 @@ const getInitials = (name: string) => {
   return (parts[0][0] + (parts[1][0] || '')).toUpperCase();
 };
 
-const formatChatTime = (dateStr?: string) => {
-  if (!dateStr) return '';
+const formatChatTime = (dateVal?: any) => {
+  if (!dateVal) return '';
   try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return '';
+    const date = parseToDate(dateVal);
     const now = new Date();
     if (date.toDateString() === now.toDateString()) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -55,6 +76,44 @@ const formatChatTime = (dateStr?: string) => {
   } catch {
     return '';
   }
+};
+
+const getMessageBody = (m: any): string => {
+  if (!m) return 'Sem mensagem';
+  if (typeof m === 'string') return m;
+  
+  const msg = m.message || m;
+  if (!msg) return 'Sem mensagem';
+  
+  if (msg.conversation) return msg.conversation;
+  if (msg.extendedTextMessage?.text) return msg.extendedTextMessage.text;
+  
+  if (msg.imageMessage) {
+    return msg.imageMessage.caption ? `📷 ${msg.imageMessage.caption}` : '📷 Foto';
+  }
+  if (msg.videoMessage) {
+    return msg.videoMessage.caption ? `🎥 ${msg.videoMessage.caption}` : '🎥 Vídeo';
+  }
+  if (msg.audioMessage) return '🎵 Áudio';
+  if (msg.documentMessage) {
+    return msg.documentMessage.title ? `📄 ${msg.documentMessage.title}` : '📄 Documento';
+  }
+  if (msg.stickerMessage) return '💟 Figurinha';
+  
+  if (msg.ephemeralMessage?.message) {
+    return getMessageBody(msg.ephemeralMessage.message);
+  }
+  if (msg.viewOnceMessage?.message) {
+    return getMessageBody(msg.viewOnceMessage.message);
+  }
+  if (msg.viewOnceMessageV2?.message) {
+    return getMessageBody(msg.viewOnceMessageV2.message);
+  }
+  if (msg.reactionMessage) {
+    return `Reagiu com: ${msg.reactionMessage.text || ''}`;
+  }
+  
+  return '[Mídia]';
 };
 
 interface Chat {
