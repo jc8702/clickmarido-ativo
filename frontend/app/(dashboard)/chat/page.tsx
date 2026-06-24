@@ -688,7 +688,7 @@ export default function ChatPage() {
     setChatSearch('');
   };
 
-  // Efeito para auto enviar o anexo do orçamento gerado na tela de impressão
+  // Efeito para auto anexar o orçamento gerado na tela de impressão no input
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const autoAttach = urlParams.get('autoAttach');
@@ -707,58 +707,44 @@ export default function ChatPage() {
           id: jid,
           name: targetPhone,
           unreadCount: 0,
-          lastMessage: 'Enviando orçamento...',
+          lastMessage: '',
           updatedAt: (Date.now() / 1000).toString()
         }, ...prev];
       });
       setSelectedChat({ id: jid, name: targetPhone, unreadCount: 0, lastMessage: '', updatedAt: (Date.now()/1000).toString() });
       setSidebarMode('chats');
 
-      // Otimista
-      const optimisticMsg = {
-        id: `optimistic-doc-auto-${Date.now()}`,
-        fromMe: true,
-        body: `📄 Enviando orçamento: ${pendingPdfName}...${textParam ? `\n\n${textParam}` : ''}`,
-        timestamp: Date.now() / 1000
-      };
-      setChatMessages(prev => [...prev, optimisticMsg]);
-
-      // Enviar de fato (com caption)
-      apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          number: targetPhone,
-          options: { delay: 1200 },
-          mediaMessage: {
-            mediatype: 'document',
-            fileName: pendingPdfName,
-            media: pendingPdf,
-            mimetype: 'application/pdf',
-            caption: textParam || ''
-          }
-        })
-      }).then(res => {
-        if (res.ok) {
-          setChats(prev => prev.map(c => c.id === jid ? { ...c, lastMessage: `📄 ${pendingPdfName}`, updatedAt: (Date.now()/1000).toString() } : c));
-          toast.success('Orçamento enviado com sucesso!');
-        } else {
-          toast.error('Falha ao enviar o orçamento em anexo.');
-          setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+      try {
+        // Converter base64 para File e colocar no estado de preview
+        const bstr = atob(pendingPdf);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
         }
-      }).catch(err => {
-        console.error(err);
-        toast.error('Erro ao enviar anexo.');
-        setChatMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
-      }).finally(() => {
+        const file = new File([u8arr], pendingPdfName, { type: 'application/pdf' });
+        
+        setSelectedFile(file);
+        if (textParam) {
+          setNewMessageText(textParam);
+        }
+        
+        toast.success('Documento carregado no anexo! Revise a mensagem antes de enviar.');
+      } catch (err) {
+        console.error('Erro ao processar PDF anexado:', err);
+        toast.error('Erro ao ler PDF anexado.');
+      } finally {
         sessionStorage.removeItem('auto_attach_pdf');
         sessionStorage.removeItem('auto_attach_name');
         
-        // Limpar URL
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      });
+        // Remove param from url to avoid looping on reload
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('autoAttach');
+        newUrl.searchParams.delete('text');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
     }
-  }, [apiFetch]);
+  }, []);
 
   // Auto-selecionar chat via URL Params (ex: integração de orçamentos)
   useEffect(() => {
