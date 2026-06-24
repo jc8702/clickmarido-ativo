@@ -384,3 +384,11 @@ npm run dev
   - Arquivos modificados: `frontend/app/(dashboard)/quotations/page.tsx`, `frontend/app/print/quotation/[id]/page.tsx`, `frontend/app/(dashboard)/chat/page.tsx`
 - **24/06/2026 - 16:30**: Adicionada a função de anexar e enviar arquivos (PDF, imagens, docs) via botão paperclip no módulo de chat usando o endpoint /message/sendDocument da Evolution API.
   - Arquivos modificados: `frontend/app/(dashboard)/chat/page.tsx`
+- **24/06/2026 - 20:00**: Padronização do número da Proposta/Orçamento para o formato `PRO-DDMMYYYY-XXXX`. Criado novo campo numérico na tabela do banco e alterados todos os painéis, PDFs gerados e mensagens pré-definidas de WhatsApp para refletir essa mudança sequencial por dia.
+  - Arquivos modificados: `frontend/prisma/schema.prisma`, `frontend/app/api/quotations/route.ts`, `frontend/app/print/quotation/[id]/page.tsx`, `frontend/app/(dashboard)/quotations/page.tsx`, `frontend/app/api/purchase-orders/from-quotation/[quotationId]/route.ts`
+- **24/06/2026 - 20:15**: Ajuste na lista de conversas do módulo de Chat para garantir que, caso o contato não exista no CRM, ele busque estritamente os nomes salvos na agenda do celular (ignorando o pushName público), ou exiba apenas o número cru amigável se não estiver em nenhuma das agendas.
+  - Arquivos modificados: `frontend/app/(dashboard)/chat/page.tsx`
+- **24/06/2026 - 20:39**: Criação da skill customizada `whatsapp-module-fix` para diagnosticar, ativar e corrigir o módulo de integração de contatos do WhatsApp no CRM.
+  - Arquivo criado: `C:\Users\jc-pr\.gemini\config\skills\whatsapp-module-fix\SKILL.md`
+- **24/06/2026 - 20:50**: Implementação do matching de clientes no Chat Hub do WhatsApp. Modificada a função `loadChats` no frontend para buscar contatos via JWT diretamente em `/api/customers` e normalizar os telefones para substituir os números limpos pelos nomes reais dos clientes na interface de chat em tempo real.
+  - Arquivos modificados: `frontend/app/(dashboard)/chat/page.tsx`

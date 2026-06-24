@@ -280,6 +280,36 @@ export default function ChatPage() {
     setLoadingChats(true);
     try {
       const res = await apiFetch(`/chat/findChats/${INSTANCE_NAME}`);
+      
+      // Buscar clientes do CRM para fazer matching de telefone
+      const token = localStorage.getItem('token');
+      let crmCustomersList: any[] = [];
+      if (token) {
+        const clientsResponse = await fetch('/api/customers?limit=500', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => null);
+        
+        if (clientsResponse && clientsResponse.ok) {
+          const result = await clientsResponse.json();
+          crmCustomersList = result.data || result || [];
+          setCrmCustomers(crmCustomersList);
+        }
+      }
+
+      // Criar mapa: telefone normalizado -> nome do cliente
+      const phoneToNameMap = new Map<string, string>();
+      crmCustomersList.forEach((client: any) => {
+        if (client.phone) {
+          // Normalizar: remover espaços, travessões, parênteses
+          const normalized = client.phone.replace(/[\s\-().+]/g, '');
+          phoneToNameMap.set(normalized, client.name);
+          // Adicional: salvar também os últimos 8 dígitos (padrão Brasil) para um match mais flexível
+          if (normalized.length >= 8) {
+            phoneToNameMap.set(normalized.slice(-8), client.name);
+          }
+        }
+      });
+
       if (res.ok) {
         const data = await res.json();
         // Normalizar dados da Evolution API
@@ -293,9 +323,18 @@ export default function ChatPage() {
             chatDate = Date.now() / 1000;
           }
           
+          const phoneId = c.id?.split('@')[0] || '';
+          const normalizedPhone = phoneId.replace(/[\s\-().+]/g, '');
+          
+          // Match exato ou últimos 8 dígitos
+          let matchedName = phoneToNameMap.get(normalizedPhone);
+          if (!matchedName && normalizedPhone.length >= 8) {
+            matchedName = phoneToNameMap.get(normalizedPhone.slice(-8));
+          }
+          
           return {
             id: c.id || c.jid,
-            name: c.name || c.pushName || c.lastMessage?.pushName || c.id?.split('@')[0] || 'Contato',
+            name: matchedName || c.name || c.verifiedName || phoneId || 'Contato',
             unreadCount: c.unreadCount || 0,
             lastMessage: getMessageBody(c.lastMessage),
             updatedAt: chatDate,
@@ -328,14 +367,14 @@ export default function ChatPage() {
     try {
       // Tenta GET primeiro
       let contacts: any[] = [];
-      const resGet = await apiFetch(`/contact/findContacts/${INSTANCE_NAME}`).catch(() => null);
+      const resGet = await apiFetch(`/chat/findContacts/${INSTANCE_NAME}`).catch(() => null);
       if (resGet && resGet.ok) {
         const d = await resGet.json();
         contacts = Array.isArray(d) ? d : (d.contacts || d.data || []);
       }
       // Fallback: POST sem filtro
       if (contacts.length === 0) {
-        const resPost = await apiFetch(`/contact/findContacts/${INSTANCE_NAME}`, {
+        const resPost = await apiFetch(`/chat/findContacts/${INSTANCE_NAME}`, {
           method: 'POST',
           body: JSON.stringify({ limit: 500 })
         }).catch(() => null);
@@ -347,7 +386,7 @@ export default function ChatPage() {
       if (contacts.length > 0) {
         const map: Record<string, string> = {};
         contacts.forEach((c: any) => {
-          const name = c.pushName || c.name || c.verifiedName || c.notify || '';
+          const name = c.name || c.verifiedName || '';
           if (!name) return;
           // Indexar pelo JID completo e pelo número puro
           const jid = c.id || c.remoteJid || c.jid || '';
@@ -429,9 +468,9 @@ export default function ChatPage() {
 
     if (crmMatch && crmMatch.name) return crmMatch.name;
 
-    // 2. Tentar achar na memória do WhatsApp
-    const resolved = contactsMap[chat.id] || contactsMap[phone] || chat.name;
-    if (resolved && resolved !== 'Contato' && resolved !== phone) return resolved;
+    // 2. Tentar achar na memória do WhatsApp (apenas contatos salvos e verificados)
+    const resolved = contactsMap[chat.id] || contactsMap[phone] || (chat.name !== phone && chat.name !== 'Contato' ? chat.name : null);
+    if (resolved) return resolved;
     
     // 3. Se não achou nome, formata o telefone para ficar amigável
     if (phone.length > 10) {
