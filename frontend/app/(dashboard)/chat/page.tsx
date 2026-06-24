@@ -151,6 +151,11 @@ export default function ChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [chatSearch, setChatSearch] = useState('');
 
+  // Estados do WhatsApp Live adicionais para clone
+  const [sidebarMode, setSidebarMode] = useState<'chats' | 'contacts'>('chats');
+  const [crmCustomers, setCrmCustomers] = useState<any[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Função para fazer scroll para baixo
@@ -300,6 +305,27 @@ export default function ChatPage() {
     }
   }, [connected, apiFetch]);
 
+  // Carregar contatos do CRM
+  const loadCrmContacts = useCallback(async () => {
+    setLoadingContacts(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch('/api/customers?limit=150', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        const list = result.data || result || [];
+        setCrmCustomers(list);
+      }
+    } catch (err) {
+      console.error('Error loading CRM contacts:', err);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }, []);
+
   // Carregar mensagens de uma conversa selecionada
   const loadMessages = useCallback(async (chatId: string) => {
     setLoadingMessages(true);
@@ -372,13 +398,43 @@ export default function ChatPage() {
           }
         ]);
         // Atualizar lista de chats
-        setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, lastMessage: textToSend } : c));
+        setChats(prev => prev.map(c => c.id === selectedChat.id ? { ...c, lastMessage: textToSend, updatedAt: (Date.now() / 1000).toString() } : c));
       } else {
         toast.error('Erro ao enviar mensagem');
       }
     } catch (err) {
       toast.error('Erro de conexão ao enviar mensagem');
     }
+  };
+
+  // Selecionar um contato do CRM para iniciar chat
+  const handleSelectCrmCustomer = (cust: any) => {
+    const formattedPhone = cust.phone ? cust.phone.replace(/\D/g, '') : '';
+    if (!formattedPhone) {
+      toast.error('Cliente sem telefone cadastrado.');
+      return;
+    }
+    const jid = `${formattedPhone}@s.whatsapp.net`;
+    
+    const virtualChat: Chat = {
+      id: jid,
+      name: cust.name,
+      unreadCount: 0,
+      lastMessage: 'Nova conversa (Iniciar chat)',
+      updatedAt: (Date.now() / 1000).toString()
+    };
+    
+    // Adicionar na lista de chats se não existir
+    setChats(prev => {
+      const exists = prev.some(c => c.id === jid);
+      if (exists) return prev;
+      return [virtualChat, ...prev];
+    });
+    
+    setSelectedChat(virtualChat);
+    setChatMessages([]);
+    setSidebarMode('chats');
+    setChatSearch('');
   };
 
   // Poll de status a cada 10 segundos
@@ -392,8 +448,9 @@ export default function ChatPage() {
   useEffect(() => {
     if (connected) {
       loadChats();
+      loadCrmContacts();
     }
-  }, [connected, loadChats]);
+  }, [connected, loadChats, loadCrmContacts]);
 
   // Carregar mensagens quando um chat é selecionado
   useEffect(() => {
@@ -406,6 +463,66 @@ export default function ChatPage() {
     chat.name.toLowerCase().includes(chatSearch.toLowerCase()) || 
     chat.id.toLowerCase().includes(chatSearch.toLowerCase())
   );
+
+  const filteredCrmCustomers = crmCustomers.filter(cust => {
+    const formattedPhone = cust.phone ? cust.phone.replace(/\D/g, '') : '';
+    if (!formattedPhone) return false;
+    
+    // Omitir os que já têm chat ativo nas Conversas Recentes
+    const hasActiveChat = chats.some(c => c.id.split('@')[0] === formattedPhone);
+    if (hasActiveChat) return false;
+    
+    const searchLower = chatSearch.toLowerCase();
+    return cust.name.toLowerCase().includes(searchLower) || formattedPhone.includes(chatSearch);
+  });
+
+  // Função para agrupar e renderizar mensagens na timeline do WhatsApp
+  const renderMessages = () => {
+    let lastDateStr = '';
+    return chatMessages.map((msg, index) => {
+      const msgDate = parseToDate(msg.timestamp);
+      const dateStr = msgDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      
+      let showDateSeparator = false;
+      if (dateStr !== lastDateStr) {
+        showDateSeparator = true;
+        lastDateStr = dateStr;
+      }
+
+      // Determinar o texto do badge de data (Hoje, Ontem ou Data Inteira)
+      let displayDate = dateStr;
+      const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      if (dateStr === today) displayDate = 'Hoje';
+      else if (dateStr === yesterday) displayDate = 'Ontem';
+
+      return (
+        <React.Fragment key={msg.id || index}>
+          {showDateSeparator && (
+            <div className="flex justify-center my-4">
+              <span className="bg-white/80 dark:bg-[#182229] text-neutral-600 dark:text-[#8696a0] text-[11px] font-medium px-3 py-1.5 rounded-lg shadow-sm border border-neutral-200/40 dark:border-neutral-800/40">
+                {displayDate}
+              </span>
+            </div>
+          )}
+          <div className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'} mb-1`}>
+            <div
+              className={`max-w-[70%] lg:max-w-[60%] rounded-lg px-3 py-1.5 text-xs shadow-sm relative leading-relaxed message-bubble ${
+                msg.fromMe
+                  ? 'bg-[#d9fdd3] text-neutral-850 dark:bg-[#005c4b] dark:text-neutral-100 rounded-tr-none message-bubble-me'
+                  : 'bg-white text-neutral-850 dark:bg-[#202c33] dark:text-neutral-100 rounded-tl-none message-bubble-other'
+              }`}
+            >
+              <p className="pr-12 break-words text-[13px]">{msg.body}</p>
+              <span className="text-[9px] absolute bottom-1 right-2 text-neutral-400 dark:text-neutral-400/80 shrink-0 select-none">
+                {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        </React.Fragment>
+      );
+    });
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -446,10 +563,69 @@ export default function ChatPage() {
 
       {/* ABA 1: CHAT LIVE */}
       {activeTab === 'live' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+        <>
+          {/* Estilos CSS customizados para os rabichos das mensagens e padrão de doodle */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .message-bubble {
+              position: relative;
+            }
+            .message-bubble-me::after {
+              content: "";
+              position: absolute;
+              right: -6px;
+              top: 0;
+              width: 0;
+              height: 0;
+              border-left: 6px solid #d9fdd3;
+              border-bottom: 6px solid transparent;
+            }
+            .dark .message-bubble-me::after {
+              border-left-color: #005c4b;
+            }
+            .message-bubble-other::after {
+              content: "";
+              position: absolute;
+              left: -6px;
+              top: 0;
+              width: 0;
+              height: 0;
+              border-right: 6px solid #ffffff;
+              border-bottom: 6px solid transparent;
+            }
+            .dark .message-bubble-other::after {
+              border-right-color: #202c33;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 6px;
+              height: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #55555540;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #55555560;
+            }
+            .whatsapp-doodle {
+              background-color: #efeae2;
+              background-image: radial-gradient(#000000 0.5px, transparent 0.5px), radial-gradient(#000000 0.5px, #efeae2 0.5px);
+              background-size: 20px 20px;
+              background-position: 0 0, 10px 10px;
+              opacity: 0.05;
+            }
+            .dark .whatsapp-doodle {
+              background-color: #0b141a;
+              background-image: radial-gradient(#ffffff 0.5px, transparent 0.5px), radial-gradient(#ffffff 0.5px, #0b141a 0.5px);
+              opacity: 0.03;
+            }
+          `}} />
+
           {/* Diagnóstico da API Offline */}
           {apiOnline === false && (
-            <Card className="lg:col-span-3 p-8 flex flex-col items-center justify-center text-center space-y-6 bg-gradient-to-b from-neutral-50 dark:from-neutral-800/20 to-white dark:to-neutral-900">
+            <Card className="p-8 flex flex-col items-center justify-center text-center space-y-6 bg-gradient-to-b from-neutral-50 dark:from-neutral-800/20 to-white dark:to-neutral-900">
               <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center text-amber-600 dark:text-amber-400">
                 <svg className="w-8 h-8 animate-bounce-subtle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -478,7 +654,7 @@ export default function ChatPage() {
 
           {/* Aguardando Pareamento (Exibe QR Code) */}
           {apiOnline === true && !connected && (
-            <Card className="lg:col-span-3 p-8 flex flex-col md:flex-row items-center justify-center gap-12 bg-white dark:bg-neutral-850">
+            <Card className="p-8 flex flex-col md:flex-row items-center justify-center gap-12 bg-white dark:bg-neutral-850">
               <div className="space-y-4 max-w-sm">
                 <Badge variant="warning">Aguardando Escaneamento</Badge>
                 <h2 className="text-2xl font-black text-neutral-800 dark:text-neutral-200">Conecte seu WhatsApp</h2>
@@ -502,22 +678,65 @@ export default function ChatPage() {
             </Card>
           )}
 
-          {/* Layout Principal de Chat Ativo (3 colunas: 1 lista, 2 conversas) */}
+          {/* Layout Principal de Chat Ativo (Estilo WhatsApp Web - Tela Cheia) */}
           {apiOnline === true && connected && (
-            <>
-              {/* Lista de Conversas (Col 1) */}
-              <Card className="flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-white dark:bg-[#111b21]">
-                <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex justify-between items-center">
-                  <h3 className="font-bold text-xs text-neutral-700 dark:text-neutral-300">
-                    Conversas Ativas ({filteredChats.length})
-                  </h3>
-                  <button onClick={loadChats} className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
-                    🔄 Atualizar
-                  </button>
+            <div className="flex border border-neutral-200/50 dark:border-neutral-800/50 rounded-2xl overflow-hidden bg-white dark:bg-[#111b21] h-[calc(100vh-140px)] min-h-[550px] max-h-[850px] shadow-lg">
+              {/* Barra Lateral Esquerda (Sidebar) */}
+              <div className={`w-full lg:w-[380px] flex flex-col border-r border-neutral-200/50 dark:border-neutral-800/50 h-full shrink-0 bg-white dark:bg-[#111b21] ${selectedChat ? 'hidden lg:flex' : 'flex'}`}>
+                
+                {/* Cabeçalho da Sidebar */}
+                <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex justify-between items-center shrink-0">
+                  {sidebarMode === 'chats' ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-black shadow-inner">
+                          CM
+                        </div>
+                        <span className="font-bold text-xs text-neutral-800 dark:text-neutral-200">WhatsApp Hub</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setSidebarMode('contacts')}
+                          title="Nova conversa com contato do CRM"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-350 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                        >
+                          <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={loadChats} 
+                          title="Sincronizar"
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                        >
+                          <svg className="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setSidebarMode('chats');
+                            setChatSearch('');
+                          }} 
+                          className="text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 p-1.5 rounded-full"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                          </svg>
+                        </button>
+                        <span className="font-bold text-xs text-neutral-800 dark:text-neutral-200">Nova Conversa</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
-                {/* Campo de Pesquisa de Contatos estilo WhatsApp */}
-                <div className="p-2 border-b border-neutral-100 dark:border-neutral-800 bg-[#f0f2f5] dark:bg-[#111b21] flex items-center">
+                {/* Campo de Pesquisa */}
+                <div className="p-2 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-[#111b21] flex items-center shrink-0">
                   <div className="flex-1 relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -526,108 +745,142 @@ export default function ChatPage() {
                     </span>
                     <input
                       type="text"
-                      placeholder="Pesquisar ou começar uma nova conversa"
+                      placeholder={sidebarMode === 'chats' ? 'Pesquisar ou começar uma nova conversa' : 'Pesquisar nos clientes do CRM'}
                       value={chatSearch}
                       onChange={(e) => setChatSearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-[#202c33] border-none rounded-lg text-xs text-neutral-850 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                      className="w-full pl-9 pr-4 py-1.5 bg-[#f0f2f5] dark:bg-[#202c33] border-none rounded-lg text-xs text-neutral-850 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/50">
-                  {loadingChats ? (
-                    <div className="p-4 text-center text-xs text-neutral-400">Carregando chats...</div>
-                  ) : filteredChats.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-neutral-400">Nenhuma conversa encontrada.</div>
-                  ) : (
-                    filteredChats.map((chat) => (
-                      <div
-                        key={chat.id}
-                        onClick={() => setSelectedChat(chat)}
-                        className={`p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3 ${
-                          selectedChat?.id === chat.id ? 'bg-[#efeae2]/45 dark:bg-[#2a3942]/20 border-l-4 border-emerald-500' : ''
-                        }`}
-                      >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(chat.name)}`}>
-                          {getInitials(chat.name)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-baseline mb-0.5">
-                            <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{chat.name}</p>
-                            <span className="text-[9px] text-neutral-400 shrink-0 ml-2">
-                              {formatChatTime(chat.updatedAt)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-[10px] text-neutral-450 dark:text-neutral-400 truncate pr-2">
-                              {chat.lastMessage}
-                            </p>
-                            {chat.unreadCount > 0 && (
-                              <span className="bg-emerald-500 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center px-1 rounded-full shrink-0 animate-pulse">
-                                {chat.unreadCount}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                {/* Lista de Contatos/Chats */}
+                <div className="flex-1 overflow-y-auto divide-y divide-neutral-100 dark:divide-neutral-800/50 custom-scrollbar bg-white dark:bg-[#111b21]">
+                  {sidebarMode === 'chats' ? (
+                    loadingChats ? (
+                      <div className="p-4 text-center text-xs text-neutral-400">Carregando conversas...</div>
+                    ) : filteredChats.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-neutral-500">
+                        Nenhuma conversa ativa encontrada.<br/>
+                        <button 
+                          onClick={() => setSidebarMode('contacts')} 
+                          className="mt-3 text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                        >
+                          Clique aqui para iniciar um chat com cliente CRM
+                        </button>
                       </div>
-                    ))
+                    ) : (
+                      filteredChats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          onClick={() => setSelectedChat(chat)}
+                          className={`p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3 ${
+                            selectedChat?.id === chat.id ? 'bg-[#efeae2]/45 dark:bg-[#2a3942]/20 border-l-4 border-emerald-500' : ''
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(chat.name)}`}>
+                            {getInitials(chat.name)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-baseline mb-0.5">
+                              <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{chat.name}</p>
+                              <span className="text-[9px] text-neutral-400 shrink-0 ml-2">
+                                {formatChatTime(chat.updatedAt)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <p className="text-[10px] text-neutral-450 dark:text-neutral-400 truncate pr-2">
+                                {chat.lastMessage}
+                              </p>
+                              {chat.unreadCount > 0 && (
+                                <span className="bg-emerald-500 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center px-1 rounded-full shrink-0">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )
+                  ) : (
+                    loadingContacts ? (
+                      <div className="p-4 text-center text-xs text-neutral-400">Carregando contatos CRM...</div>
+                    ) : filteredCrmCustomers.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-neutral-400">Nenhum contato do CRM encontrado.</div>
+                    ) : (
+                      filteredCrmCustomers.map((cust) => (
+                        <div
+                          key={cust.id}
+                          onClick={() => handleSelectCrmCustomer(cust)}
+                          className="p-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-[#2a3942]/40 transition-colors flex items-center gap-3"
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(cust.name)}`}>
+                            {getInitials(cust.name)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-xs text-neutral-850 dark:text-neutral-200 truncate">{cust.name}</p>
+                            <p className="text-[10px] text-neutral-450 dark:text-neutral-400 truncate">{cust.phone || 'Sem telefone'}</p>
+                          </div>
+                        </div>
+                      ))
+                    )
                   )}
                 </div>
-              </Card>
+              </div>
 
-              {/* Box de Chat da Conversa Selecionada (Col 2 e 3) */}
-              <Card className="lg:col-span-2 flex flex-col h-full overflow-hidden border border-neutral-200/50 dark:border-neutral-800/50 bg-[#efeae2] dark:bg-[#0b141a] transition-all relative">
+              {/* Box de Conversa Ativa */}
+              <div className={`flex-1 flex flex-col h-full bg-[#efeae2] dark:bg-[#0b141a] relative ${!selectedChat ? 'hidden lg:flex' : 'flex'}`}>
                 {selectedChat ? (
                   <>
                     {/* Header da Conversa */}
-                    <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex items-center gap-3 z-10 shadow-sm">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner ${getAvatarColor(selectedChat.name)}`}>
-                        {getInitials(selectedChat.name)}
+                    <div className="p-3 border-b border-neutral-200/50 dark:border-neutral-800/50 bg-[#f0f2f5] dark:bg-[#202c33] flex items-center justify-between z-10 shadow-sm shrink-0">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Botão Voltar Mobile */}
+                        <button 
+                          onClick={() => setSelectedChat(null)} 
+                          className="lg:hidden text-neutral-600 dark:text-neutral-350 hover:bg-neutral-200 dark:hover:bg-neutral-700 p-1.5 rounded-full shrink-0"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-inner shrink-0 ${getAvatarColor(selectedChat.name)}`}>
+                          {getInitials(selectedChat.name)}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-200 truncate">{selectedChat.name}</h3>
+                          <p className="text-[10px] text-neutral-400 font-mono truncate">{selectedChat.id.split('@')[0]}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-sm text-neutral-850 dark:text-neutral-200 truncate">{selectedChat.name}</h3>
-                        <p className="text-[10px] text-neutral-400 font-mono truncate">{selectedChat.id.split('@')[0]}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                      
+                      <div className="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                         Online
                       </div>
                     </div>
 
-                    {/* Timeline de Mensagens */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2 relative">
-                      <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
+                    {/* Timeline de Mensagens com Doodle */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 relative custom-scrollbar">
+                      {/* Padrão de Fundo do WhatsApp */}
+                      <div className="absolute inset-0 whatsapp-doodle pointer-events-none" />
                       
                       <div className="relative z-10 space-y-2">
                         {loadingMessages ? (
                           <div className="text-center text-xs text-neutral-400 py-12">Carregando histórico...</div>
+                        ) : chatMessages.length === 0 ? (
+                          <div className="text-center text-xs text-neutral-500 py-24 bg-white/40 dark:bg-[#202c33]/20 rounded-xl p-6 max-w-sm mx-auto shadow-sm border border-neutral-200/50 dark:border-neutral-800/50">
+                            Nenhuma mensagem neste chat.<br/>
+                            Envie uma mensagem abaixo para iniciar a conversa!
+                          </div>
                         ) : (
-                          chatMessages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[70%] rounded-xl px-3 py-1.5 text-xs shadow-sm relative leading-relaxed ${
-                                  msg.fromMe
-                                    ? 'bg-[#d9fdd3] text-neutral-800 dark:bg-[#005c4b] dark:text-neutral-100 rounded-tr-none'
-                                    : 'bg-white text-neutral-800 dark:bg-[#202c33] dark:text-neutral-100 rounded-tl-none'
-                                }`}
-                              >
-                                <p className="pr-10 break-words">{msg.body}</p>
-                                <span className={`text-[9px] absolute bottom-1 right-2 ${msg.fromMe ? 'text-neutral-500/80 dark:text-neutral-300/80' : 'text-neutral-400/80'}`}>
-                                  {formatChatTime(msg.timestamp)}
-                                </span>
-                              </div>
-                            </div>
-                          ))
+                          renderMessages()
                         )}
                         <div ref={messagesEndRef} />
                       </div>
                     </div>
 
                     {/* Barra de Input para Enviar Mensagem */}
-                    <form onSubmit={handleSendMessage} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-center border-t border-neutral-200/50 dark:border-neutral-800/50 z-10">
+                    <form onSubmit={handleSendMessage} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-center border-t border-neutral-200/50 dark:border-neutral-800/50 z-10 shrink-0">
                       <div className="flex-1">
                         <input
                           required
@@ -650,20 +903,24 @@ export default function ChatPage() {
                   </>
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-neutral-400 relative">
-                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px] dark:bg-[radial-gradient(#fff_1px,transparent_1px)]" />
-                    <div className="relative z-10 flex flex-col items-center">
-                      <svg className="w-16 h-16 mb-4 text-emerald-600/60 dark:text-emerald-400/40" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 18a5.969 5.969 0 01-.474-3.65A8.962 8.962 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-                      </svg>
-                      <h4 className="font-bold text-neutral-800 dark:text-neutral-200 mb-1">WhatsApp Web Emulado</h4>
-                      <p className="text-xs max-w-xs leading-relaxed text-neutral-500 dark:text-neutral-400">Selecione uma conversa ativa ao lado para visualizar o histórico de mensagens e responder em tempo real.</p>
+                    <div className="absolute inset-0 whatsapp-doodle pointer-events-none" />
+                    <div className="relative z-10 flex flex-col items-center max-w-sm">
+                      <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-[#182229] flex items-center justify-center text-emerald-600/70 dark:text-emerald-400/50 mb-6 shadow-sm">
+                        <svg className="w-10 h-10" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 18a5.969 5.969 0 01-.474-3.65A8.962 8.962 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                        </svg>
+                      </div>
+                      <h4 className="font-bold text-neutral-800 dark:text-neutral-200 mb-2 text-base">WhatsApp Web CRM</h4>
+                      <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+                        Selecione uma conversa ao lado ou clique em **"+"** no topo da barra lateral para iniciar uma conversa com qualquer cliente do seu CRM.
+                      </p>
                     </div>
                   </div>
                 )}
-              </Card>
-            </>
+              </div>
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {/* ABA 2: LOGS DE NOTIFICAÇÕES DO CRM (CÓDIGO ORIGINAL) */}
