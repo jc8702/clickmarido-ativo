@@ -617,7 +617,7 @@ export default function ChatPage() {
           }
         };
 
-        const res = await apiFetch(`/message/sendDocument/${INSTANCE_NAME}`, {
+        const res = await apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
           method: 'POST',
           body: JSON.stringify(payload)
         });
@@ -710,7 +710,7 @@ export default function ChatPage() {
       setChatMessages(prev => [...prev, optimisticMsg]);
 
       // Enviar de fato (com caption)
-      apiFetch(`/message/sendDocument/${INSTANCE_NAME}`, {
+      apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
         method: 'POST',
         body: JSON.stringify({
           number: targetPhone,
