@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getPaymentById, mapMpStatusToInternal, isPaymentApproved } from '@/lib/mercadopago';
 
-const prisma = new PrismaClient();
-
 // POST /api/payments/webhook-mp - Webhook Mercado Pago
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     const body = await request.json();
 
@@ -75,6 +73,7 @@ export async function POST(request: NextRequest) {
       if (payment) {
         // Atualizar status do pagamento
         const internalStatus = mapMpStatusToInternal(mpPayment.status || '');
+        const oldStatus = payment.status;
 
         await prisma.payment.update({
           where: { id: payment.id },
@@ -83,6 +82,18 @@ export async function POST(request: NextRequest) {
             mpStatus: mpPayment.status || '',
             confirmedAt: isPaymentApproved(mpPayment.status || '') ? new Date() : null,
             paidAt: isPaymentApproved(mpPayment.status || '') ? new Date() : payment.paidAt,
+          },
+        });
+
+        // Registrar auditoria do pagamento
+        await prisma.auditLog.create({
+          data: {
+            entity: 'payment',
+            entityId: payment.id,
+            action: 'updated',
+            oldValue: { status: oldStatus },
+            newValue: { status: internalStatus },
+            createdBy: 'system_automation',
           },
         });
 
@@ -98,9 +109,22 @@ export async function POST(request: NextRequest) {
           );
 
           if (allConfirmed) {
+            const oldInvoice = payment.invoice;
             await prisma.invoice.update({
               where: { id: payment.invoiceId },
               data: { status: 'paga' },
+            });
+
+            // Registrar auditoria da invoice
+            await prisma.auditLog.create({
+              data: {
+                entity: 'invoice',
+                entityId: payment.invoiceId,
+                action: 'updated',
+                oldValue: { status: oldInvoice?.status },
+                newValue: { status: 'paga' },
+                createdBy: 'system_automation',
+              },
             });
 
             console.log(`✅ Invoice ${payment.invoiceId} marcada como paga`);
@@ -131,7 +155,5 @@ export async function POST(request: NextRequest) {
     console.error('❌ Erro no webhook MP:', error);
     // Retornar 200 mesmo com erro para não reenviar
     return NextResponse.json({ received: true });
-  } finally {
-    await prisma.$disconnect();
   }
 }

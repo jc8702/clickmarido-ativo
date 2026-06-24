@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   try {
     // 1. Validate Asaas signature
     const signature = request.headers.get('asaas-signature');
@@ -45,6 +45,17 @@ export async function POST(request: NextRequest) {
         paidAt: new Date(payload.confirmedDate || new Date()),
       },
       include: { quotation: true, customer: true },
+    });
+
+    // Registrar auditoria do pagamento
+    await prisma.auditLog.create({
+      data: {
+        entity: 'payment',
+        entityId: payment.id,
+        action: 'updated',
+        newValue: { status: 'pago', paidAt: updated.paidAt },
+        createdBy: 'system_automation',
+      },
     });
 
     // 4.5 Generate Invoice if it doesn't exist
@@ -115,10 +126,28 @@ export async function POST(request: NextRequest) {
 
     // 5. Update service order to 'concluida' (sem acento para consistência com o banco)
     if (payment.quotationId) {
+      const affectedOS = await prisma.serviceOrder.findMany({
+        where: { quotationId: payment.quotationId },
+        select: { id: true, number: true, status: true },
+      });
+
       await prisma.serviceOrder.updateMany({
         where: { quotationId: payment.quotationId },
         data: { status: 'concluida' },
       });
+
+      for (const os of affectedOS) {
+        await prisma.auditLog.create({
+          data: {
+            entity: 'service_order',
+            entityId: os.id,
+            action: 'completed_via_payment_webhook',
+            oldValue: { status: os.status },
+            newValue: { status: 'concluida' },
+            createdBy: 'system_automation',
+          },
+        });
+      }
     }
 
     // 6. Send notification (non-blocking)
