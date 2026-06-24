@@ -10,7 +10,7 @@ async function main() {
     {
       name: 'Administrador',
       email: 'clickmarido@gmail.com',
-      password: 'Millena@@2017@@',
+      password: process.env.SEED_ADMIN_PASSWORD || 'ClickMaridoCRM@2026',
       role: 'admin',
     },
   ];

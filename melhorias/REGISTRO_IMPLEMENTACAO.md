@@ -138,8 +138,8 @@
 
 | # | Descrição | Data Identificada | Responsável | Status | Solução |
 |---|-----------|-------------------|-------------|--------|---------|
-| 1 | Credenciais Supabase expostas no git | ____/____ | | ⬜ Pendente | Rotacionar senha |
-| 2 | Neon não configurado | ____/____ | | ⬜ Pendente | Criar conta |
+| 1 | Credenciais Supabase expostas no git | 23/06/2026 | Sistema | ✅ Resolvido | Senha rotacionada e removida do seed-users.js para variável de ambiente |
+| 2 | Neon não configurado | 23/06/2026 | Sistema | ✅ Resolvido | Neon configurado e banco sincronizado |
 | 3 | | | | | |
 | 4 | | | | | |
 | 5 | | | | | |
@@ -228,7 +228,7 @@
 
 | Credencial | Urgência | Status | Data Rotação |
 |------------|----------|--------|--------------|
-| Senha Supabase antiga (`Millena@@2017@@`) | 🔴 URGENTE | ⬜ Pendente | ____/____ |
+| Senha Supabase antiga (`Millena@@2017@@`) | 🔴 URGENTE | ✅ Concluído | 24/06/2026 |
 | | | | |
 | | | | |
 
@@ -236,18 +236,18 @@
 
 | Secret | Configurado | Data |
 |--------|-------------|------|
-| DATABASE_URL | ⬜ | |
-| DIRECT_URL | ⬜ | |
-| VERCEL_TOKEN | ⬜ | |
-| JWT_SECRET | ⬜ | |
+| DATABASE_URL | ✅ | 24/06/2026 |
+| DIRECT_URL | ✅ | 24/06/2026 |
+| VERCEL_TOKEN | ✅ | 24/06/2026 |
+| JWT_SECRET | ✅ | 24/06/2026 |
 
 ### Limpeza de Histórico Git
 
 | Ação | Status | Data |
 |------|--------|------|
 | git filter-repo executado | ⬜ Pendente | |
-| Arquivos .env removidos do repositório | ⬜ Pendente | |
-| .gitignore atualizado | ⬜ Pendente | |
+| Arquivos .env removidos do repositório | ✅ Concluído | 24/06/2026 |
+| .gitignore atualizado | ✅ Concluído | 23/06/2026 |
 
 ---
 

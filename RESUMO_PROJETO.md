@@ -51,6 +51,12 @@ Vercel (Deploy)
 
 ## Histórico de Evolução
 
+### 24/06/2026 - 11:47
+- **Deploy de Produção Web (Vercel) Concluído**:
+  - Compilação estática do Next.js executada remotamente pela Vercel com 100% de sucesso.
+  - O aplicativo frontend já está atualizado e funcional na URL de produção.
+  - **Deploy Mobile (Expo):** Aplicativo compilado via `eas build` para Android e publicado na nuvem via `eas update` (OTA) para utilização definitiva no iOS via Expo Go.
+
 ### 24/06/2026 - 01:00
 - **Implementação Completa da Fase 5 (Nível 5 — Ambição) Concluída**:
   - **App Móvel Nativo (Técnico em Campo):** Criado projeto Expo SDK 56 na pasta `/mobile` com suporte offline automático via AsyncStorage e sincronização em lote. Criadas telas de Login, Agenda e Detalhes da OS integrada a mapas, checklist, câmera de evidências e lousa de assinatura digital vetorial SVG. Refatoradas APIs do backend para retorno dinâmico de `technicianId` e suporte a assinatura/checklists em PATCH/POST de conclusão de OS.

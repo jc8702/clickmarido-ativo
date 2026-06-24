@@ -8,7 +8,8 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.clickmarido.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.clickmarido.mobile"
     },
     "web": {
       "output": "static",
@@ -39,6 +41,16 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "17741415-1b3a-40c9-9ebd-e2b7bee531da"
+      }
+    },
+    "runtimeVersion": "exposdk:56.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/17741415-1b3a-40c9-9ebd-e2b7bee531da"
     }
   }
 }
