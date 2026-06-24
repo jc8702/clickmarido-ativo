@@ -96,8 +96,30 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const notes = body.notes || '';
 
+    // Gerar número de orçamento PRO-DDMMYYYY-XXXX
+    const today = new Date();
+    const dateStr = `${String(today.getDate()).padStart(2, '0')}${String(today.getMonth() + 1).padStart(2, '0')}${today.getFullYear()}`;
+    const prefix = `PRO-${dateStr}-`;
+
+    const lastQuotation = await prisma.quotation.findFirst({
+      where: { number: { startsWith: prefix } },
+      orderBy: { number: 'desc' },
+    });
+
+    let sequence = 1;
+    if (lastQuotation && lastQuotation.number) {
+      const lastSeqStr = lastQuotation.number.replace(prefix, '');
+      const lastSeq = parseInt(lastSeqStr, 10);
+      if (!isNaN(lastSeq)) {
+        sequence = lastSeq + 1;
+      }
+    }
+    
+    const generatedNumber = `${prefix}${String(sequence).padStart(4, '0')}`;
+
     const quotation = await prisma.quotation.create({
       data: {
+        number: generatedNumber,
         customerId,
         total,
         status: 'rascunho',
@@ -164,6 +186,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       action: 'created',
       newValue: {
         id: quotation.id,
+        number: quotation.number,
         customerId: quotation.customerId,
         total: quotation.total,
         status: quotation.status,

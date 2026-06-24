@@ -64,6 +64,7 @@ model Customer {
 
 model Quotation {
   id           String             @id @default(cuid())
+  number       String?            @unique @db.VarChar(30)
   customerId   String
   items        QuotationItem[]
   total        Float              @default(0)

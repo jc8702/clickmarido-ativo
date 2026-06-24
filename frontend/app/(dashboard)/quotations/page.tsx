@@ -328,7 +328,7 @@ export default function QuotationsPage() {
                             {quotation.customer?.name || 'Cliente'}
                           </p>
                           <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
-                            ID: {quotation.id.slice(-6).toUpperCase()}
+                            ID: {quotation.number || quotation.id.slice(-6).toUpperCase()}
                           </p>
                         </div>
                         {getValidityStatus(quotation.createdAt, quotation.status) && (
@@ -381,7 +381,7 @@ export default function QuotationsPage() {
             <div className="p-6 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between bg-gradient-to-r from-neutral-50 dark:from-neutral-700 to-white dark:to-neutral-800 print:bg-white print:border-neutral-200">
               <div>
                 <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 print:text-black">Orçamento Click Marido</h3>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono print:text-neutral-600">Ref: {selectedQuotation.id.slice(0, 8)}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 font-mono print:text-neutral-600">Ref: {selectedQuotation.number || selectedQuotation.id.slice(0, 8)}</p>
               </div>
               <div className="flex items-center gap-2 print:hidden">
                 <button

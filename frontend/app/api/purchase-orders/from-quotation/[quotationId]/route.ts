@@ -123,7 +123,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         discountAmount: 0,
         taxAmount: 0,
         subtotal: itemSubtotal,
-        notes: `Importado do orçamento ${quotation.id}`,
+        notes: `Importado do orçamento ${quotation.number || quotation.id}`,
       };
     });
 
@@ -152,14 +152,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         requestedBy: 'Importação Automática',
         subtotal,
         totalAmount: subtotal,
-        internalNotes: `Ordem de compra gerada automaticamente a partir do Orçamento ID ${quotation.id}.`,
+        internalNotes: `Ordem de compra gerada automaticamente a partir do Orçamento ID ${quotation.number || quotation.id}.`,
         items: {
           create: itemsData,
         },
         events: {
           create: {
             type: 'criacao',
-            description: `Ordem de compra criada a partir do Orçamento ID ${quotation.id}.`,
+            description: `Ordem de compra criada a partir do Orçamento ID ${quotation.number || quotation.id}.`,
             newValue: { status: 'rascunho', totalAmount: subtotal },
           },
         },

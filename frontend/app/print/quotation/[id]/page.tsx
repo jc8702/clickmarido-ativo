@@ -75,7 +75,7 @@ export default function PrintQuotationPage() {
 
     const opt = {
       margin: 0,
-      filename: `Orcamento_Click_Marido_${quote?.id?.slice(0, 8) || 'PROP'}.pdf`,
+      filename: `Orcamento_Click_Marido_${quote?.number || quote?.id?.slice(0, 8) || 'PROP'}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -100,7 +100,7 @@ export default function PrintQuotationPage() {
     
     const opt = {
       margin: 0,
-      filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
+      filename: `Orcamento_Click_Marido_${quote.number || quote.id.slice(0, 8)}.pdf`,
       image: { type: 'jpeg', quality: 1.0 },
       html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -121,7 +121,8 @@ export default function PrintQuotationPage() {
       
       localStorage.setItem('auto_attach_pdf', pureBase64);
       localStorage.setItem('auto_attach_name', opt.filename);
-      const msgText = `Olá! Segue em anexo a nossa proposta comercial #${quote.id.slice(0, 8).toUpperCase()}. Qualquer dúvida, estamos à disposição.`;
+      const quoteDisplayId = quote.number || quote.id.slice(0, 8).toUpperCase();
+      const msgText = `Olá! Segue em anexo a nossa proposta comercial #${quoteDisplayId}. Qualquer dúvida, estamos à disposição.`;
       
       const customerPhone = quote.customer?.phone ? quote.customer.phone.replace(/\D/g, '') : '';
       const targetUrl = `/chat?phone=${customerPhone}&autoAttach=true&text=${encodeURIComponent(msgText)}`;
@@ -253,7 +254,7 @@ export default function PrintQuotationPage() {
             <div className="text-right space-y-1">
               <h2 className="text-sm font-black font-title text-neutral-400 uppercase tracking-widest">Orçamento / Proposta</h2>
               <div className="inline-block bg-purple-50 text-purple-700 px-3 py-1 rounded-xl text-lg font-black font-title">
-                #{quote.id?.slice(0, 8).toUpperCase()}
+                #{quote.number || quote.id?.slice(0, 8).toUpperCase()}
               </div>
               <p className="text-[9px] text-neutral-400 font-medium">Gerado em {formattedCreatedAt}</p>
             </div>
