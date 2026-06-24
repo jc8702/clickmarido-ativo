@@ -44,9 +44,10 @@ export default function PrintQuotationPage() {
                const opt = {
                  margin: 10,
                  filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
-                 image: { type: 'jpeg', quality: 0.98 },
-                 html2canvas: { scale: 2, useCORS: true, logging: false },
-                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                 image: { type: 'jpeg', quality: 1.0 },
+                 html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                 pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
                };
                try {
                  // @ts-ignore
@@ -75,9 +76,10 @@ export default function PrintQuotationPage() {
     const opt = {
       margin: 10,
       filename: `Orcamento_Click_Marido_${quote?.id?.slice(0, 8) || 'PROP'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
     // @ts-ignore
@@ -99,9 +101,10 @@ export default function PrintQuotationPage() {
     const opt = {
       margin: 10,
       filename: `Orcamento_Click_Marido_${quote.id.slice(0, 8)}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      image: { type: 'jpeg', quality: 1.0 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
     try {
@@ -232,7 +235,7 @@ export default function PrintQuotationPage() {
       {/* Conteúdo Otimizado para Folha A4 (210mm x 297mm) */}
       <div 
         id="pdf-content" 
-        className="max-w-[210mm] min-h-[297mm] mx-auto bg-[#ffffff] text-[#111827] p-12 shadow-xl print:shadow-none print:p-0 border border-neutral-200/60 print:border-none rounded-3xl print:rounded-none flex flex-col justify-between"
+        className="w-[210mm] min-h-[297mm] mx-auto bg-[#ffffff] text-[#111827] p-[10mm] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
       >
         <div>
           {/* Header do Documento */}

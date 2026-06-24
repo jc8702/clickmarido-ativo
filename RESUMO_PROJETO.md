@@ -370,6 +370,7 @@ npm run dev
 ---
 
 **Documentação gerada automaticamente. Atualizar conforme mudanças.**
+- **24/06/2026 - 18:59**: Correção crítica no Chat do WhatsApp: O endpoint utilizado para envio de documentos (`/message/sendDocument`) não existe na Evolution API v1/v2. Substituído em todo o código por `/message/sendMedia` que é o endpoint oficial para PDFs, imagens e arquivos. Essa alteração resolve definitivamente a quebra silenciosa no envio tanto manual (anexar arquivo) quanto automático (gerar do CRM).
 - **24/06/2026 - 18:28**: Finalizadas 100% as cores do PDF. Botões e cabeçalhos escuros também foram substituídos por Cores Hexadecimais para não herdar modo noturno. Corrigido o envio do CRM: Agora ao clicar em "Enviar ao Cliente", o código aguarda assincronamente a geração do Base64 real do PDF antes de abrir o WhatsApp, garantindo que o arquivo acompanhe a legenda e seja enviado de fato.
   - Arquivos modificados: `frontend/app/print/quotation/[id]/page.tsx`
 - **24/06/2026 - 17:25**: Correção definitiva do Light Mode no PDF de orçamento. Substituição das classes semânticas do Tailwind (`bg-white`, `text-neutral-900`) por valores em Hex (`bg-[#ffffff]`, `text-[#111827]`) anulando definitivamente qualquer CSS global ou injeção de classes `.dark`. Adicionado legenda com o número do orçamento junto com o envio do arquivo em anexo no WhatsApp de forma automática (via `caption`).

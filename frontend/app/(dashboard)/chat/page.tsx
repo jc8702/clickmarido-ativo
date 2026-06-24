@@ -152,6 +152,7 @@ export default function ChatPage() {
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [chatSearch, setChatSearch] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Estados do WhatsApp Live adicionais para clone
   const [sidebarMode, setSidebarMode] = useState<'chats' | 'contacts'>('chats');
@@ -583,37 +584,44 @@ export default function ChatPage() {
     }
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleSendFileWithCaption = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedChat || (!newMessageText.trim() && !selectedFile)) return;
 
-  const handleSendDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    if (!selectedChat) return;
+    if (!selectedFile) {
+      return handleSendMessage(e);
+    }
+
+    const textToSend = newMessageText.trim();
+    setNewMessageText('');
+    const fileToUpload = selectedFile;
+    setSelectedFile(null);
+
+    const optimisticMsg = {
+      id: `optimistic-doc-${Date.now()}`,
+      fromMe: true,
+      body: `📄 Enviando arquivo: ${fileToUpload.name}...${textToSend ? `\n\n${textToSend}` : ''}`,
+      timestamp: Date.now() / 1000
+    };
+    setChatMessages(prev => [...prev, optimisticMsg]);
 
     const phoneNumber = selectedChat.id.split('@')[0];
-
     const reader = new FileReader();
+    
     reader.onload = async (event) => {
       const base64Url = event.target?.result as string;
-      // Remover o prefixo data:mime/type;base64,
       const pureBase64 = base64Url.split(',')[1];
       
-      const optimisticMsg = {
-        id: `optimistic-doc-${Date.now()}`,
-        fromMe: true,
-        body: `📄 Enviando arquivo: ${file.name}...`,
-        timestamp: Date.now() / 1000
-      };
-      setChatMessages(prev => [...prev, optimisticMsg]);
-
       try {
         const payload = {
           number: phoneNumber,
           options: { delay: 1200 },
           mediaMessage: {
             mediatype: 'document',
-            fileName: file.name,
-            media: pureBase64
+            fileName: fileToUpload.name,
+            media: pureBase64,
+            mimetype: fileToUpload.type,
+            caption: textToSend
           }
         };
 
@@ -625,7 +633,7 @@ export default function ChatPage() {
         if (res.ok) {
           setChats(prev => prev.map(c =>
             c.id === selectedChat.id
-              ? { ...c, lastMessage: `📄 ${file.name}`, updatedAt: (Date.now() / 1000).toString() }
+              ? { ...c, lastMessage: `📄 ${fileToUpload.name}`, updatedAt: (Date.now() / 1000).toString() }
               : c
           ));
         } else {
@@ -637,9 +645,15 @@ export default function ChatPage() {
         toast.error('Erro de rede ao enviar documento.');
       }
     };
-    reader.readAsDataURL(file);
-    
-    // reset input
+    reader.readAsDataURL(fileToUpload);
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSendDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setSelectedFile(file);
     e.target.value = '';
   };
 
@@ -719,6 +733,7 @@ export default function ChatPage() {
             mediatype: 'document',
             fileName: pendingPdfName,
             media: pendingPdf,
+            mimetype: 'application/pdf',
             caption: textParam || ''
           }
         })
@@ -1290,11 +1305,11 @@ export default function ChatPage() {
                     </div>
 
                     {/* Barra de Input para Enviar Mensagem */}
-                    <form onSubmit={handleSendMessage} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-center border-t border-neutral-200/50 dark:border-neutral-800/50 z-10 shrink-0">
+                    <form onSubmit={handleSendFileWithCaption} className="p-3 bg-[#f0f2f5] dark:bg-[#202c33] flex gap-2 items-end border-t border-neutral-200/50 dark:border-neutral-800/50 z-10 shrink-0">
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-2 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
+                        className="p-2 pb-2.5 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
                         title="Anexar arquivo (PDF, imagens, etc)"
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1308,11 +1323,20 @@ export default function ChatPage() {
                         onChange={handleSendDocument}
                         accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 flex flex-col gap-1">
+                        {selectedFile && (
+                          <div className="flex items-center gap-2 bg-[#d1f4cc] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] px-3 py-1.5 rounded-lg text-xs font-medium self-start">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                            <span className="truncate max-w-[200px]">{selectedFile.name}</span>
+                            <button type="button" onClick={() => setSelectedFile(null)} className="ml-1 hover:text-red-500 text-neutral-500">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        )}
                         <input
-                          required
+                          required={!selectedFile}
                           type="text"
-                          placeholder="Digite uma mensagem..."
+                          placeholder={selectedFile ? "Adicione uma legenda..." : "Digite uma mensagem..."}
                           value={newMessageText}
                           onChange={(e) => setNewMessageText(e.target.value)}
                           className="w-full px-4 py-2.5 bg-white dark:bg-[#2a3942] border-none rounded-lg text-[14px] text-neutral-850 dark:text-[#e9edef] placeholder-[#667781] dark:placeholder-[#8696a0] focus:outline-none focus:ring-0 shadow-sm"
@@ -1320,7 +1344,7 @@ export default function ChatPage() {
                       </div>
                       <button 
                         type="submit" 
-                        className="p-2 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
+                        className="p-2 pb-2.5 text-[#8696a0] hover:text-[#00a884] transition-colors shrink-0"
                       >
                         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
