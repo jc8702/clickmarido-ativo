@@ -129,6 +129,8 @@ interface Message {
   fromMe: boolean;
   body: string;
   timestamp: number;
+  pushName?: string;
+  sender?: string;
 }
 
 export default function ChatPage() {
@@ -282,7 +284,7 @@ export default function ChatPage() {
           
           return {
             id: c.id || c.jid,
-            name: c.name || c.id?.split('@')[0] || 'Contato',
+            name: c.name || c.pushName || c.lastMessage?.pushName || c.id?.split('@')[0] || 'Contato',
             unreadCount: c.unreadCount || 0,
             lastMessage: getMessageBody(c.lastMessage),
             updatedAt: chatDate,
@@ -373,8 +375,22 @@ export default function ChatPage() {
 
   // Resolver nome de um chat priorizando: contactsMap > nome da API > pushName > número
   const resolveName = useCallback((chat: Chat): string => {
+    if (chat.id.includes('@g.us')) {
+       // Se for um grupo, tentamos usar o chat.name. Se for apenas o ID numérico ou vazio, fallback para "Grupo WhatsApp"
+       if (chat.name && chat.name !== 'Contato' && !chat.name.includes('-')) {
+         return chat.name;
+       }
+       return 'Grupo WhatsApp';
+    }
     const phone = chat.id.split('@')[0];
-    return contactsMap[chat.id] || contactsMap[phone] || chat.name || phone;
+    const resolved = contactsMap[chat.id] || contactsMap[phone] || chat.name;
+    if (resolved && resolved !== 'Contato' && resolved !== phone) return resolved;
+    
+    // Se não achou nome, formata o telefone para ficar amigável
+    if (phone.length > 10) {
+      return `+${phone.slice(0,2)} ${phone.slice(2,4)} ${phone.slice(4,9)}-${phone.slice(9)}`;
+    }
+    return phone;
   }, [contactsMap]);
 
   // ── Função auxiliar: extrai lista de mensagens de qualquer formato de resposta da Evolution API
@@ -448,6 +464,8 @@ export default function ChatPage() {
             fromMe: m.key?.fromMe ?? m.fromMe ?? false,
             body: getMessageBody(m),
             timestamp: ts,
+            pushName: m.pushName || m.participant || '',
+            sender: m.key?.participant || m.participant || m.key?.remoteJid || m.remoteJid || '',
           };
         })
         .filter((m) => {
@@ -578,8 +596,8 @@ export default function ChatPage() {
       // Polling da lista de chats e contatos
       chatPollingRef.current = setInterval(() => {
         loadChats();
-        loadWaContacts();
-      }, 30000);
+        // Não precisamos puxar a lista inteira de contatos a cada 8s, focar só nos chats
+      }, 8000);
       return () => {
         if (chatPollingRef.current) clearInterval(chatPollingRef.current);
       };
@@ -682,6 +700,11 @@ export default function ChatPage() {
                   : 'bg-white text-neutral-850 dark:bg-[#202c33] dark:text-neutral-100 rounded-tl-none message-bubble-other'
               }`}
             >
+              {!msg.fromMe && selectedChat?.id.includes('@g.us') && msg.sender && (
+                <div className="text-[11px] font-bold text-[#128c7e] dark:text-[#00a884] mb-0.5 truncate max-w-[200px]">
+                  {msg.pushName || msg.sender.split('@')[0]}
+                </div>
+              )}
               <p className="pr-12 break-words text-[13px]">{msg.body}</p>
               <span className="text-[9px] absolute bottom-1 right-2 text-neutral-400 dark:text-neutral-400/80 shrink-0 select-none">
                 {msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1022,9 +1045,22 @@ export default function ChatPage() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                        Online
+                      <div className="flex items-center gap-3 shrink-0">
+                        {!selectedChat.id.includes('@g.us') && !crmCustomers.some(c => c.phone && c.phone.replace(/\D/g, '') === selectedChat.id.split('@')[0]) && (
+                          <button
+                            onClick={() => toast.success('Funcionalidade de Adicionar Cliente será aberta em breve!')}
+                            className="text-[10px] font-bold bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 px-3 py-1.5 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors shadow-sm flex items-center gap-1.5"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Adicionar CRM
+                          </button>
+                        )}
+                        <div className="flex items-center gap-1.5 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                          Online
+                        </div>
                       </div>
                     </div>
 

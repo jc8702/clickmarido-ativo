@@ -1,53 +1,51 @@
-# Plano de Rota Técnica: Revitalização e Integração dos Módulos (Click Marido CRM)
+# Plan de Implementación: Clone Fiel de WhatsApp Web (Consultor de Evolución)
 
-Este plano detalha as melhorias estéticas e funcionais que o Squad de Especialistas executará para transformar a interface do CRM (eliminando o visual genérico) e integrar todos os módulos operacionais com interações e botões dinâmicos.
+## Diagnóstico y Prescripción Técnica
 
----
+**Estado Actual:**
+Tras escanear el proyecto (Next.js App Router, Prisma), observo que el módulo de chat en `page.tsx` realiza *polling* (llamadas HTTP repetitivas cada 4s y 30s) para obtener mensajes y listas de chat de la Evolution API. La resolución de contactos depende de una llamada inicial a `/contact/findContacts` y de los clientes del CRM. 
+Esto genera el mayor punto de dolor actual: cuando un número no registrado o un grupo envía un mensaje, el sistema no captura su identidad (`pushName`, imagen, título del grupo) dinámicamente y la conversación no aparece en tiempo real.
 
-## 🎨 DIRETRIZ VISUAL PREMIUM
-
-- **Cores Tailored:** Tons de roxo profundo (`#6347F9`) como marca principal, verde esmeralda (`#1FAA63`) para status de sucesso/aprovado, e laranja vibrante (`#FB8500`) para alertas.
-- **Glassmorphism e Sombras:** Aplicação de fundos translúcidos (`backdrop-blur-md bg-white/80`), bordas finas com baixo contraste e sombras suaves tridimensionais.
-- **Animações de Transição:** Movimentos suaves de elevação ao passar o mouse em botões e cartões.
-- **Shimmer Effects:** Indicadores visuais de carregamento em esqueleto para evitar telas piscando.
+**Objetivo (Estándar de Diamante):**
+Elevar el entorno a un **clon exacto de WhatsApp Web**, tanto visualmente como a nivel de rendimiento en tiempo real, garantizando que todo contacto (registrado o no) y grupo funcione a la perfección dentro del CRM.
 
 ---
 
-## 📅 CRONOGRAMA E PASSOS DE EXECUÇÃO
+## 🛠️ Propuesta de Squad de Expertos
 
-### PASSO 1: Resolução de Loops de Render (Telas Piscando)
-1. Atualizar o hook `useAuth.js` utilizando `useCallback` para retornar referências estáveis de `getToken`, `login` e `logout`.
-2. Remover os disparos concorrentes de `mutate()` nos `useEffect` da página de Clientes (`customers/page.tsx`) e Orçamentos (`quotations/page.tsx`).
-3. Adicionar estados visuais de esqueleto de carregamento (*shimmers*).
+Para ejecutar esta evolución con la máxima calidad, propongo movilizar a:
 
-### PASSO 2: Revitalização Estética do Dashboard
-1. Redesenhar os cartões de estatísticas principais usando ícones dinâmicos em SVG e micro-animações de elevação.
-2. Adicionar layout do tipo Bento Grid com agrupamento sofisticado para "Últimas Ordens" e "Top Serviços".
-
-### PASSO 3: Revitalização e Expansão de Clientes e Orçamentos
-1. **Clientes:** Exibir contatos, telefone e resumo do endereço cadastrado. Adicionar gaveta de detalhes lateral (Drawer).
-2. **Orçamentos:** Adicionar no formulário de criação: Prazo de Execução, Tipo de Garantia (30 dias a 1 ano), Desconto/Acréscimo e Forma de Pagamento sugerida. Mudar chave do item de `name` para `description` no envio para a API passar no Zod.
-
-### PASSO 4: Integração de Ações em Ordens de Serviço (OS)
-1. Adicionar o botão "Criar Ordem Manual" que gera automaticamente um orçamento aprovado na API por baixo dos panos.
-2. Adicionar links direcionando o usuário para o Cliente associado e para o Orçamento de origem.
-
-### PASSO 5: Integração de Ações em Pagamentos
-1. Adicionar botão "Registrar Recebimento Manual".
-2. Integrar links na tabela de pagamentos para visualizar Cliente e Ordens de Serviço.
-3. Adicionar botão para compartilhar PIX rapidamente via WhatsApp Web do cliente.
-
-### PASSO 6: Integração de Ações em Garantias
-1. Adicionar botão de acionamento de garantia.
-2. Ao acionar a garantia, criar de forma automática no backend uma nova Ordem de Serviço de reparo sem custo (R$ 0,00) associada ao cliente.
-3. Adicionar links para Clientes e Orçamentos.
-
-### PASSO 7: Validação e Compilação
-1. Executar `npm run build` na pasta `frontend/`.
+1. **@backend-architect**: Encargado de destruir la arquitectura de "polling" y reemplazarla por **WebSockets o Server-Sent Events (SSE)** acoplados a los webhooks de la Evolution API para latencia cero.
+2. **@ui-ux-pro**: Encargado de replicar milimétricamente la estética, proporciones, paneles e interacciones del WhatsApp Web original.
+3. **@react-patterns**: Encargado de refactorizar el estado del frontend para soportar cachés locales, *optimistic updates* y la gestión de la cola de mensajes en React sin caídas de rendimiento.
 
 ---
 
-## 💎 CRITÉRIOS DE ACEITAÇÃO (Estilo Diamante)
-- **Zero oscilações:** As páginas de Clientes e Orçamentos devem carregar sem loops de re-render.
-- **Fidelidade Visual Premium:** O visual deve ser impactante e moderno.
-- **Fluxo Integrado:** Ações em Garantias e OS devem atualizar e criar registros dinâmicos correspondentes sem quebras.
+## 🚀 Hoja de Ruta Técnica (Solución)
+
+### Fase 1: Conectividad y Latencia Cero (Real-Time)
+- **Eliminar Polling:** Remover los `setInterval` del frontend.
+- **Implementar WebSocket/SSE:** Conectar el frontend para recibir eventos en vivo (ej. `messages.upsert`, `presence.update`). Esto hará que cualquier mensaje nuevo (incluso de desconocidos) cree el chat en la barra lateral instantáneamente.
+- **Gestión de Webhooks:** Asegurar que Evolution API dispare webhooks correctamente hacia el sistema o usar su capa de WebSocket nativa.
+
+### Fase 2: Resolución de Identidad (Desconocidos y Grupos)
+- **Extracción de PushName:** Utilizar el `pushName` que viene adjunto en los eventos de mensajes entrantes para mostrar el nombre de personas no registradas en el CRM.
+- **Soporte Completo a Grupos:** Detectar IDs terminados en `@g.us` y consultar `/group/metadata` para mostrar el título del grupo y los nombres de los participantes que envían mensajes.
+- **Fotos de Perfil:** Implementar un componente dinámico que haga lazy-loading de la foto de perfil llamando a `/chat/fetchProfilePictureUrl`.
+
+### Fase 3: Replicación Visual de WhatsApp Web (UI/UX)
+- **Layout Fiel:** Panel izquierdo persistente (30-35% del ancho) para la lista de chats, y panel derecho principal con fondo característico y cabecera pegajosa.
+- **Integración CRM:** Agregar un botón flotante y discreto en la cabecera de chats desconocidos que diga *"➕ Añadir a CRM ClickMarido"*, manteniendo la estética original.
+- **Renderizado de Múltiples Módulos:** Estilizar correctamente imágenes, audios y documentos tal como WA Web.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Preguntas de Aprobación para Iniciar la Ejecución:**
+> 
+> 1. **Conexión en Tiempo Real:** ¿Tienes configurados los Webhooks de Evolution API apuntando a tu backend o prefieres que conectemos el frontend directamente al WebSocket expuesto por Evolution API?
+> 2. **Alcance:** ¿Deseas que implementemos también el envío de imágenes y audios (micrófono) en este primer esfuerzo, o nos centramos primero en que el chat de texto, grupos y contactos funcionen idéntico a WhatsApp Web?
+
+Por favor, aprueba este plan (y responde las preguntas) para que el Squad materialice las tareas y comience a programar el rediseño.
