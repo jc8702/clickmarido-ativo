@@ -50,6 +50,65 @@ Como unificamos Front e Back no Next.js, o deploy na Vercel abrange todo o siste
 3. Adicione todas as variáveis do seu `.env` local (ex: `DATABASE_URL`, `JWT_SECRET`, etc).
 4. O deploy automático ocorrerá a cada push na branch `main`.
 
+## 5. CI/CD AUTOMÁTICO COM GITHUB ACTIONS
+
+### 5.1 Deploy automático no Vercel
+Crie o workflow abaixo em `.github/workflows/vercel-deploy.yml` para que a cada push na branch `main` o Vercel faça o deploy.
+
+```yaml
+name: Vercel Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}   # token da Vercel (gerar no dashboard)
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}   # id da organização Vercel
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} # id do projeto Vercel
+          working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+```
+
+### 5.2 Build e push da imagem Docker
+Crie o workflow abaixo em `.github/workflows/docker-publish.yml` para buildar a imagem e enviá‑la ao Docker Hub (ou outro registry). Substitua `<docker-repo>` pelo nome do seu repositório Docker.
+
+```yaml
+name: Docker Build & Publish
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/clickmarido:latest
+```
+
+**Observação:** As variáveis de segredo (`DOCKER_REGISTRY`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`) devem ser configuradas nas **Settings > Secrets and variables > Actions** do seu repositório GitHub.
+
+---
+
 ## 4. MÓDULO FINANCEIRO - SETUP
 
 ### 4.1 Variáveis de Ambiente (Mercado Pago)

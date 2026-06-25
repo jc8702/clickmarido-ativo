@@ -1176,7 +1176,7 @@ Risco: Qualquer pessoa com acesso ao repo pode extrair credenciais
 ### ✅ Pontos Positivos
 - Schema Prisma bem estruturado
 - Autenticação JWT funcionando
-- Deploy (Vercel + Railway) configurado
+- Deploy (Vercel) configurado
 - UI components sólidos (29 componentes)
 
 ### ⚠️ Problemas Imediatos

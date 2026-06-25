@@ -8,10 +8,10 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copiar package files
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json ./
 
 # Instalar todas as dependências (incluindo dev para o build)
-RUN npm ci
+RUN npm install
 
 # Copiar código fonte completo
 COPY frontend/ .
