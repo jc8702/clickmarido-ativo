@@ -11,7 +11,7 @@ RUN apk add --no-cache python3 make g++
 COPY frontend/package.json ./
 
 # Instalar todas as dependências (incluindo dev para o build)
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copiar código fonte completo
 COPY frontend/ .
