@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react';
 
 export default function WelcomeScreen() {
   return (
-    <div className="flex-1 hidden md:flex flex-col items-center justify-center bg-[#222e35] border-l border-[#222d34]">
+    <div className="flex-1 hidden md:flex flex-col items-center justify-center bg-gray-100 dark:bg-[#222e35] border-l border-gray-200 dark:border-[#222d34]">
       {/* Main Content */}
       <div className="flex flex-col items-center text-center px-8 max-w-md">
         {/* Illustration - WhatsApp-like icon */}
@@ -32,20 +32,20 @@ export default function WelcomeScreen() {
         </div>
 
         {/* Title */}
-        <h1 className="text-[#e9edef] text-[32px] font-light mb-4">
+        <h1 className="text-black dark:text-[#e9edef] text-[32px] font-light mb-4">
           WhatsApp Business Web
         </h1>
 
         {/* Description */}
-        <p className="text-[#8696a0] text-[14px] leading-relaxed mb-8">
+        <p className="text-gray-500 dark:text-[#8696a0] text-[14px] leading-relaxed mb-8">
           Amplie, organize e gerencie sua conta comercial.
         </p>
 
         {/* Divider */}
-        <div className="w-full border-t border-[#364147] mb-8" />
+        <div className="w-full border-t border-gray-300 dark:border-[#364147] mb-8" />
 
         {/* Security notice */}
-        <div className="flex items-center gap-2 text-[#8696a0] text-[13px]">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-[#8696a0] text-[13px]">
           <Lock className="w-4 h-4" />
           <span>Suas mensagens pessoais são protegidas com a criptografia de ponta a ponta.</span>
         </div>

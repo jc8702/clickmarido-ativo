@@ -21,7 +21,7 @@ export default function FilterPills({ activeFilter, onFilterChange }: FilterPill
   const [showLabels, setShowLabels] = useState(false);
 
   return (
-    <div className="px-3 py-2 border-b border-[#222d34] bg-[#111b21]">
+    <div className="px-3 py-2 border-b border-gray-200 dark:border-[#222d34] bg-gray-50 dark:bg-[#111b21]">
       <div className="flex items-center gap-2 flex-wrap">
         {filters.map(({ id, label }) => (
           <button
@@ -31,7 +31,7 @@ export default function FilterPills({ activeFilter, onFilterChange }: FilterPill
               px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
               ${activeFilter === id 
                 ? 'bg-[#00a884] text-white' 
-                : 'bg-[#202c33] text-[#8696a0] hover:bg-[#2a3942] hover:text-[#e9edef]'
+                : 'bg-gray-200 dark:bg-[#202c33] text-gray-600 dark:text-[#8696a0] hover:bg-gray-300 dark:hover:bg-[#2a3942] hover:text-black dark:hover:text-[#e9edef]'
               }
             `}
           >
@@ -47,7 +47,7 @@ export default function FilterPills({ activeFilter, onFilterChange }: FilterPill
               px-3 py-1.5 rounded-full text-[13px] font-medium transition-all flex items-center gap-1
               ${activeFilter === 'labels' 
                 ? 'bg-[#00a884] text-white' 
-                : 'bg-[#202c33] text-[#8696a0] hover:bg-[#2a3942] hover:text-[#e9edef]'
+                : 'bg-gray-200 dark:bg-[#202c33] text-gray-600 dark:text-[#8696a0] hover:bg-gray-300 dark:hover:bg-[#2a3942] hover:text-black dark:hover:text-[#e9edef]'
               }
             `}
           >
@@ -56,23 +56,23 @@ export default function FilterPills({ activeFilter, onFilterChange }: FilterPill
           </button>
           
           {showLabels && (
-            <div className="absolute top-full left-0 mt-1 w-[180px] bg-[#233138] rounded-md shadow-lg py-2 z-50">
+            <div className="absolute top-full left-0 mt-1 w-[180px] bg-white dark:bg-[#233138] rounded-md shadow-lg py-2 z-50">
               <button 
                 onClick={() => { onFilterChange('labels'); setShowLabels(false); }}
-                className="w-full text-left px-4 py-2 text-[#e9edef] text-sm hover:bg-[#182229] transition-colors"
+                className="w-full text-left px-4 py-2 text-black dark:text-[#e9edef] text-sm hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors"
               >
                 Todas as etiquetas
               </button>
-              <div className="border-t border-[#222d34] my-1" />
-              <button className="w-full text-left px-4 py-2 text-[#e9edef] text-sm hover:bg-[#182229] transition-colors flex items-center gap-2">
+              <div className="border-t border-gray-200 dark:border-[#222d34] my-1" />
+              <button className="w-full text-left px-4 py-2 text-black dark:text-[#e9edef] text-sm hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#00a884]" />
                 Cliente
               </button>
-              <button className="w-full text-left px-4 py-2 text-[#e9edef] text-sm hover:bg-[#182229] transition-colors flex items-center gap-2">
+              <button className="w-full text-left px-4 py-2 text-black dark:text-[#e9edef] text-sm hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#ff9500]" />
                 Lead
               </button>
-              <button className="w-full text-left px-4 py-2 text-[#e9edef] text-sm hover:bg-[#182229] transition-colors flex items-center gap-2">
+              <button className="w-full text-left px-4 py-2 text-black dark:text-[#e9edef] text-sm hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#ff3b30]" />
                 Urgente
               </button>

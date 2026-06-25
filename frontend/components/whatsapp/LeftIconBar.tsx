@@ -36,7 +36,7 @@ const bottomIcons = [
 
 export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftIconBarProps) {
   return (
-    <div className="w-[68px] bg-[#111b21] border-r border-[#222d34] flex flex-col items-center py-3 hidden md:flex">
+    <div className="w-[68px] bg-gray-50 dark:bg-[#111b21] border-r border-gray-200 dark:border-[#222d34] flex flex-col items-center py-3 hidden md:flex">
       {/* Top Icons */}
       <div className="flex-1 flex flex-col items-center gap-1">
         {icons.map(({ id, icon: Icon, label, badge, isAction }) => (
@@ -50,8 +50,8 @@ export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftI
               ${isAction 
                 ? 'bg-[#00a884] hover:bg-[#06cf9c] text-white' 
                 : activeIcon === id 
-                  ? 'text-white' 
-                  : 'text-[#aebac1] hover:text-white hover:bg-[#202c33]'
+                  ? 'text-black dark:text-white' 
+                  : 'text-gray-600 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202c33]'
               }
             `}
           >
@@ -70,7 +70,7 @@ export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftI
             )}
             
             {/* Tooltip */}
-            <div className="absolute left-full ml-3 px-2 py-1 bg-[#1f2c34] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            <div className="absolute left-full ml-3 px-2 py-1 bg-gray-700 dark:bg-[#1f2c34] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
               {label}
             </div>
           </button>
@@ -78,7 +78,7 @@ export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftI
       </div>
 
       {/* Bottom Icons */}
-      <div className="flex flex-col items-center gap-1 pt-2 border-t border-[#222d34]">
+      <div className="flex flex-col items-center gap-1 pt-2 border-t border-gray-200 dark:border-[#222d34]">
         {bottomIcons.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
@@ -88,8 +88,8 @@ export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftI
               w-10 h-10 rounded-full flex items-center justify-center
               transition-all duration-200 group
               ${activeIcon === id 
-                ? 'text-white' 
-                : 'text-[#aebac1] hover:text-white hover:bg-[#202c33]'
+                ? 'text-black dark:text-white' 
+                : 'text-gray-600 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#202c33]'
               }
             `}
           >
@@ -99,7 +99,7 @@ export default function LeftIconBar({ activeIcon = 'chats', onIconClick }: LeftI
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#00a884] rounded-r-full" />
             )}
             
-            <div className="absolute left-full ml-3 px-2 py-1 bg-[#1f2c34] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            <div className="absolute left-full ml-3 px-2 py-1 bg-gray-700 dark:bg-[#1f2c34] text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
               {label}
             </div>
           </button>
