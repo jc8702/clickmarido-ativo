@@ -7,6 +7,7 @@ import WhatsAppSidebar from './WhatsAppSidebar';
 import WelcomeScreen from './WelcomeScreen';
 import ChatArea from './chat/ChatArea';
 import { useFavorites, useArchived, useLabels } from './hooks/useWhatsAppApi';
+import { useEvolutionApi, ConnectionStatus } from './hooks/useEvolutionApi';
 
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
 const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
@@ -215,91 +216,41 @@ export default function WhatsAppContainer() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeIcon, setActiveIcon] = useState('chats');
 
-  // API States
-  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  
   const [crmCustomers, setCrmCustomers] = useState<any[]>([]);
   const [contactsMap, setContactsMap] = useState<Record<string, string>>({});
+
+  // ==========================================
+  // EVOLUTION API HOOK
+  // ==========================================
+  const {
+    status: connectionStatus,
+    apiOnline,
+    qrCode,
+    error: apiError,
+    apiFetch,
+    sendText,
+    sendMedia,
+    loadChats: loadChatsFromApi,
+  } = useEvolutionApi({
+    apiUrl: API_URL,
+    apiKey: API_KEY,
+    instanceName: INSTANCE_NAME,
+    pollingInterval: 5000,
+    qrCooldown: 50000,
+    apiTimeout: 10000,
+  });
+
+  // Derivar estado de conexão do status
+  const connected = connectionStatus === 'connected';
 
   // WhatsApp Backend API hooks
   const { favorites, fetchFavorites, toggleFavorite, isFavorite } = useFavorites();
   const { archived, fetchArchived, toggleArchive, isArchived } = useArchived();
   const { labels, fetchLabels, createLabel, deleteLabel, toggleLabelOnConversation, getLabelsForPhone } = useLabels();
 
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const lastQrGenerationRef = useRef<number>(0);
-
-  const apiFetch = useCallback(async (path: string, options: RequestInit = {}) => {
-    const headers = {
-      'Content-Type': 'application/json',
-      'apikey': API_KEY,
-      ...(options.headers || {}),
-    };
-    return fetch(`${API_URL}${path}`, { ...options, headers });
-  }, []);
-
-  const checkConnectionStatus = useCallback(async () => {
-    try {
-      const healthRes = await fetch(`${API_URL}/instance/connectionState/${INSTANCE_NAME}`, {
-        headers: { 'apikey': API_KEY }
-      }).catch(() => null);
-
-      if (!healthRes) {
-        setApiOnline(false);
-        setConnected(false);
-        return;
-      }
-
-      setApiOnline(true);
-      const data = await healthRes.json();
-
-      if (data.status === 404 || data.error === 'Not Found' || (data.response?.message && data.response.message[0]?.includes('does not exist'))) {
-        setConnected(false);
-        lastQrGenerationRef.current = Date.now();
-        const createRes = await apiFetch('/instance/create', {
-          method: 'POST',
-          body: JSON.stringify({
-            instanceName: INSTANCE_NAME,
-            token: API_KEY,
-            qrcode: true
-          })
-        }).catch(() => null);
-
-        if (createRes && createRes.ok) {
-          const createData = await createRes.json();
-          const qr = createData.qrcode?.base64 || createData.base64 || null;
-          setQrCode(qr);
-        }
-        return;
-      }
-      
-      if (data.instance?.state === 'open' || data.state === 'open') {
-        setConnected(true);
-        setQrCode(null);
-        lastQrGenerationRef.current = 0;
-      } else {
-        setConnected(false);
-        const now = Date.now();
-        const timeSinceLastGen = now - lastQrGenerationRef.current;
-        if (!qrCode || timeSinceLastGen > 50000) {
-          lastQrGenerationRef.current = now;
-          const connectRes = await apiFetch(`/instance/connect/${INSTANCE_NAME}`, { method: 'POST' }).catch(() => null);
-          if (connectRes && connectRes.ok) {
-            const connectData = await connectRes.json();
-            const qr = connectData.base64 || connectData.qrcode?.base64 || connectData.code || null;
-            setQrCode(qr);
-          }
-        }
-      }
-    } catch (err) {
-      setApiOnline(false);
-      setConnected(false);
-    }
-  }, [apiFetch, qrCode]);
-
-  // Carregar contatos do CRM
+  // ==========================================
+  // CARREGAR CONTATOS DO CRM
+  // ==========================================
   const loadCrmContacts = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -317,14 +268,17 @@ export default function WhatsAppContainer() {
     }
   }, []);
 
+  // ==========================================
+  // CARREGAR CHATS
+  // ==========================================
   const loadChats = useCallback(async () => {
     if (!connected) return;
+    
     try {
-      const res = await apiFetch(`/chat/findChats/${INSTANCE_NAME}`);
-
-      if (res.ok) {
-        const data = await res.json();
-        const list = (data || []).map((c: any) => {
+      const rawChats = await loadChatsFromApi();
+      
+      if (rawChats.length > 0) {
+        const list = rawChats.map((c: any) => {
           let chatDate = c.updatedAt || c.createdAt;
           if (!chatDate && c.lastMessage?.messageTimestamp) {
             chatDate = c.lastMessage.messageTimestamp;
@@ -379,9 +333,13 @@ export default function WhatsAppContainer() {
     } catch (err) {
       console.error('Error loading chats:', err);
     }
-  }, [connected, apiFetch, crmCustomers, contactsMap]);
+  }, [connected, loadChatsFromApi, crmCustomers, contactsMap]);
 
-  // Use effects for initialization and polling
+  // ==========================================
+  // EFFECTS
+  // ==========================================
+
+  // Carregar contatos do CRM
   useEffect(() => {
     loadCrmContacts();
   }, [loadCrmContacts]);
@@ -392,23 +350,24 @@ export default function WhatsAppContainer() {
       fetchFavorites();
       fetchArchived();
       fetchLabels();
+      loadChats();
     }
-  }, [connected, fetchFavorites, fetchArchived, fetchLabels]);
+  }, [connected, fetchFavorites, fetchArchived, fetchLabels, loadChats]);
 
+  // Polling de chats quando conectado
   useEffect(() => {
-    checkConnectionStatus();
-    loadChats();
-
-    pollingRef.current = setInterval(() => {
-      checkConnectionStatus();
+    if (!connected) return;
+    
+    const interval = setInterval(() => {
       loadChats();
     }, 5000);
 
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [checkConnectionStatus, loadChats]);
+    return () => clearInterval(interval);
+  }, [connected, loadChats]);
 
+  // ==========================================
+  // AUTO-OPEN CONVERSATION VIA URL
+  // ==========================================
   useEffect(() => {
     if (typeof window !== 'undefined' && connected && crmCustomers.length > 0 && searchParams) {
       const urlPhone = searchParams.get('phone');
@@ -427,31 +386,18 @@ export default function WhatsAppContainer() {
            const pendingPdf = localStorage.getItem('auto_attach_pdf');
            const pendingPdfName = localStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
            if (pendingPdf) {
-              apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  number: jid,
-                  mediaMessage: {
-                    mediatype: 'document',
-                    mimetype: 'application/pdf',
-                    caption: textParam || '',
-                    media: pendingPdf,
-                    fileName: pendingPdfName
-                  }
-                })
+              sendMedia(jid, pendingPdf, {
+                mediatype: 'document',
+                mimetype: 'application/pdf',
+                caption: textParam || '',
+                fileName: pendingPdfName,
               }).then(() => {
                  localStorage.removeItem('auto_attach_pdf');
                  localStorage.removeItem('auto_attach_name');
               }).catch(console.error);
            }
         } else if (textParam) {
-           apiFetch(`/message/sendText/${INSTANCE_NAME}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                 number: jid,
-                 textMessage: { text: textParam }
-              })
-           }).catch(console.error);
+           sendText(jid, textParam).catch(console.error);
         }
         
         const newUrl = new URL(window.location.href);
@@ -461,8 +407,11 @@ export default function WhatsAppContainer() {
         window.history.replaceState({}, '', newUrl.toString());
       }
     }
-  }, [searchParams, connected, crmCustomers.length, apiFetch]);
+  }, [searchParams, connected, crmCustomers.length, sendText, sendMedia]);
 
+  // ==========================================
+  // SELECTION LOGIC
+  // ==========================================
   let selectedConversation = conversations.find(c => c.id === selectedConvId);
 
   // Criar conversa virtual se não existir (ex: contato do CRM sem chat previo ou via URL param)
@@ -484,6 +433,9 @@ export default function WhatsAppContainer() {
     };
   }
 
+  // ==========================================
+  // RENDER
+  // ==========================================
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-white dark:bg-[#111b21]">
       {/* Left Icon Bar */}
