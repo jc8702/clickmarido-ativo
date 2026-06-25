@@ -23,7 +23,7 @@ export default function WhatsAppHeader({ onNewChat, onFilterClick }: WhatsAppHea
   }, []);
 
   return (
-    <header className="h-[60px] bg-gray-50 dark:bg-[#202c33] border-b border-gray-200 dark:border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
+    <header className="h-[60px] bg-white dark:bg-[#202c33] border-b border-gray-300 dark:border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
       {/* Logo */}
       <div className="flex items-center gap-2">
         <h1 className="text-black dark:text-white font-bold text-[17px]">WhatsApp</h1>
@@ -35,7 +35,7 @@ export default function WhatsAppHeader({ onNewChat, onFilterClick }: WhatsAppHea
         <button
           onClick={onNewChat}
           title="Nova conversa"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
         >
           <MessageCirclePlus className="w-[22px] h-[22px]" />
         </button>
@@ -45,7 +45,7 @@ export default function WhatsAppHeader({ onNewChat, onFilterClick }: WhatsAppHea
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             title="Menu"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
