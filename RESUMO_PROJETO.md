@@ -38,26 +38,33 @@ Vercel (Deploy)
 - [x] Ordens de ServiÃ§o manuais e links dinÃ¢micos
 - [x] Pagamentos avulsos e cobranÃ§a via WhatsApp
 - [x] Fluxo completo de acionamento de garantias gerando reparo de R$ 0,00
-- [x] MÃ³dulo Financeiro completo (Controle de saldos, faturas e despesas)
+- [x] Módulo Financeiro completo (Controle de saldos, faturas e despesas)
 
-- [x] GeraÃ§Ã£o de PDF Premium (A4)
-- [x] WhatsApp Hub Local (Evolution API de graÃ§a)
+- [x] Geração de PDF Premium (A4)
+- [x] WhatsApp Hub Local (Evolution API de graça)
 - [x] Dashboard de Auditoria & NPS
-- [x] Multi-User & Gerenciamento de UsuÃ¡rios
+- [x] Multi-User & Gerenciamento de Usuários
 - [x] Upload de Fotos no Google Drive (Service Account)
-- [x] RelatÃ³rios e Faturamentos AvanÃ§ados
+- [x] Relatórios e Faturamentos Avançados
 
-## HistÃ³rico de EvoluÃ§Ã£o
+## Histórico de Evolução
+
+### 24/06/2026 - 23:25
+- **Integração Real Evolution API no WhatsApp Clone (Fase 3):**
+  - Todo o estado do `old_chat.tsx` foi migrado com sucesso para o `WhatsAppContainer.tsx`, mantendo o design estético de clone perfeito.
+  - Implementado o auto-polling (`setInterval`) de busca de mensagens, contatos e histórico de conversas da Evolution API.
+  - Criado cruzamento local nativo para parear os números de telefone do WhatsApp com a base de Clientes do CRM, substituindo o DDI e o 9º dígito.
+  - Testes do Next.js compiler efetuados com 100% de sucesso (`npm run build`).
 
 ### 24/06/2026 - 16:08
-- **IntegraÃ§Ã£o OrÃ§amento -> WhatsApp:**
-  - O botÃ£o "Enviar ao Cliente" na aba de orÃ§amentos agora pega o telefone cadastrado do cliente, gera a URL do PDF Premium e redireciona automaticamente o usuÃ¡rio para o mÃ³dulo WhatsApp (`/chat`).
-  - No mÃ³dulo WhatsApp, foi implementada lÃ³gica na montagem da tela (`useEffect` com `URLSearchParams`) para ler o telefone, iniciar uma conversa com esse nÃºmero (seja ele um contato jÃ¡ conhecido ou nÃ£o) e preencher automaticamente a caixa de texto com a mensagem e o link do orÃ§amento, pronto para o envio com 1 clique.
+- **Integração Orçamento -> WhatsApp:**
+  - O botão "Enviar ao Cliente" na aba de orçamentos agora pega o telefone cadastrado do cliente, gera a URL do PDF Premium e redireciona automaticamente o usuário para o módulo WhatsApp (`/chat`).
+  - No módulo WhatsApp, foi implementada lógica na montagem da tela (`useEffect` com `URLSearchParams`) para ler o telefone, iniciar uma conversa com esse número (seja ele um contato já conhecido ou não) e preencher automaticamente a caixa de texto com a mensagem e o link do orçamento, pronto para o envio com 1 clique.
 
 ### 24/06/2026 - 15:56
-- **CorreÃ§Ã£o Visual no Chat e Deploy Mobile:**
-  - **Layout Saltando:** Corrigido o bug na tela de chat onde, ao enviar uma mensagem, o container inteiro da pÃ¡gina subia em telas nÃ£o-desktop ou em browsers que tratam o `scrollIntoView` afetando o scroll raiz. Alterado para rolar apenas a propriedade `scrollTop` do container de mensagens especÃ­fico, resolvendo o espaÃ§o vazio inferior e garantindo que o chat pareÃ§a nativo.
-  - **Deploy:** Commit e push realizados para Vercel (`main`) e deploy simultÃ¢neo da versÃ£o atualizada do frontend no aplicativo hÃ­brido rodando comando `eas update --auto` para atualizar todas as plataformas do React Native via OTA.
+- **Correção Visual no Chat e Deploy Mobile:**
+  - **Layout Saltando:** Corrigido o bug na tela de chat onde, ao enviar uma mensagem, o container inteiro da página subia em telas não-desktop ou em browsers que tratam o `scrollIntoView` afetando o scroll raiz. Alterado para rolar apenas a propriedade `scrollTop` do container de mensagens específico, resolvendo o espaço vazio inferior e garantindo que o chat pareça nativo.
+  - **Deploy:** Commit e push realizados para Vercel (`main`) e deploy simultâneo da versão atualizada do frontend no aplicativo híbrido rodando comando `eas update --auto` para atualizar todas as plataformas do React Native via OTA.
 
 ### 24/06/2026 - 15:28
 - **CorreÃ§Ã£o do Recebimento de Mensagens e Melhorias de UI no Chat:**
@@ -392,3 +399,5 @@ npm run dev
   - Arquivo criado: `C:\Users\jc-pr\.gemini\config\skills\whatsapp-module-fix\SKILL.md`
 - **24/06/2026 - 20:50**: Implementação do matching de clientes no Chat Hub do WhatsApp. Modificada a função `loadChats` no frontend para buscar contatos via JWT diretamente em `/api/customers` e normalizar os telefones para substituir os números limpos pelos nomes reais dos clientes na interface de chat em tempo real.
   - Arquivos modificados: `frontend/app/(dashboard)/chat/page.tsx`
+- **24/06/2026 - 23:06**: Execução do CICLO 2, CICLO 3 e CICLO 4 do plano de implementação de clone do WhatsApp Web. Criadas as pastas e 6 novos componentes estáticos simulando com perfeição a interface do WhatsApp Web, com injeção de cores personalizadas no `tailwind.config.js`. A página `/chat/page.tsx` foi temporariamente substituída pelos componentes estáticos para validação visual (Fase 1 do UI Clone).
+  - Arquivos modificados: `frontend/tailwind.config.js`, `frontend/app/(dashboard)/chat/page.tsx` e componentes novos.

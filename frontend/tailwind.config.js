@@ -58,6 +58,13 @@ module.exports = {
           800: '#1F2937',
           900: '#111827',
         },
+        whatsapp: {
+          dark: '#111827',
+          card: '#1f2937',
+          border: '#2d3139',
+          sent: '#056162',
+          green: '#31a24c',
+        },
       },
       backgroundImage: {
         'gradient-hero': 'linear-gradient(135deg, #5D3FD3 0%, #10B981 100%)',
