@@ -200,10 +200,21 @@ export default function QuotationsPage() {
     }
   };
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, customerPhone?: string) => {
     setActionLoading(true);
     try {
       await updateStatus(id, 'aceito');
+      
+      if (customerPhone) {
+        const cleanPhone = customerPhone.replace(/\D/g, '');
+        if (cleanPhone) {
+          // Redireciona para a página de print que gera o PDF, salva em localStorage e redireciona para o chat
+          window.location.href = `/print/quotation/${id}?autoDownload=true&redirectToChat=${cleanPhone}`;
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao aprovar orçamento:', err);
+      alert('Erro ao aprovar o orçamento.');
     } finally {
       setActionLoading(false);
     }
@@ -513,7 +524,7 @@ export default function QuotationsPage() {
                     <Button
                       variant="secondary"
                       className="flex-1"
-                      onClick={() => handleApprove(selectedQuotation.id)}
+                      onClick={() => handleApprove(selectedQuotation.id, selectedQuotation.customer?.phone)}
                       isLoading={actionLoading}
                     >
                       Aprovar (Gerar OS)
