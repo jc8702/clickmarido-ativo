@@ -7,11 +7,15 @@ WORKDIR /app
 # Instalar dependências nativas necessárias para bcrypt
 RUN apk add --no-cache python3 make g++
 
-# Copiar package files
+# Copiar package files e schema do Prisma primeiro
 COPY frontend/package.json ./
+COPY frontend/prisma ./prisma
 
-# Instalar todas as dependências (incluindo dev para o build)
-RUN npm install --legacy-peer-deps
+# Instalar dependências (ignorar postinstall para evitar erro do prisma generate antes do código)
+RUN npm install --legacy-peer-deps --ignore-scripts
+
+# Gerar cliente Prisma
+RUN npx prisma generate
 
 # Copiar código fonte completo
 COPY frontend/ .
