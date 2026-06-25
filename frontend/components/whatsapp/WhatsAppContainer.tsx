@@ -355,7 +355,7 @@ export default function WhatsAppContainer() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-[#111b21]">
+    <div className="flex h-[calc(100vh-4rem)] bg-white dark:bg-[#111b21]">
       {/* Left Icon Bar */}
       <LeftIconBar activeIcon={activeIcon} onIconClick={setActiveIcon} />
 
