@@ -165,10 +165,10 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#0b141a] relative">
-      {/* Background pattern */}
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0b141a] relative">
+      {/* Background pattern - only in dark mode */}
       <div 
-        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+        className="absolute inset-0 opacity-[0.06] pointer-events-none dark:block hidden"
         style={{ backgroundImage: 'url("https://static.whatsapp.net/rsrc.php/v3/yl/r/rnj2LpE031a.png")' }}
       />
       

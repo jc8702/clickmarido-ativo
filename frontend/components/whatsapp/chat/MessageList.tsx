@@ -64,16 +64,11 @@ export default function MessageList({ messages = [], loading = false }: MessageL
   return (
     <div 
       ref={containerRef} 
-      className="flex-1 overflow-y-auto px-[5%] md:px-[8%] py-2 relative"
-      style={{
-        backgroundImage: 'url("https://static.whatsapp.net/rsrc.php/v3/yl/r/rnj2LpE031a.png")',
-        backgroundColor: '#0b141a',
-        backgroundSize: 'cover',
-      }}
+      className="flex-1 overflow-y-auto px-[5%] md:px-[8%] py-2 relative bg-[#e5ddd5] dark:bg-[#0b141a]"
     >
       {loading && messages.length === 0 && (
         <div className="flex justify-center py-4">
-          <div className="bg-[#182229] text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
+          <div className="bg-white/80 dark:bg-[#182229] text-gray-600 dark:text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
             Carregando mensagens...
           </div>
         </div>
@@ -81,7 +76,7 @@ export default function MessageList({ messages = [], loading = false }: MessageL
       
       {!loading && messages.length === 0 && (
         <div className="flex justify-center my-4">
-          <span className="bg-[#182229] text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
+          <span className="bg-white/80 dark:bg-[#182229] text-gray-600 dark:text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
             Nenhuma mensagem encontrada
           </span>
         </div>
@@ -96,7 +91,7 @@ export default function MessageList({ messages = [], loading = false }: MessageL
         if (msg.isSystem) {
           return (
             <div key={msg.id} className="flex justify-center my-3">
-              <div className="bg-[#182229]/90 text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm text-center">
+              <div className="bg-white/80 dark:bg-[#182229]/90 text-gray-600 dark:text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm text-center">
                 {msg.text}
               </div>
             </div>
@@ -108,7 +103,7 @@ export default function MessageList({ messages = [], loading = false }: MessageL
             {/* Date Divider */}
             {showDateDivider && (
               <div className="flex justify-center my-3">
-                <div className="bg-[#182229]/90 text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
+                <div className="bg-white/80 dark:bg-[#182229]/90 text-gray-600 dark:text-[#8696a0] text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm">
                   {formatDateDivider(msg.timestamp)}
                 </div>
               </div>
@@ -120,8 +115,8 @@ export default function MessageList({ messages = [], loading = false }: MessageL
                 className={`
                   relative max-w-[65%] rounded-lg px-[9px] pt-[6px] pb-[8px] shadow-sm
                   ${msg.isMine 
-                    ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-none' 
-                    : 'bg-[#202c33] text-[#e9edef] rounded-tl-none'
+                    ? 'bg-[#d9fdd3] dark:bg-[#005c4b] text-black dark:text-[#e9edef] rounded-tr-none' 
+                    : 'bg-white dark:bg-[#202c33] text-black dark:text-[#e9edef] rounded-tl-none'
                   }
                   ${!isLastInGroup && msg.isMine ? 'rounded-tr-sm' : ''}
                   ${!isLastInGroup && !msg.isMine ? 'rounded-tl-sm' : ''}
@@ -142,7 +137,7 @@ export default function MessageList({ messages = [], loading = false }: MessageL
                   
                   {/* Time + Status */}
                   <div className="flex items-center gap-0.5 ml-1 flex-shrink-0 self-end mb-[2px]">
-                    <span className="text-[11px] text-[#8696a0] whitespace-nowrap">
+                    <span className="text-[11px] text-gray-500 dark:text-[#8696a0] whitespace-nowrap">
                       {msg.time}
                     </span>
                     {msg.isMine && (

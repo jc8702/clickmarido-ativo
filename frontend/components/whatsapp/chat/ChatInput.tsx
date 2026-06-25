@@ -72,25 +72,25 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
   const quickEmojis = ['😀', '😂', '❤️', '👍', '🙏', '😍', '🤔', '😊', '😎', '🥰', '😢', '😤', '👍', '👋', '🎉', '🔥'];
 
   return (
-    <div className="bg-[#202c33] border-t border-[#222d34] flex-shrink-0">
+    <div className="bg-gray-50 dark:bg-[#202c33] border-t border-gray-200 dark:border-[#222d34] flex-shrink-0">
       <div className="flex items-end gap-2 px-4 py-3">
         {/* Emoji Button + Picker */}
         <div className="relative" ref={emojiPickerRef}>
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[#8696a0] hover:text-white hover:bg-[#2a3942] transition-all flex-shrink-0"
+            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-gray-500 dark:text-[#8696a0] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all flex-shrink-0"
           >
             <Smile className="w-6 h-6" />
           </button>
           
           {showEmojiPicker && (
-            <div className="absolute bottom-full left-0 mb-2 w-[320px] bg-[#233138] rounded-lg shadow-xl p-3 z-50">
+            <div className="absolute bottom-full left-0 mb-2 w-[320px] bg-white dark:bg-[#233138] rounded-lg shadow-xl p-3 z-50">
               <div className="grid grid-cols-8 gap-1">
                 {quickEmojis.map((emoji, index) => (
                   <button
                     key={index}
                     onClick={() => addEmoji(emoji)}
-                    className="w-9 h-9 flex items-center justify-center text-xl hover:bg-[#2a3942] rounded transition-colors"
+                    className="w-9 h-9 flex items-center justify-center text-xl hover:bg-gray-100 dark:hover:bg-[#2a3942] rounded transition-colors"
                   >
                     {emoji}
                   </button>
@@ -103,7 +103,7 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
         {/* Attach Button */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[#8696a0] hover:text-white hover:bg-[#2a3942] transition-all flex-shrink-0"
+          className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-gray-500 dark:text-[#8696a0] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all flex-shrink-0"
         >
           <Paperclip className="w-6 h-6 rotate-45" />
         </button>
@@ -116,7 +116,7 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
         />
 
         {/* Input Field */}
-        <div className="flex-1 min-h-[42px] max-h-[150px] bg-[#2a3942] rounded-lg flex items-end">
+        <div className="flex-1 min-h-[42px] max-h-[150px] bg-white dark:bg-[#2a3942] rounded-lg flex items-end border border-gray-300 dark:border-transparent">
           <textarea
             ref={textareaRef}
             value={message}
@@ -124,7 +124,7 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
             onKeyDown={handleKeyDown}
             placeholder="Digite uma mensagem"
             rows={1}
-            className="flex-1 bg-transparent text-[#e9edef] text-[15px] px-3 py-[9px] outline-none resize-none leading-[20px] placeholder-[#8696a0] max-h-[150px]"
+            className="flex-1 bg-transparent text-black dark:text-[#e9edef] text-[15px] px-3 py-[9px] outline-none resize-none leading-[20px] placeholder-gray-400 dark:placeholder-[#8696a0] max-h-[150px]"
             style={{ height: 'auto', minHeight: '42px' }}
             disabled={isSending}
           />
@@ -141,7 +141,7 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
           </button>
         ) : (
           <button
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-[#8696a0] hover:text-white hover:bg-[#2a3942] transition-all flex-shrink-0"
+            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-gray-500 dark:text-[#8696a0] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all flex-shrink-0"
             title="Mensagem de voz"
           >
             <Mic className="w-6 h-6" />

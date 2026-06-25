@@ -29,11 +29,11 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
   const isGroup = conversation.id.includes('@g.us');
 
   return (
-    <header className="h-[60px] bg-[#202c33] border-b border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
+    <header className="h-[60px] bg-gray-50 dark:bg-[#202c33] border-b border-gray-200 dark:border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
       {/* Contact Info */}
       <div className="flex items-center gap-3 cursor-pointer min-w-0">
         {/* Avatar */}
-        <div className="w-[40px] h-[40px] rounded-full bg-[#6b7c85] flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="w-[40px] h-[40px] rounded-full bg-gray-400 dark:bg-[#6b7c85] flex items-center justify-center flex-shrink-0 overflow-hidden">
           {conversation.avatar ? (
             <img src={conversation.avatar} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -46,10 +46,10 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
         
         {/* Name + Status */}
         <div className="min-w-0">
-          <h2 className="text-[#e9edef] text-[16px] font-normal truncate">
+          <h2 className="text-black dark:text-[#e9edef] text-[16px] font-normal truncate">
             {conversation.contactName}
           </h2>
-          <p className="text-[#8696a0] text-[13px] truncate">
+          <p className="text-gray-500 dark:text-[#8696a0] text-[13px] truncate">
             {conversation.isOnline 
               ? 'online' 
               : conversation.lastSeen 
@@ -65,7 +65,7 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
         {/* Video Call */}
         <button 
           title="Chamada de vídeo"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
         >
           <Video className="w-[22px] h-[22px]" />
         </button>
@@ -73,7 +73,7 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
         {/* Phone Call */}
         <button 
           title="Ligação de voz"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
         >
           <Phone className="w-[22px] h-[22px]" />
         </button>
@@ -81,7 +81,7 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
         {/* Search */}
         <button 
           title="Buscar mensagens"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
         >
           <Search className="w-5 h-5" />
         </button>
@@ -91,23 +91,23 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
           <button 
             onClick={() => setMenuOpen(!menuOpen)}
             title="Menu"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
           >
             <MoreVertical className="w-5 h-5" />
           </button>
           
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-[230px] bg-[#233138] rounded-md shadow-lg py-2 z-50">
-              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+            <div className="absolute right-0 top-full mt-1 w-[230px] bg-white dark:bg-[#233138] rounded-md shadow-lg py-2 z-50">
+              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
                 Dados do contato
               </button>
-              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
                 Selecionar mensagens
               </button>
-              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
                 Fechar conversa
               </button>
-              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
                 Apagar conversa
               </button>
             </div>
