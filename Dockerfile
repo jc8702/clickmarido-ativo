@@ -1,43 +1,49 @@
-# Dockerfile opcional para testar ambiente de produção localmente
+# Dockerfile para o Click Marido CRM
+# Projeto: Next.js 15 (frontend com API Routes) + Prisma + PostgreSQL (Neon)
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Instalar dependências globais
-RUN npm install -g typescript
+# Instalar dependências nativas necessárias para bcrypt
+RUN apk add --no-cache python3 make g++
 
-# Copiar arquivos de configuração raiz
-COPY package.json package-lock.json ./
-COPY tsconfig.json ./
+# Copiar package files
+COPY frontend/package.json frontend/package-lock.json ./
 
-# Copiar workspaces
-COPY frontend/package.json ./frontend/
-COPY backend/package.json ./backend/
+# Instalar todas as dependências (incluindo dev para o build)
+RUN npm ci
 
-# Instalar dependências (workspaces)
-RUN npm install
+# Copiar código fonte completo
+COPY frontend/ .
 
-# Copiar código fonte
-COPY . .
-
-# Build dos workspaces
-RUN npm run build -ws
+# Build (já inclui prisma generate via script build)
+RUN npm run build
 
 # ==========================================
 FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-# Apenas dependências de produção para o backend (simulando o Glitch)
-COPY package.json package-lock.json ./
-COPY backend/package.json ./backend/
-RUN npm install --omit=dev --workspace=backend
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Copiar build do backend
-COPY --from=builder /app/backend/dist ./backend/dist
-COPY --from=builder /app/backend/.env* ./backend/
+# Criar usuário não-root
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
 
-# No Glitch, ele roda o script start diretamente no root do backend
-# Para o backend Glitch start: node dist/main.js
-EXPOSE 3001
-CMD ["npm", "run", "start", "-w", "backend"]
+# Copiar output standalone do Next.js
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Copiar prisma para runtime
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+
+USER nextjs
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
