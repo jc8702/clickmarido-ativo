@@ -20,9 +20,10 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
     try {
       // 1. Tentar findMessages direto
       let loadedMessages: any[] = [];
+      const targetJid = chatId.includes('@') ? chatId : `${chatId}@s.whatsapp.net`;
       const res = await apiFetch(`/chat/findMessages/${instanceName}`, {
         method: 'POST',
-        body: JSON.stringify({ remoteJid: chatId })
+        body: JSON.stringify({ where: { remoteJid: targetJid } })
       }).catch(() => null);
 
       if (res && res.ok) {
@@ -40,6 +41,14 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
       }
 
       if (loadedMessages.length > 0) {
+         // Filtrar mensagens apenas da conversa atual para evitar vazamento de outras conversas
+         const targetJid = chatId.includes('@') ? chatId : `${chatId}@s.whatsapp.net`;
+         loadedMessages = loadedMessages.filter(m => {
+            const mJid = m.key?.remoteJid || m.remoteJid || '';
+            // Ignorar sufixo :XXXX para lidar com JIDs antigos/múltiplos devices se existirem, ou usar exato
+            return mJid === targetJid || mJid.split(':')[0] === targetJid.split(':')[0];
+         });
+
          // Formatar mensagens para a UI
          const formattedMsgs = loadedMessages.map(m => {
             const isMe = m.fromMe === true;

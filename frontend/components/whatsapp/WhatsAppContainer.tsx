@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import LeftIconBar from './LeftIconBar';
 import WhatsAppSidebar from './WhatsAppSidebar';
+import WelcomeScreen from './WelcomeScreen';
 import ChatArea from './chat/ChatArea';
 
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
@@ -18,6 +20,9 @@ export interface Conversation {
   timestamp: string;
   unreadCount: number;
   isOnline?: boolean;
+  isPinned?: boolean;
+  isMuted?: boolean;
+  updatedAt?: number;
 }
 
 export default function WhatsAppContainer() {
@@ -25,6 +30,7 @@ export default function WhatsAppContainer() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeIcon, setActiveIcon] = useState('chats');
 
   // API States
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -231,11 +237,15 @@ export default function WhatsAppContainer() {
             unreadCount: c.unreadCount || 0,
             lastMessage: lastMsg,
             timestamp: timeString,
-            updatedAt: dateObj.getTime()
+            updatedAt: dateObj.getTime(),
+            isPinned: c.isPinned || false,
+            isMuted: c.isMuted || false,
           };
         });
 
         list.sort((a: any, b: any) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
           if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
           if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
           return b.updatedAt - a.updatedAt;
@@ -345,7 +355,10 @@ export default function WhatsAppContainer() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-whatsapp-dark">
+    <div className="flex h-[calc(100vh-4rem)] bg-[#111b21]">
+      {/* Left Icon Bar */}
+      <LeftIconBar activeIcon={activeIcon} onIconClick={setActiveIcon} />
+
       {/* Sidebar */}
       <WhatsAppSidebar
         conversations={conversations}
@@ -359,17 +372,14 @@ export default function WhatsAppContainer() {
         apiFetch={apiFetch}
       />
 
-      {/* Chat Area */}
+      {/* Chat Area or Welcome Screen */}
       {selectedConversation ? (
         <ChatArea 
             conversation={selectedConversation} 
             apiFetch={apiFetch}
         />
       ) : (
-        <div className="flex-1 hidden md:flex flex-col items-center justify-center text-gray-500 bg-[#222e35] border-l border-whatsapp-border">
-            <h1 className="text-3xl text-gray-300 font-light mb-4">Click Marido Web</h1>
-            <p className="text-gray-400">Selecione uma conversa para começar a enviar e receber mensagens</p>
-        </div>
+        <WelcomeScreen />
       )}
     </div>
   );

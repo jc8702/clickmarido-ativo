@@ -1,31 +1,72 @@
 'use client';
 
-import { Search, Camera, MoreVertical } from 'lucide-react';
+import { MessageCirclePlus, MoreVertical, Search, Filter } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 
-export default function WhatsAppHeader() {
+interface WhatsAppHeaderProps {
+  onNewChat?: () => void;
+  onFilterClick?: () => void;
+}
+
+export default function WhatsAppHeader({ onNewChat, onFilterClick }: WhatsAppHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <header className="sticky top-0 h-16 bg-whatsapp-dark border-b border-whatsapp-border
-      flex items-center justify-between px-4 md:px-6 gap-4 z-40">
-      
+    <header className="h-[60px] bg-[#202c33] border-b border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
       {/* Logo */}
-      <h1 className="text-white font-bold text-xl hidden md:block">WhatsApp</h1>
-      
-      {/* Search */}
-      <div className="flex-1 max-w-96">
-        <div className="flex items-center gap-2 bg-whatsapp-card rounded-full px-4 py-2">
-          <Search className="w-4 h-4 text-gray-500" />
-          <input 
-            type="text"
-            placeholder="Pesquisar ou começar uma conversa"
-            className="flex-1 bg-transparent text-white outline-none text-sm placeholder-gray-500"
-          />
-        </div>
+      <div className="flex items-center gap-2">
+        <h1 className="text-white font-bold text-[17px]">WhatsApp</h1>
       </div>
       
       {/* Action Icons */}
-      <div className="flex items-center gap-4 text-gray-400">
-        <Camera className="w-5 h-5 cursor-pointer hover:text-whatsapp-green transition" />
-        <MoreVertical className="w-5 h-5 cursor-pointer hover:text-whatsapp-green transition" />
+      <div className="flex items-center gap-2">
+        {/* New Chat Button */}
+        <button
+          onClick={onNewChat}
+          title="Nova conversa"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+        >
+          <MessageCirclePlus className="w-[22px] h-[22px]" />
+        </button>
+        
+        {/* Menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            title="Menu"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[#aebac1] hover:text-white hover:bg-[#2a3942] transition-all"
+          >
+            <MoreVertical className="w-5 h-5" />
+          </button>
+          
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-[230px] bg-[#233138] rounded-md shadow-lg py-2 z-50">
+              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+                Novo grupo
+              </button>
+              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+                Mensagens enviadas
+              </button>
+              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+                Mensagens favoritas
+              </button>
+              <button className="w-full text-left px-6 py-2.5 text-[#e9edef] text-[15px] hover:bg-[#182229] transition-colors">
+                Configurações
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
