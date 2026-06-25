@@ -4,14 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
+import { parseMessage, filterMessagesByChat, ParsedMessage } from './messageParser';
 import { INSTANCE_NAME as DEFAULT_INSTANCE_NAME } from '../WhatsAppContainer';
 
 export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propInstanceName }: { conversation: any, apiFetch?: any, INSTANCE_NAME?: string }) {
   const instanceName = propInstanceName || DEFAULT_INSTANCE_NAME;
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ParsedMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastMessageIdsRef = useRef<string>('');
+  const currentChatIdRef = useRef<string>('');
 
   const loadMessages = useCallback(async (chatId: string, silent = false) => {
     if (!apiFetch) return;
@@ -41,46 +43,11 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
       }
 
       if (loadedMessages.length > 0) {
-         // Filtrar mensagens apenas da conversa atual para evitar vazamento de outras conversas
-         const targetJid = chatId.includes('@') ? chatId : `${chatId}@s.whatsapp.net`;
-         loadedMessages = loadedMessages.filter(m => {
-            const mJid = m.key?.remoteJid || m.remoteJid || '';
-            // Ignorar sufixo :XXXX para lidar com JIDs antigos/múltiplos devices se existirem, ou usar exato
-            return mJid === targetJid || mJid.split(':')[0] === targetJid.split(':')[0];
-         });
+         // Filtrar mensagens apenas da conversa atual para evitar vazamento
+         loadedMessages = filterMessagesByChat(loadedMessages, targetJid);
 
-         // Formatar mensagens para a UI
-         const formattedMsgs = loadedMessages.map(m => {
-            const isMe = m.fromMe === true;
-            let text = 'Sem mensagem';
-            
-            const msgObj = m.message || m;
-            if (msgObj) {
-              if (msgObj.conversation) text = msgObj.conversation;
-              else if (msgObj.extendedTextMessage?.text) text = msgObj.extendedTextMessage.text;
-              else if (msgObj.imageMessage) text = msgObj.imageMessage.caption ? `📷 ${msgObj.imageMessage.caption}` : '📷 Foto';
-              else if (msgObj.videoMessage) text = msgObj.videoMessage.caption ? `🎥 ${msgObj.videoMessage.caption}` : '🎥 Vídeo';
-              else if (msgObj.audioMessage) text = '🎵 Áudio';
-              else if (msgObj.documentMessage) text = msgObj.documentMessage.title ? `📄 ${msgObj.documentMessage.title}` : '📄 Documento';
-              else if (msgObj.stickerMessage) text = '💟 Figurinha';
-              else if (msgObj.ephemeralMessage?.message?.conversation) text = msgObj.ephemeralMessage.message.conversation;
-              else if (msgObj.ephemeralMessage?.message?.extendedTextMessage?.text) text = msgObj.ephemeralMessage.message.extendedTextMessage.text;
-            }
-            
-            let ts = m.messageTimestamp || m.timestamp || (Date.now() / 1000);
-            if (ts > 1e11) ts = Math.floor(ts / 1000);
-            
-            const dateObj = new Date(ts * 1000);
-            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            return {
-              id: m.key?.id || m.id || Math.random().toString(),
-              text,
-              isMine: isMe,
-              time: timeStr,
-              timestamp: ts
-            };
-         });
+         // Usar o parser robusto para formatar mensagens
+         const formattedMsgs = loadedMessages.map(m => parseMessage(m));
          
          formattedMsgs.sort((a, b) => a.timestamp - b.timestamp);
          setMessages(formattedMsgs);
@@ -98,12 +65,19 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
     }
   }, [apiFetch, instanceName]);
 
+  // Limpar mensagens ao trocar de conversa
   useEffect(() => {
     if (conversation?.id) {
-       setMessages([]);
-       lastMessageIdsRef.current = '';
+       // Se mudou de conversa, limpar imediatamente
+       if (currentChatIdRef.current !== conversation.id) {
+         setMessages([]);
+         lastMessageIdsRef.current = '';
+         currentChatIdRef.current = conversation.id;
+       }
+       
        loadMessages(conversation.id);
        
+       // Polling para atualizações
        chatPollingRef.current = setInterval(() => {
          loadMessages(conversation.id, true);
        }, 4000);
@@ -166,12 +140,6 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propIn
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0b141a] relative">
-      {/* Background pattern - only in dark mode */}
-      <div 
-        className="absolute inset-0 opacity-[0.06] pointer-events-none dark:block hidden"
-        style={{ backgroundImage: 'url("https://static.whatsapp.net/rsrc.php/v3/yl/r/rnj2LpE031a.png")' }}
-      />
-      
       <div className="flex-1 flex flex-col relative z-10 h-full">
         <ChatHeader conversation={conversation} />
         <MessageList messages={messages} loading={loading} />
