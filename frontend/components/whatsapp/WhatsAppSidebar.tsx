@@ -86,7 +86,7 @@ export default function WhatsAppSidebar({
 
       {/* Sidebar */}
       <aside className={`
-        w-full md:w-[400px] bg-[#111b21] border-r border-[#222d34]
+        w-full md:w-[400px] bg-white dark:bg-[#111b21] border-r border-gray-200 dark:border-[#222d34]
         flex flex-col fixed md:relative inset-0 z-40 md:z-auto
         transform transition-transform ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
@@ -96,8 +96,8 @@ export default function WhatsAppSidebar({
 
         {/* Status de Conexão - Mostrar QR Code se desconectado */}
         {!connected && qrCode && (
-          <div className="bg-[#111b21] p-6 flex flex-col items-center justify-center border-b border-[#222d34] flex-shrink-0 z-50">
-            <h3 className="text-white font-medium mb-4 text-center">Conecte o seu WhatsApp</h3>
+          <div className="bg-white dark:bg-[#111b21] p-6 flex flex-col items-center justify-center border-b border-gray-200 dark:border-[#222d34] flex-shrink-0 z-50">
+            <h3 className="text-black dark:text-white font-medium mb-4 text-center">Conecte o seu WhatsApp</h3>
             <div className="bg-white p-2 rounded-lg mb-4">
               <img 
                 src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`} 
@@ -105,7 +105,7 @@ export default function WhatsAppSidebar({
                 className="w-48 h-48 object-contain" 
               />
             </div>
-            <p className="text-sm text-[#8696a0] text-center">
+            <p className="text-sm text-gray-500 dark:text-[#8696a0] text-center">
               Abra o WhatsApp no seu celular, toque em Dispositivos Conectados e aponte a câmera para esta tela.
             </p>
           </div>
@@ -113,22 +113,22 @@ export default function WhatsAppSidebar({
 
         {/* Search + Filters */}
         {connected && (
-          <div className="bg-[#111b21] flex-shrink-0">
+          <div className="bg-white dark:bg-[#111b21] flex-shrink-0">
             {/* Search Bar */}
             <div className="px-3 py-2">
-              <div className="flex items-center bg-[#202c33] rounded-lg px-3 gap-3 h-[35px]">
-                <Search className="w-[18px] h-[18px] text-[#8696a0] flex-shrink-0" />
+              <div className="flex items-center bg-gray-100 dark:bg-[#202c33] rounded-lg px-3 gap-3 h-[35px]">
+                <Search className="w-[18px] h-[18px] text-gray-500 dark:text-[#8696a0] flex-shrink-0" />
                 <input 
                   type="text"
                   placeholder="Pesquisar ou começar uma nova conversa"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 bg-transparent text-[#e9edef] outline-none text-[14px] placeholder-[#8696a0]"
+                  className="flex-1 bg-transparent text-black dark:text-[#e9edef] outline-none text-[14px] placeholder-gray-400 dark:placeholder-[#8696a0]"
                 />
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
-                    className="text-[#8696a0] hover:text-white"
+                    className="text-gray-500 dark:text-[#8696a0] hover:text-black dark:hover:text-white"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -143,14 +143,14 @@ export default function WhatsAppSidebar({
 
         {/* List */}
         {connected && (
-          <div className="flex-1 overflow-y-auto bg-[#111b21]">
+          <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]">
             {/* Arquivadas */}
             {!showArchived && (
               <button
                 onClick={() => setShowArchived(true)}
-                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[#202c33] transition-colors border-b border-[#222d34]"
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#202c33] transition-colors border-b border-gray-200 dark:border-[#222d34]"
               >
-                <div className="w-12 h-12 rounded-full bg-[#202c33] flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-[#202c33] flex items-center justify-center">
                   <Archive className="w-5 h-5 text-[#00a884]" />
                 </div>
                 <span className="text-[#00a884] text-[17px] font-medium">Arquivadas</span>
@@ -159,7 +159,7 @@ export default function WhatsAppSidebar({
 
             {/* Conversas */}
             {filteredConversations.length === 0 ? (
-              <div className="p-8 text-center text-[#8696a0] text-sm">
+              <div className="p-8 text-center text-gray-500 dark:text-[#8696a0] text-sm">
                 {searchTerm ? 'Nenhuma conversa encontrada' : 'Nenhuma conversa ainda'}
               </div>
             ) : (
@@ -204,11 +204,11 @@ function ConversationItem({
   return (
     <div
       onClick={onClick}
-      className={`flex items-center px-3 py-3 cursor-pointer transition-colors border-b border-[#222d34]
-        ${isSelected ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'}`}
+      className={`flex items-center px-3 py-3 cursor-pointer transition-colors border-b border-gray-200 dark:border-[#222d34]
+        ${isSelected ? 'bg-gray-100 dark:bg-[#2a3942]' : 'hover:bg-gray-50 dark:hover:bg-[#202c33]'}`}
     >
       {/* Avatar */}
-      <div className="w-[49px] h-[49px] rounded-full bg-[#6b7c85] flex items-center justify-center flex-shrink-0 overflow-hidden mr-3 relative">
+      <div className="w-[49px] h-[49px] rounded-full bg-gray-300 dark:bg-[#6b7c85] flex items-center justify-center flex-shrink-0 overflow-hidden mr-3 relative">
         {conversation.avatar ? (
           <img src={conversation.avatar} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -220,7 +220,7 @@ function ConversationItem({
         
         {/* Online indicator */}
         {conversation.isOnline && (
-          <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#00a884] rounded-full border-2 border-[#111b21]" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#00a884] rounded-full border-2 border-white dark:border-[#111b21]" />
         )}
       </div>
 
@@ -228,15 +228,15 @@ function ConversationItem({
       <div className="flex-1 min-w-0">
         {/* Name + Time + Pin */}
         <div className="flex justify-between items-center mb-0.5">
-          <span className="text-[#e9edef] text-[17px] truncate flex-1">
+          <span className="text-black dark:text-[#e9edef] text-[17px] truncate flex-1">
             {conversation.contactName}
           </span>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             {isPinned && (
-              <Pin className="w-4 h-4 text-[#8696a0] rotate-45" />
+              <Pin className="w-4 h-4 text-gray-500 dark:text-[#8696a0] rotate-45" />
             )}
             <span className={`text-[12px] ${
-              conversation.unreadCount > 0 ? 'text-[#00a884]' : 'text-[#8696a0]'
+              conversation.unreadCount > 0 ? 'text-[#00a884]' : 'text-gray-500 dark:text-[#8696a0]'
             }`}>
               {conversation.timestamp}
             </span>
@@ -255,7 +255,7 @@ function ConversationItem({
             
             {/* Message content */}
             <span className={`text-[14px] truncate ${
-              conversation.unreadCount > 0 ? 'text-[#e9edef]' : 'text-[#8696a0]'
+              conversation.unreadCount > 0 ? 'text-black dark:text-[#e9edef]' : 'text-gray-500 dark:text-[#8696a0]'
             }`}>
               {lastMessagePrefix}{conversation.lastMessage}
             </span>
@@ -264,7 +264,7 @@ function ConversationItem({
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             {/* Muted icon */}
             {isMuted && (
-              <BellOff className="w-4 h-4 text-[#8696a0]" />
+              <BellOff className="w-4 h-4 text-gray-500 dark:text-[#8696a0]" />
             )}
             
             {/* Unread badge */}
