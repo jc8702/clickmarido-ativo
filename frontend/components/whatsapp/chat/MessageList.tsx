@@ -137,7 +137,7 @@ export default function MessageList({ messages = [], loading = false }: MessageL
                   
                   {/* Time + Status */}
                   <div className="flex items-center gap-0.5 ml-1 flex-shrink-0 self-end mb-[2px]">
-                    <span className="text-[11px] text-gray-500 dark:text-[#8696a0] whitespace-nowrap">
+                    <span className="text-[11px] text-gray-500 dark:text-gray-300 whitespace-nowrap">
                       {msg.time}
                     </span>
                     {msg.isMine && (

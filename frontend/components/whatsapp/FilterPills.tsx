@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export type FilterType = 'all' | 'unread' | 'favorites' | 'groups' | 'labels';
 
@@ -19,6 +19,17 @@ const filters: { id: FilterType; label: string }[] = [
 
 export default function FilterPills({ activeFilter, onFilterChange }: FilterPillsProps) {
   const [showLabels, setShowLabels] = useState(false);
+  const labelsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (labelsRef.current && !labelsRef.current.contains(event.target as Node)) {
+        setShowLabels(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="px-3 py-2 border-b border-gray-200 dark:border-[#222d34] bg-gray-50 dark:bg-[#111b21]">
@@ -40,7 +51,7 @@ export default function FilterPills({ activeFilter, onFilterChange }: FilterPill
         ))}
         
         {/* Labels dropdown */}
-        <div className="relative">
+        <div className="relative" ref={labelsRef}>
           <button
             onClick={() => setShowLabels(!showLabels)}
             className={`
