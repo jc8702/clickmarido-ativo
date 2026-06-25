@@ -776,3 +776,55 @@ model CompanySettings {
 
   @@map("company_settings")
 }
+
+// ==========================================
+// WHATSAPP - FAVORITOS, ARQUIVAMENTO, ETIQUETAS
+// ==========================================
+
+model WhatsAppFavorite {
+  id        String   @id @default(cuid())
+  phone     String   @db.VarChar(20)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([phone, userId])
+  @@index([userId])
+  @@map("whatsapp_favorites")
+}
+
+model WhatsAppArchived {
+  id         String   @id @default(cuid())
+  phone      String   @db.VarChar(20)
+  userId     String
+  archivedAt DateTime @default(now())
+
+  @@unique([phone, userId])
+  @@index([userId])
+  @@map("whatsapp_archived")
+}
+
+model WhatsAppLabel {
+  id     String  @id @default(cuid())
+  name   String  @db.VarChar(50)
+  color  String  @default("#00a884") @db.VarChar(20)
+  userId String
+
+  conversations WhatsAppConversationLabel[]
+
+  @@unique([name, userId])
+  @@index([userId])
+  @@map("whatsapp_labels")
+}
+
+model WhatsAppConversationLabel {
+  id       String @id @default(cuid())
+  phone    String @db.VarChar(20)
+  labelId  String
+  label    WhatsAppLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  userId   String
+
+  @@unique([phone, labelId, userId])
+  @@index([labelId])
+  @@index([userId])
+  @@map("whatsapp_conversation_labels")
+}

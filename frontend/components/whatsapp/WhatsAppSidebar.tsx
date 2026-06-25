@@ -1,10 +1,11 @@
 'use client';
 
-import { Search, Archive, BellOff, Pin, X } from 'lucide-react';
+import { Search, BellOff, Pin, X } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Conversation } from './WhatsAppContainer';
 import WhatsAppHeader from './WhatsAppHeader';
 import FilterPills, { FilterType } from './FilterPills';
+import { WhatsAppLabel } from './hooks/useWhatsAppApi';
 
 interface WhatsAppSidebarProps {
   conversations: Conversation[];
@@ -17,6 +18,19 @@ interface WhatsAppSidebarProps {
   crmCustomers?: any[];
   apiFetch?: any;
   onNewChat?: () => void;
+  // Favorites
+  isFavorite?: (phone: string) => boolean;
+  toggleFavorite?: (phone: string) => Promise<boolean>;
+  // Archived
+  isArchived?: (phone: string) => boolean;
+  toggleArchive?: (phone: string) => Promise<boolean>;
+  // Labels
+  labels?: WhatsAppLabel[];
+  toggleLabelOnConversation?: (phone: string, labelId: string) => Promise<boolean>;
+  getLabelsForPhone?: (phone: string) => WhatsAppLabel[];
+  // Navigation
+  activeIcon?: string;
+  onIconClick?: (icon: string) => void;
 }
 
 export default function WhatsAppSidebar({
@@ -29,11 +43,20 @@ export default function WhatsAppSidebar({
   qrCode = null,
   crmCustomers = [],
   apiFetch,
-  onNewChat
+  onNewChat,
+  isFavorite,
+  toggleFavorite,
+  isArchived,
+  toggleArchive,
+  labels = [],
+  toggleLabelOnConversation,
+  getLabelsForPhone,
+  activeIcon = 'chats',
+  onIconClick,
 }: WhatsAppSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [showArchived, setShowArchived] = useState(false);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
 
   // Filtrar conversas
   const filteredConversations = useMemo(() => {
@@ -47,7 +70,16 @@ export default function WhatsAppSidebar({
       );
     }
 
-    // Filtros de tipo
+    // Filtrar por etiqueta
+    if (selectedLabelId && getLabelsForPhone) {
+      result = result.filter(c => {
+        const phone = c.contactNumber;
+        const convLabels = getLabelsForPhone(phone);
+        return convLabels.some(l => l.id === selectedLabelId);
+      });
+    }
+
+    // Filtrar por tipo
     switch (activeFilter) {
       case 'unread':
         result = result.filter(c => c.unreadCount > 0);
@@ -55,7 +87,12 @@ export default function WhatsAppSidebar({
       case 'groups':
         result = result.filter(c => c.id.includes('@g.us'));
         break;
-      // 'all' e 'favorites' mostram todas por enquanto
+      case 'favorites':
+        result = result.filter(c => isFavorite?.(c.contactNumber) ?? false);
+        break;
+      case 'archived':
+        result = result.filter(c => isArchived?.(c.contactNumber) ?? false);
+        break;
     }
 
     // Ordenar: fixados primeiro, depois por data
@@ -66,13 +103,7 @@ export default function WhatsAppSidebar({
     });
 
     return result;
-  }, [conversations, searchTerm, activeFilter]);
-
-  // Contar não lidas
-  const unreadCount = conversations.filter(c => c.unreadCount > 0).length;
-
-  // Contar fixadas
-  const pinnedCount = conversations.filter(c => (c as any).isPinned).length;
+  }, [conversations, searchTerm, activeFilter, selectedLabelId, isFavorite, isArchived, getLabelsForPhone]);
 
   return (
     <>
@@ -137,26 +168,22 @@ export default function WhatsAppSidebar({
             </div>
             
             {/* Filter Pills */}
-            <FilterPills activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+            <FilterPills 
+              activeFilter={activeFilter} 
+              onFilterChange={(f) => {
+                setActiveFilter(f);
+                if (f !== 'labels') setSelectedLabelId(null);
+              }} 
+              selectedLabelId={selectedLabelId}
+              onSelectLabel={setSelectedLabelId}
+              labels={labels}
+            />
           </div>
         )}
 
         {/* List */}
         {connected && (
           <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]">
-            {/* Arquivadas */}
-            {!showArchived && (
-              <button
-                onClick={() => setShowArchived(true)}
-                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#202c33] transition-colors border-b border-gray-200 dark:border-[#222d34]"
-              >
-                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-[#202c33] flex items-center justify-center">
-                  <Archive className="w-5 h-5 text-[#00a884]" />
-                </div>
-                <span className="text-[#00a884] text-[17px] font-medium">Arquivadas</span>
-              </button>
-            )}
-
             {/* Conversas */}
             {filteredConversations.length === 0 ? (
               <div className="p-8 text-center text-gray-500 dark:text-[#8696a0] text-sm">
@@ -172,6 +199,13 @@ export default function WhatsAppSidebar({
                     onSelectConv(conv.id);
                     onToggle();
                   }}
+                  isFavorite={isFavorite?.(conv.contactNumber) ?? false}
+                  onToggleFavorite={() => toggleFavorite?.(conv.contactNumber)}
+                  isArchived={isArchived?.(conv.contactNumber) ?? false}
+                  onToggleArchive={() => toggleArchive?.(conv.contactNumber)}
+                  convLabels={getLabelsForPhone?.(conv.contactNumber) ?? []}
+                  labels={labels}
+                  onToggleLabel={(labelId) => toggleLabelOnConversation?.(conv.contactNumber, labelId)}
                 />
               ))
             )}
@@ -186,11 +220,25 @@ export default function WhatsAppSidebar({
 function ConversationItem({ 
   conversation, 
   isSelected, 
-  onClick 
+  onClick,
+  isFavorite,
+  onToggleFavorite,
+  isArchived,
+  onToggleArchive,
+  convLabels,
+  labels,
+  onToggleLabel,
 }: { 
   conversation: Conversation;
   isSelected: boolean;
   onClick: () => void;
+  isFavorite: boolean;
+  onToggleFavorite?: () => void;
+  isArchived: boolean;
+  onToggleArchive?: () => void;
+  convLabels?: WhatsAppLabel[];
+  labels?: WhatsAppLabel[];
+  onToggleLabel?: (labelId: string) => void;
 }) {
   const isGroup = conversation.id.includes('@g.us');
   const isPinned = (conversation as any).isPinned;

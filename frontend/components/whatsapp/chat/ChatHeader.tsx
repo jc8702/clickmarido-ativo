@@ -1,18 +1,22 @@
 'use client';
 
-import { Search, Phone, Video, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
-interface Conversation {
-  id: string;
-  contactName: string;
-  contactNumber: string;
-  avatar?: string;
-  isOnline?: boolean;
-  lastSeen?: string;
+interface ChatHeaderProps {
+  conversation: {
+    id: string;
+    contactName: string;
+    contactNumber: string;
+    avatar?: string;
+    isOnline?: boolean;
+    lastSeen?: string;
+  };
+  onCloseChat?: () => void;
+  onDeleteChat?: () => void;
 }
 
-export default function ChatHeader({ conversation }: { conversation: Conversation }) {
+export default function ChatHeader({ conversation, onCloseChat, onDeleteChat }: ChatHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +35,7 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
   return (
     <header className="h-[60px] bg-gray-50 dark:bg-[#202c33] border-b border-gray-200 dark:border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
       {/* Contact Info */}
-      <div className="flex items-center gap-3 cursor-pointer min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         {/* Avatar */}
         <div className="w-[40px] h-[40px] rounded-full bg-gray-400 dark:bg-[#6b7c85] flex items-center justify-center flex-shrink-0 overflow-hidden">
           {conversation.avatar ? (
@@ -62,30 +66,6 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
       
       {/* Action Buttons */}
       <div className="flex items-center gap-1">
-        {/* Video Call */}
-        <button 
-          title="Chamada de vídeo"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
-        >
-          <Video className="w-[22px] h-[22px]" />
-        </button>
-        
-        {/* Phone Call */}
-        <button 
-          title="Ligação de voz"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
-        >
-          <Phone className="w-[22px] h-[22px]" />
-        </button>
-        
-        {/* Search */}
-        <button 
-          title="Buscar mensagens"
-          className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 dark:text-[#aebac1] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all"
-        >
-          <Search className="w-5 h-5" />
-        </button>
-        
         {/* Menu */}
         <div className="relative" ref={menuRef}>
           <button 
@@ -98,18 +78,32 @@ export default function ChatHeader({ conversation }: { conversation: Conversatio
           
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-[230px] bg-white dark:bg-[#233138] rounded-md shadow-lg py-2 z-50">
-              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
-                Dados do contato
-              </button>
-              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
-                Selecionar mensagens
-              </button>
-              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
-                Fechar conversa
-              </button>
-              <button className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors">
-                Apagar conversa
-              </button>
+              {onCloseChat && (
+                <button 
+                  onClick={() => { onCloseChat(); setMenuOpen(false); }}
+                  className="w-full text-left px-6 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors"
+                >
+                  Fechar conversa
+                </button>
+              )}
+              {onDeleteChat && (
+                <button 
+                  onClick={() => { 
+                    if (window.confirm('Tem certeza que deseja apagar esta conversa?')) {
+                      onDeleteChat(); 
+                    }
+                    setMenuOpen(false); 
+                  }}
+                  className="w-full text-left px-6 py-2.5 text-red-500 text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors"
+                >
+                  Apagar conversa
+                </button>
+              )}
+              {!onCloseChat && !onDeleteChat && (
+                <div className="px-6 py-2.5 text-gray-400 dark:text-[#8696a0] text-[13px]">
+                  Nenhuma ação disponível
+                </div>
+              )}
             </div>
           )}
         </div>

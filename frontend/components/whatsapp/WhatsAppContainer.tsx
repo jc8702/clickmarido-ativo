@@ -6,10 +6,193 @@ import LeftIconBar from './LeftIconBar';
 import WhatsAppSidebar from './WhatsAppSidebar';
 import WelcomeScreen from './WelcomeScreen';
 import ChatArea from './chat/ChatArea';
+import { useFavorites, useArchived, useLabels } from './hooks/useWhatsAppApi';
 
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
 const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
 export const INSTANCE_NAME = 'clickmarido_instance';
+
+// ==========================================
+// FUNÇÕES PURAS DE NORMALIZAÇÃO DE TELEFONE
+// ==========================================
+
+/** Remove tudo que não é dígito */
+function normalizePhone(phone: string): string {
+  return (phone || '').replace(/\D/g, '');
+}
+
+/** Normaliza para comparação (remove DDI 55, foca nos últimos 8-9 dígitos) */
+function normalizeForComparison(phone: string): string {
+  const cleaned = normalizePhone(phone);
+  // Remove DDI 55 se presente e tem 12+ dígitos
+  if (cleaned.length >= 12 && cleaned.startsWith('55')) {
+    return cleaned.slice(2);
+  }
+  return cleaned;
+}
+
+/** Formata telefone brasileiro para exibição */
+function formatPhoneBR(phone: string): string {
+  const cleaned = normalizePhone(phone);
+  if (cleaned.length === 13 && cleaned.startsWith('55')) {
+    return `+${cleaned.slice(0,2)} ${cleaned.slice(2,4)} ${cleaned.slice(4,9)}-${cleaned.slice(9)}`;
+  }
+  if (cleaned.length === 12 && cleaned.startsWith('55')) {
+    return `+${cleaned.slice(0,2)} ${cleaned.slice(2,4)} ${cleaned.slice(4,8)}-${cleaned.slice(8)}`;
+  }
+  if (cleaned.length === 11) {
+    return `+55 ${cleaned.slice(0,2)} ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
+  }
+  if (cleaned.length === 10) {
+    return `+55 ${cleaned.slice(0,2)} ${cleaned.slice(2,6)}-${cleaned.slice(6)}`;
+  }
+  return `+${cleaned}`;
+}
+
+/** Extrai telefone do JID (remove @s.whatsapp.net e @g.us) */
+function extractPhoneFromJid(jid: string): string {
+  return (jid || '').split('@')[0].replace(/\D/g, '');
+}
+
+/** Verifica se é JID de grupo */
+function isGroupJid(jid: string): boolean {
+  return jid?.includes('@g.us') ?? false;
+}
+
+/** Verifica se nome de grupo é genérico */
+function isGenericGroupName(name: string): boolean {
+  if (!name || !name.trim()) return true;
+  const lower = name.toLowerCase().trim();
+  // Nomes que indicam grupo genérico
+  const genericPatterns = [
+    /^grupo\s/i,
+    /^group\s/i,
+    /^família/i,
+    /^family/i,
+    /^trabalho/i,
+    /^work/i,
+    /^equipe/i,
+    /^team/i,
+  ];
+  // Se é muito curto ou combina com padrões genéricos
+  if (lower.length < 3) return true;
+  return genericPatterns.some(p => p.test(lower));
+}
+
+/** Conta participantes estimados de um grupo (se disponível nos metadados) */
+function getGroupParticipantCount(chat: any): number {
+  return chat?.participants?.length || chat?.participantCount || 0;
+}
+
+// ==========================================
+// RESOLUÇÃO DE NOMES COM PRIORIDADE
+// ==========================================
+
+/** Interface para resultado da resolução */
+interface ResolvedName {
+  name: string;
+  source: 'evolution_verified' | 'evolution_name' | 'crm' | 'cache' | 'formatted_phone' | 'generic_group';
+}
+
+/**
+ * Resolve nome de contato/grupo com prioridade definida:
+ * 1. Nome verificado da Evolution API
+ * 2. Nome do chat da Evolution API
+ * 3. Nome do CRM
+ * 4. Cache local (contactsMap)
+ * 5. Telefone formatado (fallback)
+ */
+function resolveContactName(
+  chat: any,
+  crmCustomers: any[],
+  contactsMap: Record<string, string>
+): ResolvedName {
+  const jid = chat.id || '';
+  const phone = extractPhoneFromJid(jid);
+  const isGroup = isGroupJid(jid);
+
+  // === GRUPOS ===
+  if (isGroup) {
+    // 1. Nome verificado do grupo
+    if (chat.verifiedName && chat.verifiedName.trim() && !isGenericGroupName(chat.verifiedName)) {
+      return { name: chat.verifiedName.trim(), source: 'evolution_verified' };
+    }
+    // 2. Nome do chat do grupo
+    if (chat.name && chat.name.trim() && !isGenericGroupName(chat.name)) {
+      return { name: chat.name.trim(), source: 'evolution_name' };
+    }
+    // 3. Nome verificado mesmo que genérico (melhor que nada)
+    if (chat.verifiedName && chat.verifiedName.trim()) {
+      return { name: chat.verifiedName.trim(), source: 'evolution_verified' };
+    }
+    // 4. Nome do chat mesmo que genérico
+    if (chat.name && chat.name.trim()) {
+      return { name: chat.name.trim(), source: 'evolution_name' };
+    }
+    // 5. Fallback genérico para grupo
+    const count = getGroupParticipantCount(chat);
+    const suffix = count > 0 ? ` (${count} participantes)` : '';
+    return { name: `Grupo WhatsApp${suffix}`, source: 'generic_group' };
+  }
+
+  // === CONTATOS INDIVIDUAIS ===
+  
+  // 1. Nome verificado da Evolution API (prioridade máxima)
+  if (chat.verifiedName && chat.verifiedName.trim()) {
+    const verified = chat.verifiedName.trim();
+    // Ignorar se for só número ou muito genérico
+    if (verified !== phone && verified.length > 2) {
+      return { name: verified, source: 'evolution_verified' };
+    }
+  }
+
+  // 2. Nome do chat da Evolution API
+  if (chat.name && chat.name.trim()) {
+    const name = chat.name.trim();
+    // Ignorar se for o próprio telefone, "Contato", ou muito genérico
+    if (name !== phone && name !== 'Contato' && name.length > 2 && !name.includes(phone)) {
+      return { name, source: 'evolution_name' };
+    }
+  }
+
+  // 3. Busca no CRM (normalizado para comparação)
+  const normalized = normalizeForComparison(phone);
+  if (crmCustomers && crmCustomers.length > 0) {
+    const crmMatch = crmCustomers.find((c: any) => {
+      if (!c.phone) return false;
+      const crmNorm = normalizeForComparison(c.phone);
+      // Correspondência exata
+      if (crmNorm === normalized) return true;
+      // Correspondência pelos últimos 8 dígitos
+      if (normalized.length >= 8 && crmNorm.length >= 8) {
+        return normalized.slice(-8) === crmNorm.slice(-8);
+      }
+      return false;
+    });
+
+    if (crmMatch?.name && crmMatch.name.trim()) {
+      return { name: crmMatch.name.trim(), source: 'crm' };
+    }
+  }
+
+  // 4. Cache local (contactsMap)
+  const cached = contactsMap[jid] || contactsMap[phone] || contactsMap[normalized];
+  if (cached && cached.trim()) {
+    return { name: cached.trim(), source: 'cache' };
+  }
+
+  // 5. Telefone formatado como fallback
+  return { name: formatPhoneBR(phone), source: 'formatted_phone' };
+}
+
+/** Função wrapper para manter compatibilidade com código existente */
+function resolveNameLegacy(
+  chat: any,
+  crmCustomers: any[],
+  contactsMap: Record<string, string>
+): string {
+  return resolveContactName(chat, crmCustomers, contactsMap).name;
+}
 
 export interface Conversation {
   id: string;
@@ -39,6 +222,11 @@ export default function WhatsAppContainer() {
   
   const [crmCustomers, setCrmCustomers] = useState<any[]>([]);
   const [contactsMap, setContactsMap] = useState<Record<string, string>>({});
+
+  // WhatsApp Backend API hooks
+  const { favorites, fetchFavorites, toggleFavorite, isFavorite } = useFavorites();
+  const { archived, fetchArchived, toggleArchive, isArchived } = useArchived();
+  const { labels, fetchLabels, createLabel, deleteLabel, toggleLabelOnConversation, getLabelsForPhone } = useLabels();
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const lastQrGenerationRef = useRef<number>(0);
@@ -129,70 +317,10 @@ export default function WhatsAppContainer() {
     }
   }, []);
 
-  const resolveName = useCallback((chat: any): string => {
-    if (chat.id && chat.id.includes('@g.us')) {
-       if (chat.name && chat.name !== 'Contato' && !chat.name.includes('-')) {
-         return chat.name;
-       }
-       return 'Grupo WhatsApp';
-    }
-    const phone = chat.id ? chat.id.split('@')[0] : '';
-    
-    // 1. Tentar achar no CRM
-    const crmMatch = crmCustomers.find(c => {
-      if (!c.phone) return false;
-      const crmPhone = c.phone.replace(/\D/g, '');
-      if (crmPhone === phone) return true;
-      
-      if (phone.startsWith('55') && phone.length >= 12 && crmPhone.length >= 10) {
-        if (phone.endsWith(crmPhone)) return true;
-        if (crmPhone.startsWith('55') && crmPhone.endsWith(phone.slice(4))) return true;
-        const phoneDdd = phone.slice(2,4);
-        const phoneRest = phone.slice(4);
-        let crmDdd = '';
-        let crmRest = '';
-        if (crmPhone.startsWith('55')) {
-          crmDdd = crmPhone.slice(2,4);
-          crmRest = crmPhone.slice(4);
-        } else {
-          crmDdd = crmPhone.slice(0,2);
-          crmRest = crmPhone.slice(2);
-        }
-        if (phoneDdd === crmDdd) {
-          if (phoneRest.slice(-8) === crmRest.slice(-8)) return true;
-        }
-      }
-      return false;
-    });
-
-    if (crmMatch && crmMatch.name) return crmMatch.name;
-
-    // 2. Map
-    const resolved = contactsMap[chat.id] || contactsMap[phone] || (chat.name !== phone && chat.name !== 'Contato' ? chat.name : null);
-    if (resolved) return resolved;
-    
-    // 3. Formatar
-    if (phone.length > 10) {
-      return `+${phone.slice(0,2)} ${phone.slice(2,4)} ${phone.slice(4,9)}-${phone.slice(9)}`;
-    }
-    return phone;
-  }, [contactsMap, crmCustomers]);
-
   const loadChats = useCallback(async () => {
     if (!connected) return;
     try {
       const res = await apiFetch(`/chat/findChats/${INSTANCE_NAME}`);
-      
-      const phoneToNameMap = new Map<string, string>();
-      crmCustomers.forEach((client: any) => {
-        if (client.phone) {
-          const normalized = client.phone.replace(/[\s\-().+]/g, '');
-          phoneToNameMap.set(normalized, client.name);
-          if (normalized.length >= 8) {
-            phoneToNameMap.set(normalized.slice(-8), client.name);
-          }
-        }
-      });
 
       if (res.ok) {
         const data = await res.json();
@@ -218,12 +346,7 @@ export default function WhatsAppContainer() {
           }
 
           const phoneId = c.id?.split('@')[0] || '';
-          const normalizedPhone = phoneId.replace(/[\s\-().+]/g, '');
-          let matchedName = phoneToNameMap.get(normalizedPhone);
-          if (!matchedName && normalizedPhone.length >= 8) {
-            matchedName = phoneToNameMap.get(normalizedPhone.slice(-8));
-          }
-          const finalName = resolveName({...c, name: matchedName || c.name || c.verifiedName || phoneId || 'Contato'});
+          const finalName = resolveNameLegacy(c, crmCustomers, contactsMap);
 
           // Formatar data para "HH:mm" se for de hoje, senao "DD/MM"
           const dateObj = new Date(typeof chatDate === 'number' ? (chatDate > 1e11 ? chatDate : chatDate * 1000) : chatDate);
@@ -256,12 +379,21 @@ export default function WhatsAppContainer() {
     } catch (err) {
       console.error('Error loading chats:', err);
     }
-  }, [connected, apiFetch, crmCustomers, resolveName]);
+  }, [connected, apiFetch, crmCustomers, contactsMap]);
 
   // Use effects for initialization and polling
   useEffect(() => {
     loadCrmContacts();
   }, [loadCrmContacts]);
+
+  // Carregar dados do backend quando conectado
+  useEffect(() => {
+    if (connected) {
+      fetchFavorites();
+      fetchArchived();
+      fetchLabels();
+    }
+  }, [connected, fetchFavorites, fetchArchived, fetchLabels]);
 
   useEffect(() => {
     checkConnectionStatus();
@@ -336,17 +468,15 @@ export default function WhatsAppContainer() {
   // Criar conversa virtual se não existir (ex: contato do CRM sem chat previo ou via URL param)
   if (!selectedConversation && selectedConvId) {
     const phoneId = selectedConvId.split('@')[0];
-    const crmMatch = crmCustomers.find(c => {
-      if (!c.phone) return false;
-      const crmPhone = c.phone.replace(/\D/g, '');
-      return crmPhone === phoneId || 
-             (crmPhone.startsWith('55') && crmPhone === phoneId) || 
-             (phoneId.startsWith('55') && crmPhone === phoneId.slice(2));
-    });
+    const resolvedName = resolveNameLegacy(
+      { id: selectedConvId, name: null, verifiedName: null },
+      crmCustomers,
+      contactsMap
+    );
 
     selectedConversation = {
       id: selectedConvId,
-      contactName: crmMatch ? crmMatch.name : phoneId,
+      contactName: resolvedName,
       contactNumber: phoneId,
       unreadCount: 0,
       lastMessage: 'Nova conversa iniciada',
@@ -370,6 +500,19 @@ export default function WhatsAppContainer() {
         qrCode={qrCode}
         crmCustomers={crmCustomers}
         apiFetch={apiFetch}
+        isFavorite={isFavorite}
+        toggleFavorite={toggleFavorite}
+        isArchived={isArchived}
+        toggleArchive={toggleArchive}
+        labels={labels}
+        toggleLabelOnConversation={toggleLabelOnConversation}
+        getLabelsForPhone={getLabelsForPhone}
+        activeIcon={activeIcon}
+        onIconClick={setActiveIcon}
+        onNewChat={() => {
+          setSelectedConvId(null);
+          setSidebarOpen(true);
+        }}
       />
 
       {/* Chat Area or Welcome Screen */}
