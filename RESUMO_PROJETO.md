@@ -14,6 +14,13 @@
   - Corrigido método HTTP `PATCH` → `PUT` no `handleApproveAndSend` da página de print (a API route só exporta GET/PUT/DELETE).
   - Arquivos modificados: `quotations/page.tsx`, `print/quotation/[id]/page.tsx`
 
+### 25/06/2026 - 00:15
+- **Correção Crítica no Formato de Payload da Evolution API (v1.8.x):**
+  - Identificado que o envio de mensagens (texto e PDF) falhava silenciosamente com erro `400 Bad Request` devido a payload desatualizado.
+  - Atualizado `WhatsAppContainer.tsx` para enviar mensagens usando `textMessage: { text }` e `mediaMessage: { ... }`.
+  - Atualizado `ChatArea.tsx` para o mesmo padrão e corrigido prop `INSTANCE_NAME` que estava ausente, impedindo chamadas corretas à API.
+  - Arquivos modificados: `components/whatsapp/WhatsAppContainer.tsx`, `components/whatsapp/chat/ChatArea.tsx`
+
 ### 24/06/2026 - 23:45
 - **BugFixes e Refinamentos Críticos (WhatsApp):**
   - Correção do bug onde "ao clicar no contato do CRM nada carrega": Implementada a geração de um "Chat Virtual" (virtual conversation) dentro do `WhatsAppContainer.tsx` sempre que um contato é clicado e não há histórico na Evolution API, resolvendo o problema da tela ficar em branco.

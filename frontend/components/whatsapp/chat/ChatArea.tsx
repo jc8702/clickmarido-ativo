@@ -4,8 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
+import { INSTANCE_NAME as DEFAULT_INSTANCE_NAME } from '../WhatsAppContainer';
 
-export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME }: { conversation: any, apiFetch?: any, INSTANCE_NAME?: string }) {
+export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME: propInstanceName }: { conversation: any, apiFetch?: any, INSTANCE_NAME?: string }) {
+  const instanceName = propInstanceName || DEFAULT_INSTANCE_NAME;
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const chatPollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -18,7 +20,7 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME }: { co
     try {
       // 1. Tentar findMessages direto
       let loadedMessages: any[] = [];
-      const res = await apiFetch(`/chat/findMessages/${INSTANCE_NAME}`, {
+      const res = await apiFetch(`/chat/findMessages/${instanceName}`, {
         method: 'POST',
         body: JSON.stringify({ remoteJid: chatId })
       }).catch(() => null);
@@ -85,7 +87,7 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME }: { co
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [apiFetch, INSTANCE_NAME]);
+  }, [apiFetch, instanceName]);
 
   useEffect(() => {
     if (conversation?.id) {
@@ -120,15 +122,17 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME }: { co
           else if (file.type.startsWith('video/')) mediaType = 'video';
           else if (file.type.startsWith('audio/')) mediaType = 'audio';
 
-          await apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
+          await apiFetch(`/message/sendMedia/${instanceName}`, {
             method: 'POST',
             body: JSON.stringify({
               number: jid,
-              mediatype: mediaType,
-              mimetype: file.type,
-              caption: text,
-              media: base64,
-              fileName: file.name
+              mediaMessage: {
+                mediatype: mediaType,
+                mimetype: file.type,
+                caption: text,
+                media: base64,
+                fileName: file.name
+              }
             })
           });
           loadMessages(conversation.id, true);
@@ -137,11 +141,11 @@ export default function ChatArea({ conversation, apiFetch, INSTANCE_NAME }: { co
       }
       
       // Envio de texto simples
-      await apiFetch(`/message/sendText/${INSTANCE_NAME}`, {
+      await apiFetch(`/message/sendText/${instanceName}`, {
         method: 'POST',
         body: JSON.stringify({
           number: jid,
-          text: text
+          textMessage: { text: text }
         })
       });
       

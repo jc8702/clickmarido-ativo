@@ -289,11 +289,13 @@ export default function WhatsAppContainer() {
                 method: 'POST',
                 body: JSON.stringify({
                   number: jid,
-                  mediatype: 'document',
-                  mimetype: 'application/pdf',
-                  caption: textParam || '',
-                  media: pendingPdf,
-                  fileName: pendingPdfName
+                  mediaMessage: {
+                    mediatype: 'document',
+                    mimetype: 'application/pdf',
+                    caption: textParam || '',
+                    media: pendingPdf,
+                    fileName: pendingPdfName
+                  }
                 })
               }).then(() => {
                  localStorage.removeItem('auto_attach_pdf');
@@ -305,7 +307,7 @@ export default function WhatsAppContainer() {
               method: 'POST',
               body: JSON.stringify({
                  number: jid,
-                 text: textParam
+                 textMessage: { text: textParam }
               })
            }).catch(console.error);
         }
