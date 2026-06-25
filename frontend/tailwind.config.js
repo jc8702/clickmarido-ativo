@@ -59,11 +59,23 @@ module.exports = {
           900: '#111827',
         },
         whatsapp: {
+          // Dark Mode (existente - IDÊNTICO ao WhatsApp Web)
           dark: '#111827',
           card: '#1f2937',
           border: '#2d3139',
           sent: '#056162',
           green: '#31a24c',
+          
+          // Light Mode (cores reais do WhatsApp Web)
+          'light-bg': '#ffffff',
+          'light-card': '#f5f5f5',
+          'light-border': '#e9edef',
+          'light-sent': '#d9fdd3',
+          'light-text': '#111b21',
+          'light-text-secondary': '#667781',
+          'light-hover': '#f5f6f6',
+          'light-input': '#ffffff',
+          'light-divider': '#e9edef',
         },
       },
       backgroundImage: {
