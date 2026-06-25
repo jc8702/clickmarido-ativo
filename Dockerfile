@@ -39,7 +39,6 @@ RUN addgroup --system --gid 1001 nodejs \
 # Copiar output standalone do Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Copiar prisma para runtime
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
