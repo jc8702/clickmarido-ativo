@@ -1,6 +1,6 @@
 'use client';
 
-import { Smile, Paperclip, Mic, Send, X } from 'lucide-react';
+import { Smile, Paperclip, Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface ChatInputProps {
@@ -130,23 +130,15 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
           />
         </div>
 
-        {/* Send / Mic Button */}
-        {message.trim() ? (
-          <button
-            onClick={handleSend}
-            disabled={isSending}
-            className="w-[42px] h-[42px] rounded-full bg-[#00a884] hover:bg-[#06cf9c] flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-50"
-          >
-            <Send className="w-5 h-5 text-white ml-0.5" />
-          </button>
-        ) : (
-          <button
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center text-gray-500 dark:text-[#8696a0] hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#2a3942] transition-all flex-shrink-0"
-            title="Mensagem de voz"
-          >
-            <Mic className="w-6 h-6" />
-          </button>
-        )}
+        {/* Send Button */}
+        <button
+          onClick={handleSend}
+          disabled={isSending || !message.trim()}
+          className="w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+          style={message.trim() ? { backgroundColor: '#00a884' } : {}}
+        >
+          <Send className={`w-5 h-5 ml-0.5 ${message.trim() ? 'text-white' : 'text-gray-400 dark:text-[#8696a0]'}`} />
+        </button>
       </div>
     </div>
   );

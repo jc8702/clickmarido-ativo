@@ -43,7 +43,6 @@ function authHeaders(): HeadersInit {
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
 
   const fetchFavorites = useCallback(async () => {
     try {
@@ -85,7 +84,7 @@ export function useFavorites() {
 
   const isFavorite = useCallback((phone: string) => favorites.has(phone), [favorites]);
 
-  return { favorites, loading, fetchFavorites, toggleFavorite, isFavorite };
+  return { favorites, fetchFavorites, toggleFavorite, isFavorite };
 }
 
 // ==========================================
@@ -94,7 +93,6 @@ export function useFavorites() {
 
 export function useArchived() {
   const [archived, setArchived] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
 
   const fetchArchived = useCallback(async () => {
     try {
@@ -136,7 +134,7 @@ export function useArchived() {
 
   const isArchived = useCallback((phone: string) => archived.has(phone), [archived]);
 
-  return { archived, loading, fetchArchived, toggleArchive, isArchived };
+  return { archived, fetchArchived, toggleArchive, isArchived };
 }
 
 // ==========================================

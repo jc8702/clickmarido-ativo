@@ -1,20 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
-
-function getUserId(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'clickmarido_secret') as { userId: string };
-    return decoded.userId;
-  } catch {
-    return null;
-  }
-}
+import { prisma } from '@/components/whatsapp/utils/prisma';
+import { getUserId } from '@/components/whatsapp/utils/auth';
 
 // GET - Listar conversas arquivadas
 export async function GET(request: NextRequest) {

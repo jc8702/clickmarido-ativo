@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X, Pin, BellOff } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Conversation } from './WhatsAppContainer';
 import FilterPills, { FilterType } from './FilterPills';
 import { WhatsAppLabel } from './hooks/useWhatsAppApi';
@@ -16,7 +16,6 @@ interface WhatsAppSidebarProps {
   qrCode?: string | null;
   crmCustomers?: any[];
   apiFetch?: any;
-  onNewChat?: () => void;
   // Favorites
   isFavorite?: (phone: string) => boolean;
   toggleFavorite?: (phone: string) => Promise<boolean>;
@@ -30,6 +29,8 @@ interface WhatsAppSidebarProps {
   // Navigation
   activeIcon?: string;
   onIconClick?: (icon: string) => void;
+  // Connection status for visual feedback
+  connectionStatus?: string;
 }
 
 export default function WhatsAppSidebar({
@@ -42,7 +43,6 @@ export default function WhatsAppSidebar({
   qrCode = null,
   crmCustomers = [],
   apiFetch,
-  onNewChat,
   isFavorite,
   toggleFavorite,
   isArchived,
@@ -52,10 +52,28 @@ export default function WhatsAppSidebar({
   getLabelsForPhone,
   activeIcon = 'chats',
   onIconClick,
+  connectionStatus = 'offline',
 }: WhatsAppSidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
+
+  // Sincronizar LeftIconBar 'labels' com filtro de etiquetas (bidirecional)
+  useEffect(() => {
+    if (activeIcon === 'labels' && activeFilter !== 'labels') {
+      setActiveFilter('labels');
+    }
+  }, [activeIcon]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Quando o usuário muda o filtro manualmente, atualizar o ícone ativo
+  const handleFilterChange = (f: FilterType) => {
+    setActiveFilter(f);
+    if (f !== 'labels') setSelectedLabelId(null);
+    // Sincronizar de volta: se mudou de labels, voltar ícone para 'chats'
+    if (f !== 'labels' && activeIcon === 'labels' && onIconClick) {
+      onIconClick('chats');
+    }
+  };
 
   // Filtrar conversas
   const filteredConversations = useMemo(() => {
@@ -93,6 +111,10 @@ export default function WhatsAppSidebar({
         break;
       case 'archived':
         result = result.filter(c => isArchived?.(c.contactNumber) ?? false);
+        break;
+      default:
+        // Na visualização 'all', esconder arquivadas (comportamento WhatsApp)
+        result = result.filter(c => !isArchived?.(c.contactNumber));
         break;
     }
 
@@ -141,7 +163,32 @@ export default function WhatsAppSidebar({
           </div>
         </div>
 
-        {/* Status de Conexão - QR Code se desconectado */}
+        {/* Status de Conexão - Feedback visual */}
+        {!connected && !qrCode && connectionStatus === 'error' && (
+          <div className="bg-white dark:bg-[#111b21] p-4 flex flex-col items-center justify-center border-b border-gray-200 dark:border-[#222d34] flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-3">
+              <span className="text-red-500 text-xl">⚠️</span>
+            </div>
+            <p className="text-[14px] text-gray-700 dark:text-[#e9edef] text-center font-medium">
+              Erro de conexão
+            </p>
+            <p className="text-[12px] text-gray-400 dark:text-[#6b7c85] text-center mt-1 mb-3">
+              Não foi possível conectar à instância
+            </p>
+          </div>
+        )}
+        {!connected && !qrCode && connectionStatus !== 'error' && (
+          <div className="bg-white dark:bg-[#111b21] p-4 flex flex-col items-center justify-center border-b border-gray-200 dark:border-[#222d34] flex-shrink-0">
+            <div className="w-12 h-12 border-4 border-[#00a884] border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-[14px] text-gray-500 dark:text-[#8696a0] text-center font-medium">
+              Conectando ao WhatsApp...
+            </p>
+            <p className="text-[12px] text-gray-400 dark:text-[#6b7c85] text-center mt-1">
+              Verificando status da instância
+            </p>
+          </div>
+        )}
+
         {!connected && qrCode && (
           <div className="bg-white dark:bg-[#111b21] p-4 flex flex-col items-center justify-center border-b border-gray-200 dark:border-[#222d34] flex-shrink-0">
             <h3 className="text-black dark:text-white font-medium mb-3 text-center text-[15px]">
@@ -189,10 +236,7 @@ export default function WhatsAppSidebar({
             {/* Filter Pills */}
             <FilterPills 
               activeFilter={activeFilter} 
-              onFilterChange={(f) => {
-                setActiveFilter(f);
-                if (f !== 'labels') setSelectedLabelId(null);
-              }} 
+              onFilterChange={handleFilterChange} 
               selectedLabelId={selectedLabelId}
               onSelectLabel={setSelectedLabelId}
               labels={labels}
@@ -279,13 +323,13 @@ function ConversationItem({
   onToggleLabel?: (labelId: string) => void;
 }) {
   const isGroup = conversation.id.includes('@g.us');
-  const isPinned = (conversation as any).isPinned;
-  const isMuted = (conversation as any).isMuted;
+  const isPinned = conversation.isPinned;
+  const isMuted = conversation.isMuted;
   const hasUnread = conversation.unreadCount > 0;
 
   // Determinar prefixo do último remetente (para grupos)
-  const lastMessagePrefix = isGroup && (conversation as any).lastMessageSender 
-    ? `${(conversation as any).lastMessageSender}: ` 
+  const lastMessagePrefix = isGroup && conversation.lastMessageSender 
+    ? `${conversation.lastMessageSender}: ` 
     : '';
 
   // Determinar ícone de status da última mensagem (para conversas individuais)

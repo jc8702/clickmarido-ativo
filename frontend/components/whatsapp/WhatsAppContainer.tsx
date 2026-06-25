@@ -8,82 +8,13 @@ import WelcomeScreen from './WelcomeScreen';
 import ChatArea from './chat/ChatArea';
 import { useFavorites, useArchived, useLabels } from './hooks/useWhatsAppApi';
 import { useEvolutionApi, ConnectionStatus } from './hooks/useEvolutionApi';
+import { normalizeForComparison, formatPhoneBR, extractPhoneFromJid, isGroupJid, isGenericGroupName, getGroupParticipantCount } from './utils/phone';
 
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
 const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
 export const INSTANCE_NAME = 'clickmarido_instance';
 
-// ==========================================
-// FUNÇÕES PURAS DE NORMALIZAÇÃO DE TELEFONE
-// ==========================================
-
-/** Remove tudo que não é dígito */
-function normalizePhone(phone: string): string {
-  return (phone || '').replace(/\D/g, '');
-}
-
-/** Normaliza para comparação (remove DDI 55, foca nos últimos 8-9 dígitos) */
-function normalizeForComparison(phone: string): string {
-  const cleaned = normalizePhone(phone);
-  // Remove DDI 55 se presente e tem 12+ dígitos
-  if (cleaned.length >= 12 && cleaned.startsWith('55')) {
-    return cleaned.slice(2);
-  }
-  return cleaned;
-}
-
-/** Formata telefone brasileiro para exibição */
-function formatPhoneBR(phone: string): string {
-  const cleaned = normalizePhone(phone);
-  if (cleaned.length === 13 && cleaned.startsWith('55')) {
-    return `+${cleaned.slice(0,2)} ${cleaned.slice(2,4)} ${cleaned.slice(4,9)}-${cleaned.slice(9)}`;
-  }
-  if (cleaned.length === 12 && cleaned.startsWith('55')) {
-    return `+${cleaned.slice(0,2)} ${cleaned.slice(2,4)} ${cleaned.slice(4,8)}-${cleaned.slice(8)}`;
-  }
-  if (cleaned.length === 11) {
-    return `+55 ${cleaned.slice(0,2)} ${cleaned.slice(2,7)}-${cleaned.slice(7)}`;
-  }
-  if (cleaned.length === 10) {
-    return `+55 ${cleaned.slice(0,2)} ${cleaned.slice(2,6)}-${cleaned.slice(6)}`;
-  }
-  return `+${cleaned}`;
-}
-
-/** Extrai telefone do JID (remove @s.whatsapp.net e @g.us) */
-function extractPhoneFromJid(jid: string): string {
-  return (jid || '').split('@')[0].replace(/\D/g, '');
-}
-
-/** Verifica se é JID de grupo */
-function isGroupJid(jid: string): boolean {
-  return jid?.includes('@g.us') ?? false;
-}
-
-/** Verifica se nome de grupo é genérico */
-function isGenericGroupName(name: string): boolean {
-  if (!name || !name.trim()) return true;
-  const lower = name.toLowerCase().trim();
-  // Nomes que indicam grupo genérico
-  const genericPatterns = [
-    /^grupo\s/i,
-    /^group\s/i,
-    /^família/i,
-    /^family/i,
-    /^trabalho/i,
-    /^work/i,
-    /^equipe/i,
-    /^team/i,
-  ];
-  // Se é muito curto ou combina com padrões genéricos
-  if (lower.length < 3) return true;
-  return genericPatterns.some(p => p.test(lower));
-}
-
-/** Conta participantes estimados de um grupo (se disponível nos metadados) */
-function getGroupParticipantCount(chat: any): number {
-  return chat?.participants?.length || chat?.participantCount || 0;
-}
+// Funções de normalização importadas de utils/phone.ts
 
 // ==========================================
 // RESOLUÇÃO DE NOMES COM PRIORIDADE
@@ -201,6 +132,7 @@ export interface Conversation {
   contactNumber: string;
   avatar?: string;
   lastMessage: string;
+  lastMessageSender?: string;
   timestamp: string;
   unreadCount: number;
   isOnline?: boolean;
@@ -366,6 +298,17 @@ export default function WhatsAppContainer() {
   }, [connected, loadChats]);
 
   // ==========================================
+  // HANDLER PARA NOVA CONVERSAA (via LeftIconBar)
+  // ==========================================
+  useEffect(() => {
+    if (activeIcon === 'new-chat') {
+      setSelectedConvId(null);
+      setSidebarOpen(true);
+      setActiveIcon('chats');
+    }
+  }, [activeIcon]);
+
+  // ==========================================
   // AUTO-OPEN CONVERSATION VIA URL
   // ==========================================
   useEffect(() => {
@@ -450,6 +393,7 @@ export default function WhatsAppContainer() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         connected={connected}
         qrCode={qrCode}
+        connectionStatus={connectionStatus}
         crmCustomers={crmCustomers}
         apiFetch={apiFetch}
         isFavorite={isFavorite}
@@ -461,10 +405,7 @@ export default function WhatsAppContainer() {
         getLabelsForPhone={getLabelsForPhone}
         activeIcon={activeIcon}
         onIconClick={setActiveIcon}
-        onNewChat={() => {
-          setSelectedConvId(null);
-          setSidebarOpen(true);
-        }}
+
       />
 
       {/* Chat Area or Welcome Screen */}
@@ -472,6 +413,9 @@ export default function WhatsAppContainer() {
         <ChatArea 
             conversation={selectedConversation} 
             apiFetch={apiFetch}
+            sendText={sendText}
+            sendMedia={sendMedia}
+            onCloseChat={() => setSelectedConvId(null)}
         />
       ) : (
         <WelcomeScreen />

@@ -75,14 +75,23 @@ function formatTime(ts: number): string {
 }
 
 function getStatusFromKey(msg: any): MessageStatus {
-  const status = msg.update?.status || msg.status || msg.key?.remoteJid?.includes('g.us') ? 'read' : undefined;
-  if (!status) return 'sent';
+  // 1. Status explícito do update (mais confiável)
+  const explicitStatus = msg.update?.status || msg.status;
+  if (explicitStatus) {
+    const s = String(explicitStatus).toLowerCase();
+    if (s === '0' || s === 'SENT' || s === 'PLAYED') return 'sent';
+    if (s === '1' || s === 'DELIVERED') return 'delivered';
+    if (s === '2' || s === 'READ') return 'read';
+    if (s === '3' || s === 'PLAYED') return 'read';
+  }
   
-  const s = String(status).toLowerCase();
-  if (s === '0' || s === 'SENT' || s === 'PLAYED') return 'sent';
-  if (s === '1' || s === 'DELIVERED') return 'delivered';
-  if (s === '2' || s === 'READ') return 'read';
-  if (s === '3' || s === 'PLAYED') return 'read';
+  // 2. Fallback: grupos sempre marcados como lidos (comportamento EvolutionAPI)
+  const remoteJid = msg.key?.remoteJid || '';
+  if (remoteJid.includes('g.us')) {
+    return 'read';
+  }
+  
+  // 3. Default para mensagens individuais
   return 'sent';
 }
 
@@ -416,7 +425,9 @@ export function parseMessage(
 function getSystemMessageText(msg: any): string {
   const stubType = msg.messageStubType || msg.message?.protocolMessage?.type;
   
-  const stubMap: Record<number, string> = {
+  // Stub types que significam "mensagem apagada" (0-10, 14-100 = todos apagados)
+  // Stub types que significam outros eventos
+  const specificStubs: Record<number, string> = {
     0: 'Mensagem apagada',
     1: 'Mensagem apagada',
     2: 'Mensagem apagada',
@@ -427,32 +438,19 @@ function getSystemMessageText(msg: any): string {
     8: 'Mensagem apagada',
     9: 'Mensagem apagada',
     10: 'Mensagem apagada',
-    14: 'Mensagem apagada',
-    15: 'Mensagem apagada',
-    16: 'Mensagem apagada',
-    17: 'Mensagem apagada',
-    18: 'Mensagem apagada',
-    19: 'Mensagem apagada',
-    20: 'Mensagem apagada',
-    21: 'Mensagem apagada',
-    22: 'Mensagem apagada',
-    23: 'Mensagem apagada',
-    24: 'Mensagem apagada',
-    25: 'Mensagem apagada',
-    26: 'Mensagem apagada',
-    27: 'Mensagem apagada',
-    28: 'Mensagem apagada',
-    29: 'Mensagem apagada',
-    30: 'Mensagem apagada',
-    31: 'Mensagem apagada',
-    32: 'Mensagem apagada',
-    33: 'Mensagem apagada',
-    34: 'Mensagem apagada',
-    35: 'Mensagem apagada',
-    36: 'Mensagem apagada',
-    37: 'Mensagem apagada',
-    38: 'Mensagem apagada',
-    39: 'Mensagem apagada',
+    // Eventos de grupo
+    27: 'Criou o grupo',
+    28: 'Alterou o assunto do grupo',
+    29: 'Alterou a descrição do grupo',
+    30: 'Alterou o ícone do grupo',
+    31: 'Alterou o nome do grupo',
+    32: 'Você foi adicionado ao grupo',
+    33: 'Você saiu do grupo',
+    34: 'Você foi removido do grupo',
+    35: 'Alguém foi adicionado ao grupo',
+    36: 'Alguém saiu do grupo',
+    37: 'Alguém foi removido do grupo',
+    // Outros
     40: 'Mensagem apagada',
     41: 'Mensagem apagada',
     42: 'Mensagem apagada',
@@ -516,8 +514,15 @@ function getSystemMessageText(msg: any): string {
     100: 'Mensagem apagada',
   };
   
-  if (stubType && stubMap[stubType]) {
-    return stubMap[stubType];
+  if (stubType !== undefined && stubType !== null) {
+    // Se o stubType está no mapa específico, usar
+    if (specificStubs[stubType]) {
+      return specificStubs[stubType];
+    }
+    // Para qualquer stubType alto (100+), assumir apagada
+    if (stubType > 100) {
+      return 'Mensagem apagada';
+    }
   }
   
   // Protocol messages

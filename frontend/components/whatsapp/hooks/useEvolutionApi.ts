@@ -57,28 +57,10 @@ function log(level: 'info' | 'warn' | 'error', msg: string, data?: any) {
 // PAYLOAD NORMALIZERS
 // ==========================================
 
-function normalizeNumber(number: string): string {
-  // Remove caracteres não numéricos
-  let cleaned = number.replace(/\D/g, '');
-  
-  // Se começa com 55 e tem 12+ dígitos, já tem DDI
-  if (cleaned.length >= 12 && cleaned.startsWith('55')) {
-    return cleaned;
-  }
-  
-  // Se tem 11 dígitos (DDD + número), adiciona DDI 55
-  if (cleaned.length === 11) {
-    return '55' + cleaned;
-  }
-  
-  // Se tem 10 dígitos (DDD + número fixo), adiciona DDI 55
-  if (cleaned.length === 10) {
-    return '55' + cleaned;
-  }
-  
-  // Retorna como está (pode ser internacional)
-  return cleaned;
-}
+import { normalizeNumberForSend } from '../utils/phone';
+
+// Re-exportar para compatibilidade
+const normalizeNumber = normalizeNumberForSend;
 
 function buildTextPayload(number: string, text: string) {
   return {
@@ -144,6 +126,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
   const lastQrGenerationRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
   const reconnectAttemptsRef = useRef<number>(0);
+  const isCheckingRef = useRef<boolean>(false);
   const maxReconnectAttempts = 5;
 
   // Cleanup on unmount
@@ -241,6 +224,9 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
 
   const checkConnection = useCallback(async (): Promise<void> => {
     if (!mountedRef.current) return;
+    // Deduplicação: evitar chamadas concorrentes
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
 
     try {
       const res = await apiFetch(`/instance/connectionState/${instanceName}`);
@@ -318,6 +304,8 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
           error: err.message || 'Erro de conexão',
         }));
       }
+    } finally {
+      isCheckingRef.current = false;
     }
   }, [apiFetch, instanceName, createInstance]);
 
@@ -518,7 +506,12 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
       }
 
       const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      // Suportar múltiplos formatos de resposta da EvolutionAPI
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data.records)) return data.records;
+      if (Array.isArray(data.data)) return data.data;
+      if (data.chats && Array.isArray(data.chats)) return data.chats;
+      return [];
     } catch (err: any) {
       log('error', 'Falha ao carregar chats', err);
       return [];
@@ -580,7 +573,6 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
             ...prev,
             status: 'offline',
             qrCode: null,
-            connected: false,
           }));
         }
         return true;

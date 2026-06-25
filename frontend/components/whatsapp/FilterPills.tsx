@@ -18,6 +18,7 @@ const filters: { id: FilterType; label: string }[] = [
   { id: 'unread', label: 'Não lidas' },
   { id: 'groups', label: 'Grupos' },
   { id: 'favorites', label: 'Favoritos' },
+  { id: 'archived', label: 'Arquivadas' },
   { id: 'labels', label: 'Etiquetas' },
 ];
 
