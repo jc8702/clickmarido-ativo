@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import WhatsAppSidebar from './WhatsAppSidebar';
 import ChatArea from './chat/ChatArea';
 
@@ -20,6 +21,7 @@ export interface Conversation {
 }
 
 export default function WhatsAppContainer() {
+  const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -265,7 +267,80 @@ export default function WhatsAppContainer() {
     };
   }, [checkConnectionStatus, loadChats]);
 
-  const selectedConversation = conversations.find(c => c.id === selectedConvId);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && connected && crmCustomers.length > 0 && searchParams) {
+      const urlPhone = searchParams.get('phone');
+      const textParam = searchParams.get('text');
+      const autoAttach = searchParams.get('autoAttach');
+      
+      if (urlPhone) {
+        let cleanPhone = urlPhone.replace(/\D/g, '');
+        if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+          cleanPhone = '55' + cleanPhone;
+        }
+        const jid = `${cleanPhone}@s.whatsapp.net`;
+        setSelectedConvId(jid);
+        
+        if (autoAttach === 'true') {
+           const pendingPdf = localStorage.getItem('auto_attach_pdf');
+           const pendingPdfName = localStorage.getItem('auto_attach_name') || 'Orcamento.pdf';
+           if (pendingPdf) {
+              apiFetch(`/message/sendMedia/${INSTANCE_NAME}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  number: jid,
+                  mediatype: 'document',
+                  mimetype: 'application/pdf',
+                  caption: textParam || '',
+                  media: pendingPdf,
+                  fileName: pendingPdfName
+                })
+              }).then(() => {
+                 localStorage.removeItem('auto_attach_pdf');
+                 localStorage.removeItem('auto_attach_name');
+              }).catch(console.error);
+           }
+        } else if (textParam) {
+           apiFetch(`/message/sendText/${INSTANCE_NAME}`, {
+              method: 'POST',
+              body: JSON.stringify({
+                 number: jid,
+                 text: textParam
+              })
+           }).catch(console.error);
+        }
+        
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('phone');
+        newUrl.searchParams.delete('text');
+        newUrl.searchParams.delete('autoAttach');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    }
+  }, [searchParams, connected, crmCustomers.length, apiFetch]);
+
+  let selectedConversation = conversations.find(c => c.id === selectedConvId);
+
+  // Criar conversa virtual se não existir (ex: contato do CRM sem chat previo ou via URL param)
+  if (!selectedConversation && selectedConvId) {
+    const phoneId = selectedConvId.split('@')[0];
+    const crmMatch = crmCustomers.find(c => {
+      if (!c.phone) return false;
+      const crmPhone = c.phone.replace(/\D/g, '');
+      return crmPhone === phoneId || 
+             (crmPhone.startsWith('55') && crmPhone === phoneId) || 
+             (phoneId.startsWith('55') && crmPhone === phoneId.slice(2));
+    });
+
+    selectedConversation = {
+      id: selectedConvId,
+      contactName: crmMatch ? crmMatch.name : phoneId,
+      contactNumber: phoneId,
+      unreadCount: 0,
+      lastMessage: 'Nova conversa iniciada',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-whatsapp-dark">
