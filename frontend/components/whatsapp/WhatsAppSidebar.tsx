@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X, Pin, BellOff } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Conversation } from './WhatsAppContainer';
 import FilterPills, { FilterType } from './FilterPills';
 import { WhatsAppLabel } from './hooks/useWhatsAppApi';
@@ -244,9 +244,9 @@ export default function WhatsAppSidebar({
           </div>
         )}
 
-        {/* Conversation List */}
+        {/* Conversation List - Virtualized for 875+ items */}
         {connected && (
-          <div className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]">
+          <div className="flex-1 bg-white dark:bg-[#111b21]">
             {filteredConversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6">
                 <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-[#202c33] flex items-center justify-center mb-4">
@@ -268,29 +268,146 @@ export default function WhatsAppSidebar({
                 )}
               </div>
             ) : (
-              filteredConversations.map((conv) => (
-                <ConversationItem
-                  key={conv.id}
-                  conversation={conv}
-                  isSelected={selectedConvId === conv.id}
-                  onClick={() => {
-                    onSelectConv(conv.id);
-                    onToggle();
-                  }}
-                  isFavorite={isFavorite?.(conv.contactNumber) ?? false}
-                  onToggleFavorite={() => toggleFavorite?.(conv.contactNumber)}
-                  isArchived={isArchived?.(conv.contactNumber) ?? false}
-                  onToggleArchive={() => toggleArchive?.(conv.contactNumber)}
-                  convLabels={getLabelsForPhone?.(conv.contactNumber) ?? []}
+              (
+                <VirtualizedConversationList
+                  conversations={filteredConversations}
+                  selectedConvId={selectedConvId}
+                  onSelectConv={(id) => { onSelectConv(id); onToggle(); }}
+                  isFavorite={isFavorite}
+                  onToggleFavorite={toggleFavorite}
+                  isArchived={isArchived}
+                  onToggleArchive={toggleArchive}
+                  getLabelsForPhone={getLabelsForPhone}
                   labels={labels}
-                  onToggleLabel={(labelId) => toggleLabelOnConversation?.(conv.contactNumber, labelId)}
+                  onToggleLabel={toggleLabelOnConversation}
                 />
-              ))
+              )
             )}
           </div>
         )}
       </aside>
     </>
+  );
+}
+
+// ==========================================
+// LISTA VIRTUALIZADA DE CONVERSAS
+// Renderiza apenas itens visíveis (windowing)
+// ==========================================
+
+const ITEM_HEIGHT = 72; // Altura fixa de cada ConversationItem (px)
+const OVERSCAN = 5;     // Itens extras acima/abaixo da viewport
+
+interface VirtualizedListProps {
+  conversations: Conversation[];
+  selectedConvId: string | null;
+  onSelectConv: (id: string) => void;
+  isFavorite?: (phone: string) => boolean;
+  onToggleFavorite?: (phone: string) => Promise<boolean>;
+  isArchived?: (phone: string) => boolean;
+  onToggleArchive?: (phone: string) => Promise<boolean>;
+  getLabelsForPhone?: (phone: string) => WhatsAppLabel[];
+  labels?: WhatsAppLabel[];
+  onToggleLabel?: (phone: string, labelId: string) => Promise<boolean>;
+}
+
+function VirtualizedConversationList({
+  conversations,
+  selectedConvId,
+  onSelectConv,
+  isFavorite,
+  onToggleFavorite,
+  isArchived,
+  onToggleArchive,
+  getLabelsForPhone,
+  labels,
+  onToggleLabel,
+}: VirtualizedListProps) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  // Observar mudança de tamanho do container
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    setContainerHeight(el.clientHeight);
+    return () => observer.disconnect();
+  }, []);
+
+  const totalHeight = conversations.length * ITEM_HEIGHT;
+  const visibleCount = Math.ceil(containerHeight / ITEM_HEIGHT);
+  const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN);
+  const endIndex = Math.min(conversations.length - 1, startIndex + visibleCount + OVERSCAN * 2);
+  const visibleItems = conversations.slice(startIndex, endIndex + 1);
+  const offsetTop = startIndex * ITEM_HEIGHT;
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  };
+
+  // Auto-scroll para conversa selecionada (evitar dependência instável do array)
+  const selectedIdx = useMemo(
+    () => (selectedConvId ? conversations.findIndex(c => c.id === selectedConvId) : -1),
+    [selectedConvId, conversations]
+  );
+
+  useEffect(() => {
+    if (selectedIdx >= 0 && containerRef.current) {
+      const itemTop = selectedIdx * ITEM_HEIGHT;
+      const itemBottom = itemTop + ITEM_HEIGHT;
+      const currentTop = containerRef.current.scrollTop;
+      const currentBottom = currentTop + containerHeight;
+
+      if (itemTop < currentTop) {
+        containerRef.current.scrollTop = itemTop;
+      } else if (itemBottom > currentBottom) {
+        containerRef.current.scrollTop = itemBottom - containerHeight;
+      }
+    }
+  }, [selectedIdx, containerHeight]);
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-y-auto bg-white dark:bg-[#111b21]"
+      style={{ height: '100%' }}
+    >
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {visibleItems.map((conv, i) => (
+          <div
+            key={conv.id}
+            style={{
+              position: 'absolute',
+              top: offsetTop + i * ITEM_HEIGHT,
+              height: ITEM_HEIGHT,
+              width: '100%',
+            }}
+          >
+            <ConversationItem
+              conversation={conv}
+              isSelected={selectedConvId === conv.id}
+              onClick={() => onSelectConv(conv.id)}
+              isFavorite={isFavorite?.(conv.contactNumber) ?? false}
+              onToggleFavorite={() => onToggleFavorite?.(conv.contactNumber)}
+              isArchived={isArchived?.(conv.contactNumber) ?? false}
+              onToggleArchive={() => onToggleArchive?.(conv.contactNumber)}
+              convLabels={getLabelsForPhone?.(conv.contactNumber) ?? []}
+              labels={labels}
+              onToggleLabel={(labelId) => onToggleLabel?.(conv.contactNumber, labelId)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
