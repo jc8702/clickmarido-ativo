@@ -45,7 +45,7 @@ async function handleGeneratePix(
 
     const pixPayload = generatePixPayload({
       key: pixKey,
-      amount: quotation.total,
+      amount: Number(quotation.total),
       name: customerName,
       city: 'SAO PAULO',
     });

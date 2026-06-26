@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -106,7 +104,7 @@ export async function GET(request: NextRequest) {
       
       const sum = recentPayments
         .filter(p => p.createdAt >= start && p.createdAt < end)
-        .reduce((acc, p) => acc + p.amount, 0);
+        .reduce((acc, p) => acc + Number(p.amount), 0);
 
       const label = `${start.getDate().toString().padStart(2, '0')}/${(start.getMonth() + 1).toString().padStart(2, '0')}`;
       revenueHistory.push({ name: label, receita: sum });
@@ -135,11 +133,11 @@ export async function GET(request: NextRequest) {
         q.items.forEach((item) => {
           if (item.product?.type === 'SERVICO') {
             const cat = item.product.category || 'Geral';
-            const value = item.quantity * item.unitPrice;
+            const value = Number(item.quantity) * Number(item.unitPrice);
             categoryRevenue[cat] = (categoryRevenue[cat] || 0) + value;
 
             const name = item.product.name || 'Serviço';
-            serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + item.quantity;
+            serviceCounts[name.trim()] = (serviceCounts[name.trim()] || 0) + Number(item.quantity);
           }
         });
       }
@@ -164,7 +162,7 @@ export async function GET(request: NextRequest) {
     const techRevenue: Record<string, number> = {};
     completedOrders.forEach(order => {
       const techName = order.technician?.name || 'Sem Técnico';
-      techRevenue[techName] = (techRevenue[techName] || 0) + order.finalTotal;
+      techRevenue[techName] = (techRevenue[techName] || 0) + Number(order.finalTotal);
     });
 
     const technicianPerformance = Object.entries(techRevenue).map(([name, valor]) => ({

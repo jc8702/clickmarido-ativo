@@ -57,9 +57,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         if (!dbItem) continue;
 
         // Nova quantidade recebida acumulada
-        const newReceivedQuantity = dbItem.receivedQuantity + parseFloat(rx.quantityReceived);
+        const newReceivedQuantity = Number(dbItem.receivedQuantity) + parseFloat(rx.quantityReceived);
         let itemStatus = 'pendente';
-        if (newReceivedQuantity >= dbItem.quantity) {
+        if (newReceivedQuantity >= Number(dbItem.quantity)) {
           itemStatus = 'recebido_total';
         } else if (newReceivedQuantity > 0) {
           itemStatus = 'recebido_parcial';

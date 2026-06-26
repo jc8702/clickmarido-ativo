@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -154,12 +152,12 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Calcular totais
-    const totalReceivable = pendingInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-    const totalPayable = pendingExpensesSum._sum.amount || 0;
+    const totalReceivable = pendingInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+    const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+    const totalPayable = Number(pendingExpensesSum._sum.amount || 0);
 
     // Calcular saldo atual (real consolidado)
-    const currentBalance = (paidInvoices._sum.amount || 0) - (allPaidExpenses._sum.amount || 0);
+    const currentBalance = Number(paidInvoices._sum.amount || 0) - Number(allPaidExpenses._sum.amount || 0);
 
     // Previsão 30/60/90 dias (simplificada)
     const forecast30 = currentBalance + (totalReceivable * 0.7) - totalPayable;

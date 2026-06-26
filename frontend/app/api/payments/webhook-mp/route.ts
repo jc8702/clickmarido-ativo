@@ -1,159 +1,223 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getPaymentById, mapMpStatusToInternal, isPaymentApproved } from '@/lib/mercadopago';
+import {
+  getPaymentById,
+  mapMpStatusToInternal,
+  isPaymentApproved,
+  validateMpWebhookSignature,
+} from '@/lib/mercadopago';
 
 // POST /api/payments/webhook-mp - Webhook Mercado Pago
+// Com validação de assinatura e idempotência
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    const body = await request.json();
+    const body = await request.text();
 
-    console.log('📱 Webhook MP recebido:', JSON.stringify(body, null, 2));
+    // 1. Validar assinatura HMAC do Mercado Pago
+    const signature = request.headers.get('x-signature');
+    const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
 
-    // Mercado Pago envia type + data.id
-    if (body.type === 'payment') {
-      const mpPaymentId = body.data?.id;
+    if (!webhookSecret) {
+      console.error('[WEBHOOK MP] MERCADO_PAGO_WEBHOOK_SECRET não configurado');
+      // Retornar 200 para não causar retry infinito, mas logar erro crítico
+      return NextResponse.json({ received: true, error: 'Webhook secret not configured' });
+    }
 
-      if (!mpPaymentId) {
-        console.error('❌ Webhook MP: ID do pagamento não encontrado');
-        return NextResponse.json({ error: 'ID não encontrado' }, { status: 400 });
-      }
+    if (!validateMpWebhookSignature(body, signature, webhookSecret)) {
+      console.warn('[WEBHOOK MP] Assinatura inválida');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
 
-      // Buscar pagamento no Mercado Pago
-      const mpPayment = await getPaymentById(String(mpPaymentId));
+    const payload = JSON.parse(body);
 
-      if (!mpPayment) {
-        console.error('❌ Webhook MP: Pagamento não encontrado no MP');
-        return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
-      }
+    // 2. Mercado Pago envia type + data.id
+    if (payload.type !== 'payment') {
+      return NextResponse.json({ received: true, status: 'ignored' });
+    }
 
-      console.log('💰 Pagamento MP:', {
-        id: mpPayment.id,
-        status: mpPayment.status,
-        externalReference: mpPayment.external_reference,
-        amount: mpPayment.transaction_amount,
-      });
+    const mpPaymentId = payload.data?.id;
 
-      // Buscar payment no banco pelo mpPaymentId ou external_reference
-      let payment = await prisma.payment.findFirst({
-        where: {
-          OR: [
-            { mpPaymentId: String(mpPayment.id) },
-            { id: mpPayment.external_reference || '' },
-          ],
-        },
-        include: { invoice: true },
-      });
+    if (!mpPaymentId) {
+      console.error('[WEBHOOK MP] ID do pagamento não encontrado');
+      return NextResponse.json({ received: true, error: 'Missing payment ID' });
+    }
 
-      if (!payment && mpPayment.external_reference) {
-        // Tentar buscar pela invoice
-        const invoice = await prisma.invoice.findUnique({
-          where: { id: mpPayment.external_reference },
-        });
+    // 3. Idempotência: verificar se este pagamento já foi processado recentemente
+    const existingPayment = await prisma.payment.findFirst({
+      where: { mpPaymentId: String(mpPaymentId) },
+      select: { id: true, status: true, mpStatus: true },
+    });
 
-        if (invoice) {
-          // Criar payment se não existir
-          payment = await prisma.payment.create({
-            data: {
-              quotationId: invoice.quotationId,
-              customerId: invoice.customerId,
-              amount: mpPayment.transaction_amount || 0,
-              method: mpPayment.payment_method_id || 'pix',
-              status: mapMpStatusToInternal(mpPayment.status || ''),
-              mpPaymentId: String(mpPayment.id),
-              mpStatus: mpPayment.status || '',
-              mpPaymentMethodId: mpPayment.payment_method_id,
-              mpExternalReference: mpPayment.external_reference,
-              description: `Pagamento MP #${mpPayment.id}`,
-            },
-            include: { invoice: true },
-          });
-        }
-      }
+    // 4. Buscar pagamento no Mercado Pago
+    const mpPayment = await getPaymentById(String(mpPaymentId));
 
-      if (payment) {
-        // Atualizar status do pagamento
-        const internalStatus = mapMpStatusToInternal(mpPayment.status || '');
-        const oldStatus = payment.status;
+    if (!mpPayment) {
+      console.error('[WEBHOOK MP] Pagamento não encontrado no MP');
+      return NextResponse.json({ received: true, error: 'Payment not found in MP' });
+    }
 
-        await prisma.payment.update({
-          where: { id: payment.id },
-          data: {
-            status: internalStatus,
-            mpStatus: mpPayment.status || '',
-            confirmedAt: isPaymentApproved(mpPayment.status || '') ? new Date() : null,
-            paidAt: isPaymentApproved(mpPayment.status || '') ? new Date() : payment.paidAt,
+    const mpStatus = (mpPayment as any).status || '';
+    const internalStatus = mapMpStatusToInternal(mpStatus);
+
+    // 5. Idempotência: se já temos o pagamento e o status não mudou, ignorar
+    if (existingPayment && existingPayment.status === internalStatus) {
+      console.log(`[WEBHOOK MP] Pagamento ${mpPaymentId} já processado com status ${internalStatus}`);
+      return NextResponse.json({ received: true, status: 'already_processed' });
+    }
+
+    console.log('[WEBHOOK MP] Processando pagamento:', {
+      id: mpPaymentId,
+      mpStatus,
+      internalStatus,
+      amount: (mpPayment as any).transaction_amount,
+    });
+
+    // 6. Buscar ou criar payment no banco
+    let payment = existingPayment
+      ? await prisma.payment.findUnique({
+          where: { id: existingPayment.id },
+          include: { invoice: true },
+        })
+      : null;
+
+    if (!payment) {
+      // Buscar pelo external_reference
+      const externalRef = (mpPayment as any).external_reference;
+      if (externalRef) {
+        payment = await prisma.payment.findFirst({
+          where: {
+            OR: [
+              { id: externalRef },
+              { invoiceId: externalRef },
+            ],
           },
+          include: { invoice: true },
         });
-
-        // Registrar auditoria do pagamento
-        await prisma.auditLog.create({
-          data: {
-            entity: 'payment',
-            entityId: payment.id,
-            action: 'updated',
-            oldValue: { status: oldStatus },
-            newValue: { status: internalStatus },
-            createdBy: 'system_automation',
-          },
-        });
-
-        // Se pagamento aprovado, atualizar invoice
-        if (isPaymentApproved(mpPayment.status || '') && payment.invoiceId) {
-          // Verificar se todos os pagamentos da invoice foram confirmados
-          const allPayments = await prisma.payment.findMany({
-            where: { invoiceId: payment.invoiceId },
-          });
-
-          const allConfirmed = allPayments.every(
-            (p) => p.status === 'confirmado' || p.id === payment.id
-          );
-
-          if (allConfirmed) {
-            const oldInvoice = payment.invoice;
-            await prisma.invoice.update({
-              where: { id: payment.invoiceId },
-              data: { status: 'paga' },
-            });
-
-            // Registrar auditoria da invoice
-            await prisma.auditLog.create({
-              data: {
-                entity: 'invoice',
-                entityId: payment.invoiceId,
-                action: 'updated',
-                oldValue: { status: oldInvoice?.status },
-                newValue: { status: 'paga' },
-                createdBy: 'system_automation',
-              },
-            });
-
-            console.log(`✅ Invoice ${payment.invoiceId} marcada como paga`);
-          }
-        }
-
-        // Criar transação financeira para auditoria
-        await prisma.financialTransaction.create({
-          data: {
-            type: 'PAYMENT_RECEIVED',
-            paymentId: payment.id,
-            invoiceId: payment.invoiceId,
-            credit: mpPayment.transaction_amount || 0,
-            description: `Pagamento recebido via ${mpPayment.payment_method_id}`,
-            transactionDate: new Date(),
-          },
-        });
-
-        console.log(`✅ Pagamento ${payment.id} atualizado: ${internalStatus}`);
-      } else {
-        console.log('⚠️ Pagamento não encontrado no banco, ignorando webhook');
       }
     }
+
+    // Criar payment se não existir
+    if (!payment) {
+      const invoiceId = (mpPayment as any).external_reference;
+      const invoice = invoiceId
+        ? await prisma.invoice.findUnique({ where: { id: invoiceId } })
+        : null;
+
+      if (invoice) {
+        payment = await prisma.payment.create({
+          data: {
+            quotationId: invoice.quotationId,
+            customerId: invoice.customerId,
+            invoiceId: invoice.id,
+            amount: (mpPayment as any).transaction_amount || 0,
+            method: (mpPayment as any).payment_method_id || 'pix',
+            status: internalStatus,
+            mpPaymentId: String(mpPaymentId),
+            mpStatus,
+            mpPaymentMethodId: (mpPayment as any).payment_method_id,
+            mpExternalReference: (mpPayment as any).external_reference,
+            description: `Pagamento MP #${mpPaymentId}`,
+          },
+          include: { invoice: true },
+        });
+      }
+    }
+
+    if (!payment) {
+      console.warn(`[WEBHOOK MP] Pagamento ${mpPaymentId} não encontrado no banco`);
+      return NextResponse.json({ received: true, status: 'payment_not_in_db' });
+    }
+
+    // 7. Atualizar status (idempotente - só atualiza se mudou)
+    const oldStatus = payment.status;
+
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: internalStatus,
+        mpStatus,
+        confirmedAt: isPaymentApproved(mpStatus) ? new Date() : payment.confirmedAt,
+        paidAt: isPaymentApproved(mpStatus) ? new Date() : payment.paidAt,
+      },
+    });
+
+    // Auditoria (só se status mudou)
+    if (oldStatus !== internalStatus) {
+      await prisma.auditLog.create({
+        data: {
+          entity: 'payment',
+          entityId: payment.id,
+          action: 'updated',
+          oldValue: { status: oldStatus },
+          newValue: { status: internalStatus },
+          createdBy: 'system_webhook_mp',
+        },
+      });
+    }
+
+    // 8. Se pagamento aprovado, verificar invoice
+    if (isPaymentApproved(mpStatus) && payment.invoiceId) {
+      const allPayments = await prisma.payment.findMany({
+        where: { invoiceId: payment.invoiceId },
+      });
+
+      const allConfirmed = allPayments.every(
+        (p) => p.status === 'confirmado' || p.id === payment!.id
+      );
+
+      if (allConfirmed) {
+        const invoice = await prisma.invoice.findUnique({
+          where: { id: payment.invoiceId },
+        });
+
+        if (invoice && invoice.status !== 'paga') {
+          await prisma.invoice.update({
+            where: { id: payment.invoiceId },
+            data: { status: 'paga' },
+          });
+
+          await prisma.auditLog.create({
+            data: {
+              entity: 'invoice',
+              entityId: payment.invoiceId,
+              action: 'updated',
+              oldValue: { status: invoice.status },
+              newValue: { status: 'paga' },
+              createdBy: 'system_webhook_mp',
+            },
+          });
+        }
+      }
+    }
+
+    // 9. Criar transação financeira (idempotente - verificar se já existe)
+    const existingTransaction = await prisma.financialTransaction.findFirst({
+      where: {
+        paymentId: payment.id,
+        type: 'PAYMENT_RECEIVED',
+      },
+    });
+
+    if (!existingTransaction) {
+      await prisma.financialTransaction.create({
+        data: {
+          type: 'PAYMENT_RECEIVED',
+          paymentId: payment.id,
+          invoiceId: payment.invoiceId,
+          credit: (mpPayment as any).transaction_amount || 0,
+          description: `Pagamento recebido via ${(mpPayment as any).payment_method_id}`,
+          transactionDate: new Date(),
+        },
+      });
+    }
+
+    console.log(`[WEBHOOK MP] Pagamento ${payment.id} processado: ${internalStatus}`);
 
     // Sempre retornar 200 para o Mercado Pago não reenviar
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('❌ Erro no webhook MP:', error);
-    // Retornar 200 mesmo com erro para não reenviar
+    console.error('[WEBHOOK MP] Erro processando webhook:', error);
+    // Retornar 200 mesmo com erro para não causar retry infinito
     return NextResponse.json({ received: true });
   }
 }

@@ -5,39 +5,58 @@ import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
-    // 1. Validate Asaas signature
+    // 1. Validar assinatura HMAC do Asaas
     const signature = request.headers.get('asaas-signature');
     const body = await request.text();
 
+    const webhookSecret = process.env.ASAAS_WEBHOOK_SECRET;
+
+    // Falhar explicitamente se secret não configurado
+    if (!webhookSecret) {
+      console.error('[WEBHOOK ASAAS] ASAAS_WEBHOOK_SECRET não configurado');
+      return NextResponse.json(
+        { error: 'Webhook secret not configured' },
+        { status: 500 }
+      );
+    }
+
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.ASAAS_WEBHOOK_SECRET || '')
+      .createHmac('sha256', webhookSecret)
       .update(body)
       .digest('hex');
 
     if (!signature || signature !== expectedSignature) {
-      console.warn('[WEBHOOK] Invalid signature');
+      console.warn('[WEBHOOK ASAAS] Assinatura inválida');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     // 2. Parse payload
     const payload = JSON.parse(body);
 
+    // 3. Ignorar eventos que não são de pagamento
     if (payload.event !== 'PAYMENT_RECEIVED') {
       return NextResponse.json({ status: 'ignored', event: payload.event });
     }
 
-    // 3. Find payment in DB
+    // 4. Idempotência: verificar se este pagamento já foi processado
     const payment = await prisma.payment.findFirst({
       where: { pixCode: payload.pixCode },
       include: { quotation: true, customer: true },
     });
 
     if (!payment) {
-      console.warn(`[WEBHOOK] Payment not found for pixCode: ${payload.pixCode}`);
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+      console.warn(`[WEBHOOK ASAAS] Pagamento não encontrado para pixCode: ${payload.pixCode}`);
+      return NextResponse.json({ received: true, status: 'payment_not_found' });
     }
 
-    // 4. Update payment status
+    // 5. Idempotência: se já está pago, ignorar
+    if (payment.status === 'pago') {
+      console.log(`[WEBHOOK ASAAS] Pagamento ${payment.id} já processado`);
+      return NextResponse.json({ received: true, status: 'already_processed' });
+    }
+
+    // 6. Atualizar status do pagamento
+    const oldStatus = payment.status;
     const updated = await prisma.payment.update({
       where: { id: payment.id },
       data: {
@@ -47,18 +66,19 @@ export async function POST(request: NextRequest): Promise<Response> {
       include: { quotation: true, customer: true },
     });
 
-    // Registrar auditoria do pagamento
+    // Auditoria
     await prisma.auditLog.create({
       data: {
         entity: 'payment',
         entityId: payment.id,
         action: 'updated',
-        newValue: { status: 'pago', paidAt: updated.paidAt },
-        createdBy: 'system_automation',
+        oldValue: { status: oldStatus },
+        newValue: { status: 'pago' },
+        createdBy: 'system_webhook_asaas',
       },
     });
 
-    // 4.5 Generate Invoice if it doesn't exist
+    // 7. Gerar Invoice se não existir (idempotente)
     if (payment.quotationId) {
       try {
         const existingInvoice = await prisma.invoice.findUnique({
@@ -66,7 +86,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         });
 
         if (!existingInvoice) {
-          // Buscar a última invoice para gerar a numeração sequencial
+          // Buscar última invoice para numeração sequencial
           const lastInvoice = await prisma.invoice.findFirst({
             orderBy: { invoiceNumber: 'desc' },
             select: { invoiceNumber: true },
@@ -81,9 +101,8 @@ export async function POST(request: NextRequest): Promise<Response> {
             }
           }
 
-          // Criar a Invoice
-          const subtotal = updated.amount;
-          const taxAmount = subtotal * 0.02; // Exemplo de ISS fictício de 2%
+          const subtotal = Number(updated.amount);
+          const taxAmount = subtotal * 0.02;
           const totalAmount = subtotal + taxAmount;
 
           const invoice = await prisma.invoice.create({
@@ -91,7 +110,7 @@ export async function POST(request: NextRequest): Promise<Response> {
               quotationId: payment.quotationId,
               customerId: payment.customerId,
               invoiceNumber: nextNumber,
-              dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias de vencimento
+              dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               subtotal,
               taxAmount,
               totalAmount,
@@ -106,73 +125,75 @@ export async function POST(request: NextRequest): Promise<Response> {
             data: { invoiceId: invoice.id },
           });
 
-          // Registrar em AuditLog
           await prisma.auditLog.create({
             data: {
               entity: 'invoice',
               entityId: invoice.id,
               action: 'auto_generated_from_payment',
               newValue: { invoiceNumber: nextNumber, total: totalAmount },
-              createdBy: 'system_automation',
+              createdBy: 'system_webhook_asaas',
             },
           });
 
-          console.log(`[AUTOMATION] Invoice ${nextNumber} gerada automaticamente para o pagamento ${payment.id}`);
+          console.log(`[WEBHOOK ASAAS] Invoice ${nextNumber} gerada para pagamento ${payment.id}`);
         }
       } catch (error) {
-        console.error('[AUTOMATION ERROR] Falha ao autogerar Invoice:', error);
+        console.error('[WEBHOOK ASAAS] Erro ao gerar invoice:', error);
       }
     }
 
-    // 5. Update service order to 'concluida' (sem acento para consistência com o banco)
+    // 8. Atualizar OS para 'concluida'
     if (payment.quotationId) {
       const affectedOS = await prisma.serviceOrder.findMany({
         where: { quotationId: payment.quotationId },
         select: { id: true, number: true, status: true },
       });
 
-      await prisma.serviceOrder.updateMany({
-        where: { quotationId: payment.quotationId },
-        data: { status: 'concluida' },
-      });
+      // Só atualizar se não estiver já concluída
+      const pendingOS = affectedOS.filter((os) => os.status !== 'concluida');
 
-      for (const os of affectedOS) {
-        await prisma.auditLog.create({
-          data: {
-            entity: 'service_order',
-            entityId: os.id,
-            action: 'completed_via_payment_webhook',
-            oldValue: { status: os.status },
-            newValue: { status: 'concluida' },
-            createdBy: 'system_automation',
-          },
+      if (pendingOS.length > 0) {
+        await prisma.serviceOrder.updateMany({
+          where: { quotationId: payment.quotationId },
+          data: { status: 'concluida' },
         });
+
+        for (const os of pendingOS) {
+          await prisma.auditLog.create({
+            data: {
+              entity: 'service_order',
+              entityId: os.id,
+              action: 'completed_via_payment_webhook',
+              oldValue: { status: os.status },
+              newValue: { status: 'concluida' },
+              createdBy: 'system_webhook_asaas',
+            },
+          });
+        }
       }
     }
 
-    // 6. Send notification (non-blocking)
-    fireAndForgetNotification({
-      phone: updated.customer.phone,
-      template: 'payment_received',
-      variables: {
-        customer_name: updated.customer.name,
-        amount: `R$ ${updated.amount.toFixed(2)}`,
-      },
-    });
+    // 9. Enviar notificação (não bloqueante)
+    if (updated.customer?.phone) {
+      fireAndForgetNotification({
+        phone: updated.customer.phone,
+        template: 'payment_received',
+        variables: {
+          customer_name: updated.customer.name,
+          amount: `R$ ${updated.amount.toFixed(2)}`,
+        },
+      });
+    }
 
-    // 7. Log
-    console.log('[WEBHOOK] Payment received:', {
+    console.log('[WEBHOOK ASAAS] Pagamento processado:', {
       paymentId: payment.id,
       amount: updated.amount,
-      timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[WEBHOOK] Error processing payment:', error);
-    return NextResponse.json(
-      { error: 'Processing failed' },
-      { status: 500 }
-    );
+    console.error('[WEBHOOK ASAAS] Erro processando webhook:', error);
+    // Retornar 200 para não causar retry infinito
+    return NextResponse.json({ received: true });
   }
 }

@@ -75,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const expiresIn = body.expiresIn || 3600; // 1 hora padrão
 
     const mpPayment = await createPixPayment({
-      transactionAmount: invoice.totalAmount,
+      transactionAmount: Number(invoice.totalAmount),
       description: `Invoice #${invoice.invoiceNumber} - ${invoice.description || ''}`,
       externalReference: invoiceId,
       email: invoice.customer?.email || undefined,

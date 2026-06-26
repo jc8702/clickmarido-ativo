@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // 1. Obter configurações para a taxa de comissão padrão
     const settings = await prisma.companySettings.findFirst() || { defaultCommissionRate: 40.0 };
-    const commissionPercent = settings.defaultCommissionRate / 100;
+    const commissionPercent = Number(settings.defaultCommissionRate) / 100;
 
     // 2. Buscar pagamentos confirmados no período (Entradas)
     const payments = await prisma.payment.findMany({
@@ -95,8 +93,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Calcular consolidados
-    const totalInflow = payments.reduce((acc, curr) => acc + curr.amount, 0);
-    const totalOutflow = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const totalInflow = payments.reduce((acc, curr) => acc + Number(curr.amount), 0);
+    const totalOutflow = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
     // 5. Custos de Materiais (Consumo de peças nas OS fechadas no período)
     const productUsages = await prisma.productUsage.findMany({
@@ -105,7 +103,7 @@ export async function GET(request: NextRequest) {
       },
       include: { product: true }
     });
-    const materialsCost = productUsages.reduce((acc, curr) => acc + (curr.quantityUsed * (curr.product?.price || 0)), 0);
+    const materialsCost = productUsages.reduce((acc, curr) => acc + (Number(curr.quantityUsed) * Number(curr.product?.price || 0)), 0);
 
     // 6. Produtividade e Comissão por Técnico
     const completedOrders = await prisma.serviceOrder.findMany({
@@ -122,7 +120,7 @@ export async function GET(request: NextRequest) {
       if (!so.technicianId) return;
       const techId = so.technicianId;
       const techName = so.technician?.name || 'Desconhecido';
-      const revenue = so.finalTotal;
+      const revenue = Number(so.finalTotal);
       const commission = revenue * commissionPercent;
 
       if (!technicianPerformanceMap[techId]) {
@@ -144,10 +142,11 @@ export async function GET(request: NextRequest) {
 
     // 7. Margens e Lucro Operacional Detalhado por OS
     const osMargins = completedOrders.map(so => {
-      const osMaterialsCost = so.productUsages.reduce((acc, curr) => acc + (curr.quantityUsed * (curr.product?.price || 0)), 0);
-      const osCommission = so.finalTotal * commissionPercent;
-      const netProfit = so.finalTotal - osMaterialsCost - osCommission;
-      const profitMarginPercent = so.finalTotal > 0 ? Math.round((netProfit / so.finalTotal) * 100) : 0;
+      const osMaterialsCost = so.productUsages.reduce((acc, curr) => acc + (Number(curr.quantityUsed) * Number(curr.product?.price || 0)), 0);
+      const osFinalTotal = Number(so.finalTotal);
+      const osCommission = osFinalTotal * commissionPercent;
+      const netProfit = osFinalTotal - osMaterialsCost - osCommission;
+      const profitMarginPercent = osFinalTotal > 0 ? Math.round((netProfit / osFinalTotal) * 100) : 0;
 
       return {
         id: so.id,

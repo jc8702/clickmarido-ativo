@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/auth';
 
-const prisma = new PrismaClient();
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(request);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -16,6 +21,12 @@ export async function GET(request: Request) {
         { error: 'userId é obrigatório' },
         { status: 400 }
       );
+    }
+
+    // Usuário só pode ver suas próprias notificações
+    const tokenUserId = (auth.user as any)?.userId;
+    if (tokenUserId && tokenUserId !== userId) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
     const where: any = { userId };
@@ -53,8 +64,14 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(request);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { userId, type, title, message, relatedEntityId, relatedEntityType } = body;
 
@@ -63,6 +80,13 @@ export async function POST(request: Request) {
         { error: 'Dados obrigatórios não fornecidos' },
         { status: 400 }
       );
+    }
+
+    // Usuário só pode criar notificações para si mesmo (ou admin)
+    const tokenUserId = (auth.user as any)?.userId;
+    const tokenRole = (auth.user as any)?.role;
+    if (tokenUserId && tokenRole !== 'admin' && tokenUserId !== userId) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
     const notification = await prisma.notification.create({

@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/auth';
 
-// Fetch NPS history and metrics
+// Fetch NPS history and metrics - requer autenticação
 export async function GET(req: NextRequest): Promise<Response> {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(req);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    // Get all records for calculating NPS
-    // In a huge DB, we'd do a grouped query, but for simplicity we fetch all scores or group them.
     const allScores = await prisma.nPS.findMany({
       select: { score: true },
     });
@@ -30,7 +35,6 @@ export async function GET(req: NextRequest): Promise<Response> {
       npsScore = Math.round(((promoters - detractors) / totalResponses) * 100);
     }
 
-    // Get paginated history
     const history = await prisma.nPS.findMany({
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
@@ -63,9 +67,15 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 }
 
-// Submit a new NPS score (public or private)
+// Submit a new NPS score - requer autenticação para evitar manipulação
 export async function POST(req: NextRequest): Promise<Response> {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(req);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { clientId, score, feedback } = body;
 

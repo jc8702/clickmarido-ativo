@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -97,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calcular impostos
-    const subtotal = quotation.total;
+    const subtotal = Number(quotation.total);
     const taxAmount = subtotal * (issRate / 100);
     const totalAmount = subtotal + taxAmount;
 

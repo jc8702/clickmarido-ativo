@@ -56,8 +56,8 @@ export async function PUT(
     const updateData: any = { ...parsed.data };
 
     if (parsed.data.quantity !== undefined || parsed.data.unitPrice !== undefined) {
-      const quantity = parsed.data.quantity ?? existingItem.quantity;
-      const unitPrice = parsed.data.unitPrice ?? existingItem.unitPrice;
+      const quantity = Number(parsed.data.quantity ?? existingItem.quantity);
+      const unitPrice = Number(parsed.data.unitPrice ?? existingItem.unitPrice);
       updateData.subtotal = quantity * unitPrice;
     }
 

@@ -142,8 +142,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       (item) => item.purchaseOrder.status === 'recebido' || item.purchaseOrder.status === 'aprovado'
     );
     
-    const totalSpent = completedPurchases.reduce((acc, curr) => acc + curr.subtotal, 0);
-    const totalQty = completedPurchases.reduce((acc, curr) => acc + curr.quantity, 0);
+    const totalSpent = completedPurchases.reduce((acc, curr) => acc + Number(curr.subtotal), 0);
+    const totalQty = completedPurchases.reduce((acc, curr) => acc + Number(curr.quantity), 0);
     const avgPrice = totalQty > 0 ? totalSpent / totalQty : 0;
     
     const lastPurchase = completedPurchases.length > 0 ? completedPurchases[0] : null;

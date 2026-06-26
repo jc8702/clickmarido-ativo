@@ -232,3 +232,27 @@ export function formatCurrency(value: number): string {
     currency: 'BRL',
   }).format(value);
 }
+
+/**
+ * Validar assinatura do webhook do Mercado Pago
+ * O MP envia x-signature com HMAC SHA-256 do body
+ */
+export function validateMpWebhookSignature(
+  body: string,
+  signature: string | null,
+  secret: string
+): boolean {
+  if (!signature || !secret) return false;
+
+  // MP envia no formato: sha256=<hash>
+  const parts = signature.split('=');
+  if (parts.length !== 2 || parts[0] !== 'sha256') return false;
+
+  const crypto = require('crypto');
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+
+  return parts[1] === expectedSignature;
+}

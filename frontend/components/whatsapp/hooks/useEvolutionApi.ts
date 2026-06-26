@@ -126,6 +126,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
   const mountedRef = useRef<boolean>(true);
   const reconnectAttemptsRef = useRef<number>(0);
   const isCheckingRef = useRef<boolean>(false);
+  const qrCodeRef = useRef<string | null>(null);
   const maxReconnectAttempts = 5;
 
   // Cleanup on unmount
@@ -206,6 +207,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
       // Extrair QR Code da resposta
       const qr = data.qrcode?.base64 || data.base64 || data.qrcode || null;
       if (qr && mountedRef.current) {
+        qrCodeRef.current = qr;
         setState(prev => ({ ...prev, qrCode: qr, status: 'qrcode', instanceExists: true }));
         lastQrGenerationRef.current = Date.now();
       }
@@ -251,8 +253,9 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
 
       const data = await res.json();
       
-      // API está online
+      // API está online - resetar tentativas de reconexão
       if (mountedRef.current) {
+        reconnectAttemptsRef.current = 0;
         setState(prev => ({ ...prev, apiOnline: true, error: null }));
       }
 
@@ -263,6 +266,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
         // Conectado!
         log('info', 'WhatsApp conectado');
         if (mountedRef.current) {
+          qrCodeRef.current = null;
           setState(prev => ({
             ...prev,
             status: 'connected',
@@ -281,15 +285,22 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
         }
         await reconnect();
       } else if (instanceState === 'connecting') {
-        // Já está conectando
+        // Está conectando - tentar obter QR code se não temos um
         if (mountedRef.current) {
           setState(prev => ({ ...prev, status: 'connecting', instanceExists: true }));
         }
+        // Se não temos QR code, tentar obter um (usa ref para evitar stale closure)
+        if (!qrCodeRef.current) {
+          await reconnect();
+        }
       } else {
-        // Estado desconhecido
+        // Estado desconhecido - pode ser temporário, manter 'connecting'
         log('warn', `Estado desconhecido: ${instanceState}`);
         if (mountedRef.current) {
-          setState(prev => ({ ...prev, status: 'error', error: `Estado: ${instanceState}`, instanceExists: true }));
+          setState(prev => ({ ...prev, status: 'connecting', instanceExists: true }));
+        }
+        if (!qrCodeRef.current) {
+          await reconnect();
         }
       }
     } catch (err: any) {
@@ -339,9 +350,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
     try {
       log('info', `Tentativa de reconexão ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`);
       
-      const res = await apiFetch(`/instance/connect/${instanceName}`, {
-        method: 'POST',
-      });
+      const res = await apiFetch(`/instance/connect/${instanceName}`);
 
       if (!res.ok) {
         log('warn', 'Falha ao conectar instância');
@@ -354,6 +363,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
       const qr = data.base64 || data.qrcode?.base64 || data.code || null;
       
       if (qr && mountedRef.current) {
+        qrCodeRef.current = qr;
         setState(prev => ({ ...prev, qrCode: qr, status: 'qrcode', instanceExists: true }));
         log('info', 'QR Code obtido, aguardando leitura');
       }
@@ -568,6 +578,7 @@ export function useEvolutionApi(config: EvolutionApiConfig) {
       if (res.ok) {
         log('info', 'Instância desconectada');
         if (mountedRef.current) {
+          qrCodeRef.current = null;
           setState(prev => ({
             ...prev,
             status: 'offline',

@@ -113,9 +113,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (attachments !== undefined) updateData.attachments = attachments;
     if (metadata !== undefined) updateData.metadata = metadata;
 
-    const disc = discountAmount !== undefined ? parseFloat(discountAmount) : existingOrder.discountAmount;
-    const freight = freightAmount !== undefined ? parseFloat(freightAmount) : existingOrder.freightAmount;
-    const tax = taxAmount !== undefined ? parseFloat(taxAmount) : existingOrder.taxAmount;
+    const disc = discountAmount !== undefined ? parseFloat(discountAmount) : Number(existingOrder.discountAmount);
+    const freight = freightAmount !== undefined ? parseFloat(freightAmount) : Number(existingOrder.freightAmount);
+    const tax = taxAmount !== undefined ? parseFloat(taxAmount) : Number(existingOrder.taxAmount);
 
     updateData.discountAmount = disc;
     updateData.freightAmount = freight;
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Transação para atualizar itens e cabeçalho
     const updatedOrder = await prisma.$transaction(async (tx) => {
-      let subtotal = existingOrder.subtotal;
+      let subtotal = Number(existingOrder.subtotal);
 
       if (items !== undefined) {
         if (items.length === 0) {

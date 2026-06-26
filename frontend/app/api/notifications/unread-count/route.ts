@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { verifyAuth } from '@/lib/auth';
 
-const prisma = new PrismaClient();
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(request);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
 
@@ -13,6 +18,12 @@ export async function GET(request: Request) {
         { error: 'userId é obrigatório' },
         { status: 400 }
       );
+    }
+
+    // Usuário só pode ver contagem das próprias notificações
+    const tokenUserId = (auth.user as any)?.userId;
+    if (tokenUserId && tokenUserId !== userId) {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
     const unreadCount = await prisma.notification.count({

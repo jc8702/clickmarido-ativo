@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendWhatsAppNotification } from '@/lib/notifications/whatsapp';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(req: NextRequest): Promise<Response> {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(req);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
@@ -46,6 +52,12 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: NextRequest): Promise<Response> {
   try {
+    // Autenticação obrigatória
+    const auth = await verifyAuth(req);
+    if (!auth.success) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
     const body = await req.json();
     // template as typed in whatsapp.ts (e.g. 'payment_reminder', 'service_order_completed')
     const { phone, template, variables } = body;

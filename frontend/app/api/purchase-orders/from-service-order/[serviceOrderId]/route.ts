@@ -112,8 +112,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Mapear itens para a Ordem de Compra
     let subtotal = 0;
     const itemsData = pieceItems.map((item) => {
-      const q = item.quantity;
-      const price = item.product.price || 0;
+      const q = Number(item.quantity);
+      const price = Number(item.product.price || 0);
       const itemSubtotal = q * price;
       subtotal += itemSubtotal;
 

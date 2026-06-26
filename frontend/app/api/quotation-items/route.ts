@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const unitPrice = product.price;
-    const subtotal = quantity * unitPrice;
+    const subtotal = quantity * Number(unitPrice);
 
     const item = await prisma.quotationItem.create({
       data: {

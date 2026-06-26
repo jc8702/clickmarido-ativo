@@ -89,8 +89,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (dueDate) updateData.dueDate = new Date(dueDate);
     if (issRate !== undefined) {
       updateData.issRate = issRate;
-      updateData.taxAmount = existingInvoice.subtotal * (issRate / 100);
-      updateData.totalAmount = existingInvoice.subtotal + updateData.taxAmount;
+      const subtotal = Number(existingInvoice.subtotal);
+      updateData.taxAmount = subtotal * (issRate / 100);
+      updateData.totalAmount = subtotal + updateData.taxAmount;
     }
     if (description !== undefined) updateData.description = description;
     if (notes !== undefined) updateData.notes = notes;

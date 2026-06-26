@@ -25,7 +25,7 @@ export async function estimateServicePrice({
   try {
     // 1. Obter configurações padrão da empresa
     const settings = await prisma.companySettings.findFirst();
-    const defaultHourlyRate = settings?.defaultHourlyRate ?? 80;
+    const defaultHourlyRate = Number(settings?.defaultHourlyRate ?? 80);
 
     // Tempo estimado padrão se não fornecido
     const timeInMinutes = estimatedTime ?? 60; // 1 hora padrão
@@ -75,7 +75,7 @@ export async function estimateServicePrice({
 
     // Se temos dados históricos, calculamos com base no histórico
     if (sampleSize > 0) {
-      const prices = historyItems.map((item) => item.unitPrice);
+      const prices = historyItems.map((item) => Number(item.unitPrice));
       const sum = prices.reduce((a, b) => a + b, 0);
       const avgPrice = sum / sampleSize;
 
@@ -85,14 +85,14 @@ export async function estimateServicePrice({
 
       historyItems.forEach((item) => {
         const itemTime = item.product?.estimatedTime ?? 60;
-        const itemHourlyRate = item.unitPrice / (itemTime / 60);
+        const itemHourlyRate = Number(item.unitPrice) / (itemTime / 60);
         if (itemHourlyRate > 0) {
           totalHourlyRates += itemHourlyRate;
           itemsWithTime++;
         }
       });
 
-      const avgHourlyRate = itemsWithTime > 0 ? (totalHourlyRates / itemsWithTime) : defaultHourlyRate;
+      const avgHourlyRate = itemsWithTime > 0 ? (totalHourlyRates / itemsWithTime) : Number(defaultHourlyRate);
 
       // Sugerir preço baseado na média ponderada do tempo solicitado
       suggestedPrice = avgHourlyRate * (timeInMinutes / 60);
