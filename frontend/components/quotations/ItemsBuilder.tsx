@@ -59,7 +59,7 @@ export function ItemsBuilder() {
       if (data.success) {
         setValue(`items.${index}.unit_price`, data.suggestedPrice);
         toast.success(
-          `Preço sugerido: R$ ${data.suggestedPrice.toFixed(2)}\n${data.explanation}`,
+          `Preço sugerido: R$ ${Number(data.suggestedPrice || 0).toFixed(2)}\n${data.explanation}`,
           { duration: 6000 }
         );
       } else {
@@ -73,7 +73,7 @@ export function ItemsBuilder() {
     }
   };
 
-  const subtotal = items.reduce((acc: number, item: any) => acc + ((item.quantity || 0) * (item.unit_price || 0)), 0);
+  const subtotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
   const total = subtotal - discount;
 
   const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
@@ -173,12 +173,12 @@ export function ItemsBuilder() {
       </button>
 
       <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-900/30 border border-primary-100 dark:border-primary-800 rounded text-right space-y-2">
-        <p className="text-neutral-600 dark:text-neutral-400">Subtotal: <span className="font-semibold">R$ {subtotal.toFixed(2)}</span></p>
+        <p className="text-neutral-600 dark:text-neutral-400">Subtotal: <span className="font-semibold">R$ {Number(subtotal || 0).toFixed(2)}</span></p>
         <div className="flex justify-end items-center gap-2">
           <label className="text-neutral-600 dark:text-neutral-400 text-sm">Desconto: R$</label>
           <input type="number" step="0.01" {...register('discount', { valueAsNumber: true })} className="w-24 p-1 border border-neutral-300 dark:border-neutral-600 rounded text-right bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
         </div>
-        <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Total: R$ {total.toFixed(2)}</p>
+        <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">Total: R$ {Number(total || 0).toFixed(2)}</p>
       </div>
 
       {showPicker && (

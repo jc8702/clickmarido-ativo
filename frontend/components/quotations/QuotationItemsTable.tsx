@@ -178,13 +178,13 @@ export function QuotationItemsTable({ items, isLoading, onItemUpdated }: Quotati
                   />
                 ) : (
                   <span className="text-sm text-neutral-900 dark:text-neutral-100">
-                    R$ {item.unitPrice.toFixed(2)}
+                    R$ {Number(item.unitPrice || 0).toFixed(2)}
                   </span>
                 )}
               </td>
               <td className="px-4 py-3 text-right">
                 <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                  R$ {(editingId === item.id ? editQuantity * editPrice : item.subtotal).toFixed(2)}
+                  R$ {Number(editingId === item.id ? editQuantity * editPrice : item.subtotal || 0).toFixed(2)}
                 </span>
               </td>
               <td className="px-4 py-3 text-right">

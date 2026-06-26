@@ -105,7 +105,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
     }
   };
 
-  const subtotal = selectedProduct ? selectedProduct.price * quantity : 0;
+  const subtotal = selectedProduct ? Number(selectedProduct.price || 0) * quantity : 0;
 
   const getFamilyBadge = (sku: string) => {
     const match = sku?.match(/^SRV-([A-Z]{3})-/);
@@ -266,7 +266,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                      R$ {product.price.toFixed(2)}
+                      R$ {Number(product.price || 0).toFixed(2)}
                     </td>
                   </tr>
                 ))}
@@ -283,7 +283,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
                   {selectedProduct.name}
                 </p>
                 <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">
-                  {selectedProduct.sku} • R$ {selectedProduct.price.toFixed(2)}/{selectedProduct.unit}
+                  {selectedProduct.sku} • R$ {Number(selectedProduct.price || 0).toFixed(2)}/{selectedProduct.unit}
                 </p>
               </div>
             </div>
@@ -305,7 +305,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
               <div className="text-right">
                 <p className="text-sm text-neutral-500 dark:text-neutral-400">Subtotal</p>
                 <p className="text-lg font-bold text-teal-600 dark:text-teal-400">
-                  R$ {subtotal.toFixed(2)}
+                  R$ {Number(subtotal || 0).toFixed(2)}
                 </p>
               </div>
             </div>
