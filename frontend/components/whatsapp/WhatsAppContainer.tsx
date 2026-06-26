@@ -8,138 +8,16 @@ import WelcomeScreen from './WelcomeScreen';
 import ChatArea from './chat/ChatArea';
 import { useFavorites, useArchived, useLabels } from './hooks/useWhatsAppApi';
 import { useEvolutionApi, ConnectionStatus } from './hooks/useEvolutionApi';
-import { normalizeForComparison, formatPhoneBR, extractPhoneFromJid, isGroupJid, isGenericGroupName, getGroupParticipantCount } from './utils/phone';
+import { normalizePhone } from './utils/phone';
+import { resolveNameLegacy, formatChatDate, normalizeChatTimestamp } from './utils/names';
+import { extractLastMessage } from './utils/messages';
+import { Conversation } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_WHATSAPP_API_URL || 'http://localhost:8080';
 const API_KEY = process.env.NEXT_PUBLIC_WHATSAPP_API_KEY || 'clickmarido_key';
-export const INSTANCE_NAME = 'clickmarido_instance';
+const INSTANCE_NAME = 'clickmarido_instance';
 
-// Funções de normalização importadas de utils/phone.ts
 
-// ==========================================
-// RESOLUÇÃO DE NOMES COM PRIORIDADE
-// ==========================================
-
-/** Interface para resultado da resolução */
-interface ResolvedName {
-  name: string;
-  source: 'evolution_verified' | 'evolution_name' | 'crm' | 'cache' | 'formatted_phone' | 'generic_group';
-}
-
-/**
- * Resolve nome de contato/grupo com prioridade definida:
- * 1. Nome verificado da Evolution API
- * 2. Nome do chat da Evolution API
- * 3. Nome do CRM
- * 4. Cache local (contactsMap)
- * 5. Telefone formatado (fallback)
- */
-function resolveContactName(
-  chat: any,
-  crmCustomers: any[],
-  contactsMap: Record<string, string>
-): ResolvedName {
-  const jid = chat.id || '';
-  const phone = extractPhoneFromJid(jid);
-  const isGroup = isGroupJid(jid);
-
-  // === GRUPOS ===
-  if (isGroup) {
-    // 1. Nome verificado do grupo
-    if (chat.verifiedName && chat.verifiedName.trim() && !isGenericGroupName(chat.verifiedName)) {
-      return { name: chat.verifiedName.trim(), source: 'evolution_verified' };
-    }
-    // 2. Nome do chat do grupo
-    if (chat.name && chat.name.trim() && !isGenericGroupName(chat.name)) {
-      return { name: chat.name.trim(), source: 'evolution_name' };
-    }
-    // 3. Nome verificado mesmo que genérico (melhor que nada)
-    if (chat.verifiedName && chat.verifiedName.trim()) {
-      return { name: chat.verifiedName.trim(), source: 'evolution_verified' };
-    }
-    // 4. Nome do chat mesmo que genérico
-    if (chat.name && chat.name.trim()) {
-      return { name: chat.name.trim(), source: 'evolution_name' };
-    }
-    // 5. Fallback genérico para grupo
-    const count = getGroupParticipantCount(chat);
-    const suffix = count > 0 ? ` (${count} participantes)` : '';
-    return { name: `Grupo WhatsApp${suffix}`, source: 'generic_group' };
-  }
-
-  // === CONTATOS INDIVIDUAIS ===
-  
-  // 1. Nome verificado da Evolution API (prioridade máxima)
-  if (chat.verifiedName && chat.verifiedName.trim()) {
-    const verified = chat.verifiedName.trim();
-    // Ignorar se for só número ou muito genérico
-    if (verified !== phone && verified.length > 2) {
-      return { name: verified, source: 'evolution_verified' };
-    }
-  }
-
-  // 2. Nome do chat da Evolution API
-  if (chat.name && chat.name.trim()) {
-    const name = chat.name.trim();
-    // Ignorar se for o próprio telefone, "Contato", ou muito genérico
-    if (name !== phone && name !== 'Contato' && name.length > 2 && !name.includes(phone)) {
-      return { name, source: 'evolution_name' };
-    }
-  }
-
-  // 3. Busca no CRM (normalizado para comparação)
-  const normalized = normalizeForComparison(phone);
-  if (crmCustomers && crmCustomers.length > 0) {
-    const crmMatch = crmCustomers.find((c: any) => {
-      if (!c.phone) return false;
-      const crmNorm = normalizeForComparison(c.phone);
-      // Correspondência exata
-      if (crmNorm === normalized) return true;
-      // Correspondência pelos últimos 8 dígitos
-      if (normalized.length >= 8 && crmNorm.length >= 8) {
-        return normalized.slice(-8) === crmNorm.slice(-8);
-      }
-      return false;
-    });
-
-    if (crmMatch?.name && crmMatch.name.trim()) {
-      return { name: crmMatch.name.trim(), source: 'crm' };
-    }
-  }
-
-  // 4. Cache local (contactsMap)
-  const cached = contactsMap[jid] || contactsMap[phone] || contactsMap[normalized];
-  if (cached && cached.trim()) {
-    return { name: cached.trim(), source: 'cache' };
-  }
-
-  // 5. Telefone formatado como fallback
-  return { name: formatPhoneBR(phone), source: 'formatted_phone' };
-}
-
-/** Função wrapper para manter compatibilidade com código existente */
-function resolveNameLegacy(
-  chat: any,
-  crmCustomers: any[],
-  contactsMap: Record<string, string>
-): string {
-  return resolveContactName(chat, crmCustomers, contactsMap).name;
-}
-
-export interface Conversation {
-  id: string;
-  contactName: string;
-  contactNumber: string;
-  avatar?: string;
-  lastMessage: string;
-  lastMessageSender?: string;
-  timestamp: string;
-  unreadCount: number;
-  isOnline?: boolean;
-  isPinned?: boolean;
-  isMuted?: boolean;
-  updatedAt?: number;
-}
 
 export default function WhatsAppContainer() {
   const searchParams = useSearchParams();
@@ -150,6 +28,10 @@ export default function WhatsAppContainer() {
 
   const [crmCustomers, setCrmCustomers] = useState<any[]>([]);
   const [contactsMap, setContactsMap] = useState<Record<string, string>>({});
+
+  // Refs para evitar recriação de callbacks e polling restart
+  const crmCustomersRef = useRef<any[]>([]);
+  const contactsMapRef = useRef<Record<string, string>>({});
 
   // ==========================================
   // EVOLUTION API HOOK
@@ -181,7 +63,7 @@ export default function WhatsAppContainer() {
   const { labels, fetchLabels, createLabel, deleteLabel, toggleLabelOnConversation, getLabelsForPhone } = useLabels();
 
   // ==========================================
-  // CARREGAR CONTATOS DO CRM
+  // CARREGAR CONTATOS DO CRM + POPULAR CONTACTS MAP
   // ==========================================
   const loadCrmContacts = useCallback(async () => {
     try {
@@ -194,6 +76,26 @@ export default function WhatsAppContainer() {
         const result = await res.json();
         const list = result.data || result || [];
         setCrmCustomers(list);
+        crmCustomersRef.current = list;
+
+        // Popular contactsMap a partir do CRM para cache de resolução de nomes
+        const newMap: Record<string, string> = {};
+        for (const c of list) {
+          if (c.phone && c.name) {
+            const normalized = normalizePhone(c.phone);
+            // Mapear por diferentes formatos do telefone
+            newMap[normalized] = c.name;
+            if (normalized.startsWith('55') && normalized.length >= 12) {
+              newMap[normalized.slice(2)] = c.name; // Sem DDI
+            }
+            if (normalized.length >= 10) {
+              newMap[normalized.slice(-10)] = c.name; // Últimos 10 dígitos
+              newMap[normalized.slice(-8)] = c.name;  // Últimos 8 dígitos
+            }
+          }
+        }
+        setContactsMap(newMap);
+        contactsMapRef.current = newMap;
       }
     } catch (err) {
       console.error('Error loading CRM contacts:', err);
@@ -201,7 +103,7 @@ export default function WhatsAppContainer() {
   }, []);
 
   // ==========================================
-  // CARREGAR CHATS
+  // CARREGAR CHATS (sem dependência de crmCustomers/contactsMap via refs)
   // ==========================================
   const loadChats = useCallback(async () => {
     if (!connected) return;
@@ -210,34 +112,15 @@ export default function WhatsAppContainer() {
       const rawChats = await loadChatsFromApi();
       
       if (rawChats.length > 0) {
+        const currentCrm = crmCustomersRef.current;
+        const currentMap = contactsMapRef.current;
+
         const list = rawChats.map((c: any) => {
-          let chatDate = c.updatedAt || c.createdAt;
-          if (!chatDate && c.lastMessage?.messageTimestamp) {
-            chatDate = c.lastMessage.messageTimestamp;
-          }
-          if (!chatDate) {
-            chatDate = Date.now() / 1000;
-          }
-          
-          let lastMsg = 'Sem mensagem';
-          if (c.lastMessage) {
-              const msg = c.lastMessage.message || c.lastMessage;
-              if (msg.conversation) lastMsg = msg.conversation;
-              else if (msg.extendedTextMessage?.text) lastMsg = msg.extendedTextMessage.text;
-              else if (msg.imageMessage) lastMsg = msg.imageMessage.caption ? `📷 ${msg.imageMessage.caption}` : '📷 Foto';
-              else if (msg.videoMessage) lastMsg = msg.videoMessage.caption ? `🎥 ${msg.videoMessage.caption}` : '🎥 Vídeo';
-              else if (msg.audioMessage) lastMsg = '🎵 Áudio';
-              else if (msg.documentMessage) lastMsg = msg.documentMessage.title ? `📄 ${msg.documentMessage.title}` : '📄 Documento';
-              else if (msg.stickerMessage) lastMsg = '💟 Figurinha';
-          }
-
+          const { text: lastMsg, sender: lastMsgSender } = extractLastMessage(c.lastMessage);
           const phoneId = c.id?.split('@')[0] || '';
-          const finalName = resolveNameLegacy(c, crmCustomers, contactsMap);
-
-          // Formatar data para "HH:mm" se for de hoje, senao "DD/MM"
-          const dateObj = new Date(typeof chatDate === 'number' ? (chatDate > 1e11 ? chatDate : chatDate * 1000) : chatDate);
-          const isToday = new Date().toDateString() === dateObj.toDateString();
-          const timeString = isToday ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : dateObj.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+          const finalName = resolveNameLegacy(c, currentCrm, currentMap);
+          const updatedAt = normalizeChatTimestamp(c);
+          const timeString = formatChatDate(c.updatedAt || c.createdAt);
 
           return {
             id: c.id || c.jid,
@@ -245,8 +128,9 @@ export default function WhatsAppContainer() {
             contactNumber: phoneId,
             unreadCount: c.unreadCount || 0,
             lastMessage: lastMsg,
+            lastMessageSender: lastMsgSender,
             timestamp: timeString,
-            updatedAt: dateObj.getTime(),
+            updatedAt,
             isPinned: c.isPinned || false,
             isMuted: c.isMuted || false,
           };
@@ -265,7 +149,7 @@ export default function WhatsAppContainer() {
     } catch (err) {
       console.error('Error loading chats:', err);
     }
-  }, [connected, loadChatsFromApi, crmCustomers, contactsMap]);
+  }, [connected, loadChatsFromApi]);
 
   // ==========================================
   // EFFECTS
@@ -394,8 +278,6 @@ export default function WhatsAppContainer() {
         connected={connected}
         qrCode={qrCode}
         connectionStatus={connectionStatus}
-        crmCustomers={crmCustomers}
-        apiFetch={apiFetch}
         isFavorite={isFavorite}
         toggleFavorite={toggleFavorite}
         isArchived={isArchived}
@@ -405,7 +287,6 @@ export default function WhatsAppContainer() {
         getLabelsForPhone={getLabelsForPhone}
         activeIcon={activeIcon}
         onIconClick={setActiveIcon}
-
       />
 
       {/* Chat Area or Welcome Screen */}

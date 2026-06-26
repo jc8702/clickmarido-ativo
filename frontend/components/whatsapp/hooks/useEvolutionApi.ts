@@ -48,9 +48,8 @@ function log(level: 'info' | 'warn' | 'error', msg: string, data?: any) {
     console.error(prefix, msg, data || '');
   } else if (level === 'warn') {
     console.warn(prefix, msg, data || '');
-  } else {
-    console.log(prefix, msg, data || '');
   }
+  // Logs de nível 'info' removidos para produção (evitar vazamento de dados no console)
 }
 
 // ==========================================

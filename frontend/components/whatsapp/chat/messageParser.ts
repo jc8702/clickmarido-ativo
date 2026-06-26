@@ -79,10 +79,10 @@ function getStatusFromKey(msg: any): MessageStatus {
   const explicitStatus = msg.update?.status || msg.status;
   if (explicitStatus) {
     const s = String(explicitStatus).toLowerCase();
-    if (s === '0' || s === 'SENT' || s === 'PLAYED') return 'sent';
-    if (s === '1' || s === 'DELIVERED') return 'delivered';
-    if (s === '2' || s === 'READ') return 'read';
-    if (s === '3' || s === 'PLAYED') return 'read';
+    // Códigos numéricos EvolutionAPI: 0=SENT, 1=DELIVERED, 2=READ, 3=PLAYED
+    if (s === '0' || s === 'sent') return 'sent';
+    if (s === '1' || s === 'delivered') return 'delivered';
+    if (s === '2' || s === 'read' || s === '3' || s === 'played') return 'read';
   }
   
   // 2. Fallback: grupos sempre marcados como lidos (comportamento EvolutionAPI)
@@ -425,104 +425,24 @@ export function parseMessage(
 function getSystemMessageText(msg: any): string {
   const stubType = msg.messageStubType || msg.message?.protocolMessage?.type;
   
-  // Stub types que significam "mensagem apagada" (0-10, 14-100 = todos apagados)
-  // Stub types que significam outros eventos
-  const specificStubs: Record<number, string> = {
-    0: 'Mensagem apagada',
-    1: 'Mensagem apagada',
-    2: 'Mensagem apagada',
-    3: 'Mensagem apagada',
-    5: 'Mensagem apagada',
-    6: 'Mensagem apagada',
-    7: 'Mensagem apagada',
-    8: 'Mensagem apagada',
-    9: 'Mensagem apagada',
-    10: 'Mensagem apagada',
-    // Eventos de grupo
-    27: 'Criou o grupo',
-    28: 'Alterou o assunto do grupo',
-    29: 'Alterou a descrição do grupo',
-    30: 'Alterou o ícone do grupo',
-    31: 'Alterou o nome do grupo',
-    32: 'Você foi adicionado ao grupo',
-    33: 'Você saiu do grupo',
-    34: 'Você foi removido do grupo',
-    35: 'Alguém foi adicionado ao grupo',
-    36: 'Alguém saiu do grupo',
-    37: 'Alguém foi removido do grupo',
-    // Outros
-    40: 'Mensagem apagada',
-    41: 'Mensagem apagada',
-    42: 'Mensagem apagada',
-    43: 'Mensagem apagada',
-    44: 'Mensagem apagada',
-    45: 'Mensagem apagada',
-    46: 'Mensagem apagada',
-    47: 'Mensagem apagada',
-    48: 'Mensagem apagada',
-    49: 'Mensagem apagada',
-    50: 'Mensagem apagada',
-    51: 'Mensagem apagada',
-    52: 'Mensagem apagada',
-    53: 'Mensagem apagada',
-    54: 'Mensagem apagada',
-    55: 'Mensagem apagada',
-    56: 'Mensagem apagada',
-    57: 'Mensagem apagada',
-    58: 'Mensagem apagada',
-    59: 'Mensagem apagada',
-    60: 'Mensagem apagada',
-    61: 'Mensagem apagada',
-    62: 'Mensagem apagada',
-    63: 'Mensagem apagada',
-    64: 'Mensagem apagada',
-    65: 'Mensagem apagada',
-    66: 'Mensagem apagada',
-    67: 'Mensagem apagada',
-    68: 'Mensagem apagada',
-    69: 'Mensagem apagada',
-    70: 'Mensagem apagada',
-    71: 'Mensagem apagada',
-    72: 'Mensagem apagada',
-    73: 'Mensagem apagada',
-    74: 'Mensagem apagada',
-    75: 'Mensagem apagada',
-    76: 'Mensagem apagada',
-    77: 'Mensagem apagada',
-    78: 'Mensagem apagada',
-    79: 'Mensagem apagada',
-    80: 'Mensagem apagada',
-    81: 'Mensagem apagada',
-    82: 'Mensagem apagada',
-    83: 'Mensagem apagada',
-    84: 'Mensagem apagada',
-    85: 'Mensagem apagada',
-    86: 'Mensagem apagada',
-    87: 'Mensagem apagada',
-    88: 'Mensagem apagada',
-    89: 'Mensagem apagada',
-    90: 'Mensagem apagada',
-    91: 'Mensagem apagada',
-    92: 'Mensagem apagada',
-    93: 'Mensagem apagada',
-    94: 'Mensagem apagada',
-    95: 'Mensagem apagada',
-    96: 'Mensagem apagada',
-    97: 'Mensagem apagada',
-    98: 'Mensagem apagada',
-    99: 'Mensagem apagada',
-    100: 'Mensagem apagada',
-  };
-  
   if (stubType !== undefined && stubType !== null) {
-    // Se o stubType está no mapa específico, usar
-    if (specificStubs[stubType]) {
-      return specificStubs[stubType];
-    }
-    // Para qualquer stubType alto (100+), assumir apagada
-    if (stubType > 100) {
-      return 'Mensagem apagada';
-    }
+    // Eventos específicos de grupo
+    const groupEvents: Record<number, string> = {
+      27: 'Criou o grupo',
+      28: 'Alterou o assunto do grupo',
+      29: 'Alterou a descrição do grupo',
+      30: 'Alterou o ícone do grupo',
+      31: 'Alterou o nome do grupo',
+      32: 'Você foi adicionado ao grupo',
+      33: 'Você saiu do grupo',
+      34: 'Você foi removido do grupo',
+      35: 'Alguém foi adicionado ao grupo',
+      36: 'Alguém saiu do grupo',
+      37: 'Alguém foi removido do grupo',
+    };
+    if (groupEvents[stubType]) return groupEvents[stubType];
+    // Tudo o resto (0-10, 40-100+) = mensagem apagada
+    return 'Mensagem apagada';
   }
   
   // Protocol messages

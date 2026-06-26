@@ -5,13 +5,14 @@ import ChatHeader from './ChatHeader';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import { parseMessage, filterMessagesByChat, ParsedMessage } from './messageParser';
-import { INSTANCE_NAME as DEFAULT_INSTANCE_NAME } from '../WhatsAppContainer';
+import { INSTANCE_NAME as DEFAULT_INSTANCE_NAME } from '../utils/constants';
+import { Conversation } from '../types';
 import { SendMessageResult } from '../hooks/useEvolutionApi';
 
 type SendTextFn = (number: string, text: string) => Promise<SendMessageResult>;
 type SendMediaFn = (number: string, media: string, options?: { mediatype?: 'image' | 'video' | 'audio' | 'document'; mimetype?: string; caption?: string; fileName?: string }) => Promise<SendMessageResult>;
 
-export default function ChatArea({ conversation, apiFetch, sendText, sendMedia, INSTANCE_NAME: propInstanceName, onCloseChat }: { conversation: any, apiFetch?: any, sendText?: SendTextFn, sendMedia?: SendMediaFn, INSTANCE_NAME?: string, onCloseChat?: () => void }) {
+export default function ChatArea({ conversation, apiFetch, sendText, sendMedia, INSTANCE_NAME: propInstanceName, onCloseChat, onDeleteChat }: { conversation: Conversation, apiFetch?: any, sendText?: SendTextFn, sendMedia?: SendMediaFn, INSTANCE_NAME?: string, onCloseChat?: () => void, onDeleteChat?: () => void }) {
   const instanceName = propInstanceName || DEFAULT_INSTANCE_NAME;
   const [messages, setMessages] = useState<ParsedMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,6 +49,11 @@ export default function ChatArea({ conversation, apiFetch, sendText, sendMedia, 
             else if (Array.isArray(d.messages.records)) loadedMessages = d.messages.records;
           }
           else if (Array.isArray(d.data)) loadedMessages = d.data;
+          else if (d.data && typeof d.data === 'object') {
+            // Suporte a formato { data: { records: [...] } }
+            const dataObj = d.data as any;
+            if (Array.isArray(dataObj.records)) loadedMessages = dataObj.records;
+          }
         }
       }
 
@@ -59,12 +65,16 @@ export default function ChatArea({ conversation, apiFetch, sendText, sendMedia, 
          const formattedMsgs = loadedMessages.map(m => parseMessage(m));
          
          formattedMsgs.sort((a, b) => a.timestamp - b.timestamp);
-         setMessages(formattedMsgs);
-         setError(null);
          
+         // Deduplicação: só atualizar estado se houve mudança real
          const newIdsStr = formattedMsgs.map(m => m.id).join(',');
-         lastMessageIdsRef.current = newIdsStr;
-      } else {
+         if (newIdsStr !== lastMessageIdsRef.current) {
+           setMessages(formattedMsgs);
+           lastMessageIdsRef.current = newIdsStr;
+         }
+         setError(null);
+      } else if (!silent) {
+         // Só limpar mensagens se não for polling silencioso
          setMessages([]);
          lastMessageIdsRef.current = '';
       }
@@ -162,7 +172,7 @@ export default function ChatArea({ conversation, apiFetch, sendText, sendMedia, 
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0b141a] relative">
       <div className="flex-1 flex flex-col relative z-10 h-full">
-        <ChatHeader conversation={conversation} onCloseChat={onCloseChat} />
+        <ChatHeader conversation={conversation} onCloseChat={onCloseChat} onDeleteChat={onDeleteChat} />
         
         {/* Barra de erro */}
         {error && (

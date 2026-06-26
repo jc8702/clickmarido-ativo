@@ -1,7 +1,7 @@
 'use client';
 
 import { Tag } from 'lucide-react';
-import { WhatsAppLabel } from './hooks/useWhatsAppApi';
+import { WhatsAppLabel } from './types';
 
 export type FilterType = 'all' | 'unread' | 'groups' | 'favorites' | 'archived' | 'labels';
 

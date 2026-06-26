@@ -2,9 +2,8 @@
 
 import { Search, X, Pin, BellOff } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Conversation } from './WhatsAppContainer';
+import { Conversation, WhatsAppLabel } from './types';
 import FilterPills, { FilterType } from './FilterPills';
-import { WhatsAppLabel } from './hooks/useWhatsAppApi';
 
 interface WhatsAppSidebarProps {
   conversations: Conversation[];
@@ -14,8 +13,6 @@ interface WhatsAppSidebarProps {
   onToggle: () => void;
   connected?: boolean;
   qrCode?: string | null;
-  crmCustomers?: any[];
-  apiFetch?: any;
   // Favorites
   isFavorite?: (phone: string) => boolean;
   toggleFavorite?: (phone: string) => Promise<boolean>;
@@ -41,8 +38,6 @@ export default function WhatsAppSidebar({
   onToggle,
   connected = true,
   qrCode = null,
-  crmCustomers = [],
-  apiFetch,
   isFavorite,
   toggleFavorite,
   isArchived,

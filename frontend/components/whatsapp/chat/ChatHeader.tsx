@@ -13,10 +13,11 @@ interface ChatHeaderProps {
     lastSeen?: string;
   };
   onCloseChat?: () => void;
+  onDeleteChat?: () => void;
   onBack?: () => void;
 }
 
-export default function ChatHeader({ conversation, onCloseChat, onBack }: ChatHeaderProps) {
+export default function ChatHeader({ conversation, onCloseChat, onDeleteChat, onBack }: ChatHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -43,8 +44,10 @@ export default function ChatHeader({ conversation, onCloseChat, onBack }: ChatHe
     if (isGroup) {
       return 'toque para ver informações do grupo';
     }
-    return 'clique para ver mensagens';
+    return '';
   };
+
+  const statusText = getStatusText();
 
   return (
     <header className="h-[60px] bg-gray-50 dark:bg-[#202c33] border-b border-gray-200 dark:border-[#222d34] flex items-center justify-between px-4 flex-shrink-0">
@@ -74,17 +77,19 @@ export default function ChatHeader({ conversation, onCloseChat, onBack }: ChatHe
         </div>
         
         {/* Name + Status */}
-        <div className="min-w-0 cursor-pointer">
+        <div className="min-w-0">
           <h2 className="text-black dark:text-[#e9edef] text-[16px] font-normal truncate leading-[22px]">
             {conversation.contactName}
           </h2>
-          <p className={`text-[13px] truncate leading-[18px] ${
-            conversation.isOnline 
-              ? 'text-[#00a884]' 
-              : 'text-gray-500 dark:text-[#8696a0]'
-          }`}>
-            {getStatusText()}
-          </p>
+          {statusText && (
+            <p className={`text-[13px] truncate leading-[18px] ${
+              conversation.isOnline 
+                ? 'text-[#00a884]' 
+                : 'text-gray-500 dark:text-[#8696a0]'
+            }`}>
+              {statusText}
+            </p>
+          )}
         </div>
       </div>
       
@@ -102,17 +107,26 @@ export default function ChatHeader({ conversation, onCloseChat, onBack }: ChatHe
           
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-[200px] bg-white dark:bg-[#233138] rounded-md shadow-lg py-1.5 z-50 border border-gray-200 dark:border-[#364147]">
-              {onCloseChat ? (
+              {onCloseChat && (
                 <button 
                   onClick={() => { onCloseChat(); setMenuOpen(false); }}
                   className="w-full text-left px-4 py-2.5 text-black dark:text-[#e9edef] text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors"
                 >
                   Fechar conversa
                 </button>
-              ) : (
-                <div className="w-full text-left px-4 py-2.5 text-gray-400 dark:text-[#8696a0] text-[13px] cursor-not-allowed">
-                  Fechar conversa
-                </div>
+              )}
+              {onDeleteChat && (
+                <button 
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (window.confirm('Tem certeza que deseja apagar esta conversa?')) {
+                      onDeleteChat();
+                    }
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-red-600 dark:text-red-400 text-[15px] hover:bg-gray-100 dark:hover:bg-[#182229] transition-colors"
+                >
+                  Apagar conversa
+                </button>
               )}
             </div>
           )}

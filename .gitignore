@@ -36,4 +36,16 @@ backups/
 .DS_Store
 Thumbs.db
 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test & Build
+coverage/
+.turbo/
+.eslintcache
+
+# Vercel (duplicata limpa)
 .vercel

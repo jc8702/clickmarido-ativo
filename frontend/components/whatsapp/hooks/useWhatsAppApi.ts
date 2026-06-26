@@ -7,22 +7,10 @@ import { useState, useCallback } from 'react';
 // Consumo das rotas de backend (favorites, archived, labels)
 // ==========================================
 
-export interface WhatsAppLabel {
-  id: string;
-  name: string;
-  color: string;
-  _count?: { conversations: number };
-}
+import type { WhatsAppLabel, WhatsAppFavorite, WhatsAppArchived } from '../types';
 
-export interface WhatsAppFavorite {
-  id: string;
-  phone: string;
-}
-
-export interface WhatsAppArchived {
-  id: string;
-  phone: string;
-}
+// Re-exportar para compatibilidade com código existente
+export type { WhatsAppLabel, WhatsAppFavorite, WhatsAppArchived };
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

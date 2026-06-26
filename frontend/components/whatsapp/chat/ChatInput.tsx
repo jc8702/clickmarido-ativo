@@ -11,6 +11,7 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -55,9 +56,24 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && onSendMessage) {
+    if (!file) return;
+    setUploadError(null);
+
+    // Validar tamanho (max 16MB)
+    const MAX_SIZE = 16 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setUploadError('Arquivo muito grande. Máximo: 16MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (onSendMessage) {
       setIsSending(true);
-      await onSendMessage('', file);
+      try {
+        await onSendMessage('', file);
+      } catch {
+        setUploadError('Falha ao enviar arquivo');
+      }
       if (fileInputRef.current) fileInputRef.current.value = '';
       setIsSending(false);
     }
@@ -69,10 +85,17 @@ export default function ChatInput({ onSendMessage }: ChatInputProps) {
   };
 
   // Common emojis
-  const quickEmojis = ['😀', '😂', '❤️', '👍', '🙏', '😍', '🤔', '😊', '😎', '🥰', '😢', '😤', '👍', '👋', '🎉', '🔥'];
+  const quickEmojis = ['😀', '😂', '❤️', '👍', '🙏', '😍', '🤔', '😊', '😎', '🥰', '😢', '😤', '🤝', '👋', '🎉', '🔥'];
 
   return (
     <div className="bg-gray-50 dark:bg-[#202c33] border-t border-gray-200 dark:border-[#222d34] flex-shrink-0">
+      {/* Upload error */}
+      {uploadError && (
+        <div className="bg-red-50 dark:bg-red-900/20 px-4 py-1.5 flex items-center justify-between border-b border-red-200 dark:border-red-800">
+          <span className="text-red-600 dark:text-red-400 text-[12px]">{uploadError}</span>
+          <button onClick={() => setUploadError(null)} className="text-red-500 hover:text-red-700 text-[12px]">✕</button>
+        </div>
+      )}
       <div className="flex items-end gap-2 px-4 py-3">
         {/* Emoji Button + Picker */}
         <div className="relative" ref={emojiPickerRef}>

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Check, CheckCheck, Image, Film, Music, FileText, SmilePlus, Forward, Reply, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, Image, Film, Music, FileText, SmilePlus, Forward, Reply } from 'lucide-react';
 import { ParsedMessage, MessageType, groupMessagesByDate, MessageGroup, MessageStatus as MsgStatus } from './messageParser';
+import { formatFileSize } from '../utils/messages';
 
 interface MessageListProps {
   messages?: ParsedMessage[];
@@ -302,15 +303,7 @@ function MessageBubble({
   );
 }
 
-// ==========================================
-// UTILITÁRIOS
-// ==========================================
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 // ==========================================
 // COMPONENTE PRINCIPAL
