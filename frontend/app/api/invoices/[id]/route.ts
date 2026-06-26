@@ -52,7 +52,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.error('GET /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao buscar invoice' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -111,7 +110,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error('PUT /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao atualizar invoice' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -155,6 +153,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     console.error('DELETE /api/invoices/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao cancelar invoice' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

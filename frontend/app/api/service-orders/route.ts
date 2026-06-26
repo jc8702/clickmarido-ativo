@@ -101,8 +101,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('GET /api/service-orders error:', error);
     return NextResponse.json({ error: 'Erro ao listar ordens de serviço' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -175,7 +173,5 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error: any) {
     console.error('POST /api/service-orders error:', error);
     return NextResponse.json({ error: 'Erro ao criar ordem de serviço' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

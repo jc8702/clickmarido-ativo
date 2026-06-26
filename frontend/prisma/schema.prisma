@@ -81,6 +81,8 @@ model Quotation {
 
   // Financeiro
   paymentTerms String?   @default("A_VISTA")  // A_VISTA, 30_DIAS, 60_DIAS
+  paymentMethods String? @default("")  // Ex: "PIX, Cartão de Crédito, Boleto"
+  executionDeadline String? @default("")  // Ex: "5 dias úteis", "Conforme agendamento"
 
   // Automação
   expiryNotificationSent Boolean @default(false)

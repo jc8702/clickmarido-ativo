@@ -58,8 +58,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/expenses error:', error);
     return NextResponse.json({ error: 'Erro ao listar despesas' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -118,7 +116,5 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/expenses error:', error);
     return NextResponse.json({ error: 'Erro ao criar despesa' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

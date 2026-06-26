@@ -28,8 +28,6 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('GET /api/media error:', error);
     return NextResponse.json({ error: 'Erro ao listar mídias' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -89,7 +87,5 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/media error:', error);
     return NextResponse.json({ error: 'Erro ao criar mídia' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

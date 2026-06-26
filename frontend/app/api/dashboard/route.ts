@@ -205,7 +205,5 @@ export async function GET(request: NextRequest) {
       { error: 'Erro ao carregar dados do dashboard' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

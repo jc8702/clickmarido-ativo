@@ -95,7 +95,6 @@ export async function PUT(
     console.error('PUT /api/users/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao atualizar usuário' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -146,6 +145,5 @@ export async function DELETE(
     console.error('DELETE /api/users/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao excluir usuário' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

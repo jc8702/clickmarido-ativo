@@ -125,6 +125,5 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.error('POST /api/invoices/[id]/pay error:', error);
     return NextResponse.json({ error: 'Erro ao registrar baixa da fatura' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

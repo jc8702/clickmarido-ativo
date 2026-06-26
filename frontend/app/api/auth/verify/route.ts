@@ -56,7 +56,5 @@ export async function GET(request: NextRequest) {
       { error: 'Token inválido ou expirado' },
       { status: 401 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

@@ -54,7 +54,6 @@ export async function GET(
     console.error('GET /api/customers/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao carregar cliente' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -97,7 +96,6 @@ export async function PUT(
 
     return NextResponse.json({ error: 'Erro ao atualizar cliente' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -124,6 +122,5 @@ export async function DELETE(
 
     return NextResponse.json({ error: 'Erro ao deletar cliente' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

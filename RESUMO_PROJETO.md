@@ -1,11 +1,23 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Melhorias no PDF da Proposta e Orçamentos Concluídas. Exibição completa de SKU, itens, descrição, impostos estimados por item, soma de impostos aproximados, logo no cabeçalho, logo em marca d'água de fundo e campo de Observações/Escopo funcional na criação/edição.
+- **Status Atual:** Melhorias no PDF da Proposta e correções críticas no fluxo de criação/edição e catálogo de orçamentos concluídas e validadas em produção.
 - **Objetivo Central:** Migrar o Módulo WhatsApp para a nova arquitetura sem perder funcionalidades antigas como geração de orçamento integrado e seleção de contatos.
-- **Última Atualização:** 26/06/2026 - 16:30
+- **Última Atualização:** 26/06/2026 - 17:15
 
 ## Histórico de Alterações
+
+### 26/06/2026 - 17:15
+- **Correção da Quebra na Criação/Edição de Orçamentos e Catálogo de Itens:**
+  - Corrigido o erro fatal que quebrava as páginas `/quotations/new` e `/quotations/[id]` ao buscar itens do catálogo de produtos e ao adicionar itens manuais.
+  - Blindados os componentes `ItemsBuilder.tsx`, `ProductPicker.tsx` e `QuotationItemsTable.tsx` contra problemas de tipo com campos `Decimal` retornados como strings do banco de dados (convertidos adequadamente com `Number(...)` antes de operações de cálculo e `.toFixed(2)`).
+  - Arquivos modificados: `frontend/components/quotations/ItemsBuilder.tsx`, `frontend/components/quotations/ProductPicker.tsx`, `frontend/components/quotations/QuotationItemsTable.tsx`
+
+### 26/06/2026 - 16:45
+- **Correção da Quebra no Módulo de Orçamentos (Kanban e Detalhes):**
+  - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (que são recebidas como string no JSON). As chamadas foram blindadas com `Number(...)`.
+  - Atualizada a rota `GET /api/quotations` para incluir `items` e `product` no Prisma `include`, possibilitando a exibição correta dos itens e seus respectivos detalhes no Drawer de visualização do Kanban.
+  - Arquivos modificados: `frontend/app/(dashboard)/quotations/page.tsx`, `frontend/app/(dashboard)/quotations/view/ClientPage.tsx`, `frontend/app/api/quotations/route.ts`
 
 ### 26/06/2026 - 16:30
 - **Melhorias no PDF da Proposta e Suporte a Observações e Logos:**
@@ -50,5 +62,6 @@
 - [x] Corrigir integração de envio de orçamento automático (`autoAttach` + searchParams).
 - [x] Realizar deploy para produção na Vercel (via GitHub push).
 - [x] Restaurar fluxo "Aprovar Orçamento → Chat WhatsApp com PDF anexado".
+- [x] Corrigir bug de renderização/toFixed no Kanban de Orçamentos e nos formulários de criação/edição.
 - [ ] Integrar mais templates para notificações transacionais (se necessário).
 

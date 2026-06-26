@@ -46,8 +46,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: settings });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -97,7 +95,5 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true, data: settings });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

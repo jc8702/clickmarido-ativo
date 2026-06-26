@@ -90,6 +90,5 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
   }
 }

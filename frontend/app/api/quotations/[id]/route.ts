@@ -55,7 +55,6 @@ export async function GET(
     console.error('GET /api/quotations/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao carregar orçamento' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -81,6 +80,8 @@ export async function PUT(
     if (body.status) updateData.status = body.status;
     if (body.notes !== undefined) updateData.notes = body.notes;
     if (body.total !== undefined) updateData.total = body.total;
+    if (body.payment_methods !== undefined) updateData.paymentMethods = body.payment_methods;
+    if (body.execution_deadline !== undefined) updateData.executionDeadline = body.execution_deadline;
 
     const quotation = await prisma.quotation.update({
       where: { id },
@@ -234,7 +235,6 @@ export async function PUT(
 
     return NextResponse.json({ error: 'Erro ao atualizar orçamento' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -276,6 +276,5 @@ export async function DELETE(
 
     return NextResponse.json({ error: 'Erro ao deletar orçamento' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

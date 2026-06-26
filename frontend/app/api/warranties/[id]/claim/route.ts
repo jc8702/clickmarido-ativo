@@ -103,6 +103,5 @@ export async function POST(
     console.error('POST /api/warranties/[id]/claim error:', error);
     return NextResponse.json({ error: 'Erro ao acionar garantia' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

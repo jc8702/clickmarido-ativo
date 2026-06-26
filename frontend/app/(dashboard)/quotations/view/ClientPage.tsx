@@ -65,6 +65,12 @@ function QuotationContent() {
             <p className="text-neutral-600 dark:text-neutral-400 text-sm">Olá,</p>
             <p className="text-lg font-medium text-neutral-900 dark:text-neutral-100">{data.customer_name}</p>
             <p className="mt-2 text-neutral-600 dark:text-neutral-400 text-sm">Segue abaixo o detalhamento dos serviços propostos. Esta proposta é válida até <strong>{new Date(data.valid_until).toLocaleDateString()}</strong>.</p>
+            {data.executionDeadline && (
+              <p className="mt-1 text-neutral-600 dark:text-neutral-400 text-sm">Prazo de execução: <strong>{data.executionDeadline}</strong></p>
+            )}
+            {data.paymentMethods && (
+              <p className="mt-1 text-neutral-600 dark:text-neutral-400 text-sm">Formas de pagamento: <strong>{data.paymentMethods}</strong></p>
+            )}
           </div>
 
           <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">

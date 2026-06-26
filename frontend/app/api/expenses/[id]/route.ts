@@ -44,7 +44,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.error('GET /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao buscar despesa' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -109,7 +108,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     console.error('PUT /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao atualizar despesa' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -178,7 +176,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.error('POST /api/expenses/[id]/mark-paid error:', error);
     return NextResponse.json({ error: 'Erro ao marcar despesa como paga' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -207,6 +204,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     console.error('DELETE /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao excluir despesa' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

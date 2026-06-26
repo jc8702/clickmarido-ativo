@@ -49,8 +49,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/warranties error:', error);
     return NextResponse.json({ error: 'Erro ao listar garantias' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -82,7 +80,5 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/warranties error:', error);
     return NextResponse.json({ error: 'Erro ao criar garantia' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

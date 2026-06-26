@@ -59,8 +59,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('GET /api/quotations error:', error);
     return NextResponse.json({ error: 'Erro ao listar orçamentos' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -127,6 +125,8 @@ export async function POST(request: NextRequest): Promise<Response> {
         total,
         status: 'rascunho',
         notes,
+        paymentMethods: body.payment_methods || '',
+        executionDeadline: body.execution_deadline || '',
       },
       include: { customer: true },
     });
@@ -202,7 +202,5 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error: any) {
     console.error('POST /api/quotations error:', error);
     return NextResponse.json({ error: 'Erro ao criar orçamento: ' + (error.message || 'Erro desconhecido') }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

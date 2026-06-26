@@ -44,8 +44,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('GET /api/users error:', error);
     return NextResponse.json({ error: 'Erro ao listar usuários' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -114,7 +112,5 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('POST /api/users error:', error);
     return NextResponse.json({ error: 'Erro ao criar usuário' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

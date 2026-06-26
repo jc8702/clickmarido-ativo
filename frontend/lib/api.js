@@ -20,13 +20,29 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor: 401 redireciona para login
+// Flag para evitar múltiplos redirects simultâneos
+let isRedirecting = false;
+
+// Interceptor: 401 redireciona para login (apenas em casos claros de token expirado)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+    if (error.response?.status === 401 && typeof window !== 'undefined' && !isRedirecting) {
+      // Verificar se o token realmente existe antes de redirecionar
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Sem token, redirecionar para login
+        isRedirecting = true;
+        window.location.href = '/login';
+      } else {
+        // Token existe mas é inválido/expirado - remover e redirecionar
+        localStorage.removeItem('token');
+        isRedirecting = true;
+        // Usar setTimeout para evitar redirect imediato em caso de race condition
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
+      }
     }
     return Promise.reject(error);
   }

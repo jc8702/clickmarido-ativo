@@ -51,7 +51,5 @@ export async function GET(request: NextRequest) {
       { error: 'Erro ao buscar logs de mensagens' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

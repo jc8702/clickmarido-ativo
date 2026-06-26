@@ -64,7 +64,5 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/products/next-sku error:', error);
     return NextResponse.json({ error: 'Erro ao gerar SKU' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

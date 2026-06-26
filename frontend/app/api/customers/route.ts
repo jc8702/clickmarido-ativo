@@ -76,8 +76,6 @@ export async function GET(request: NextRequest) {
       { error: 'Erro ao listar clientes' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -132,7 +130,5 @@ export async function POST(request: NextRequest) {
       { error: 'Erro ao criar cliente' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

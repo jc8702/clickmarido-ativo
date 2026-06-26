@@ -89,7 +89,6 @@ async function handleGeneratePix(
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
   }
 }
 

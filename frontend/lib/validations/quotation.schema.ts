@@ -16,6 +16,8 @@ export const quotationSchema = z.object({
   discount: z.number().min(0),
   valid_until: z.string().min(1, 'Data de validade é obrigatória'),
   notes: z.string().optional(),
+  payment_methods: z.string().optional(),
+  execution_deadline: z.string().optional(),
 });
 
 export type QuotationFormValues = z.infer<typeof quotationSchema>;

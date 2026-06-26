@@ -108,7 +108,6 @@ async function handleApprove(
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
   }
 }
 

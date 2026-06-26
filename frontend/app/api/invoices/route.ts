@@ -56,8 +56,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('GET /api/invoices error:', error);
     return NextResponse.json({ error: 'Erro ao listar invoices' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -134,7 +132,5 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('POST /api/invoices error:', error);
     return NextResponse.json({ error: 'Erro ao criar invoice' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

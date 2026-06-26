@@ -50,8 +50,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   } catch (error) {
     console.error('GET /api/payments error:', error);
     return NextResponse.json({ error: 'Erro ao listar pagamentos' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -105,7 +103,5 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (error: any) {
     console.error('POST /api/payments error:', error);
     return NextResponse.json({ error: 'Erro ao criar pagamento' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+}
 }

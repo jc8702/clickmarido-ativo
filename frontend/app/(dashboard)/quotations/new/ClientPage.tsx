@@ -21,7 +21,9 @@ export default function NewQuotationPage() {
       items: [{ name: '', quantity: 1, unit_price: 0 }],
       discount: 0,
       valid_until: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
-      notes: ''
+      notes: '',
+      payment_methods: '',
+      execution_deadline: '',
     }
   });
 
@@ -53,6 +55,27 @@ export default function NewQuotationPage() {
           </div>
 
           <ItemsBuilder />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Prazo de Execução</label>
+              <input
+                type="text"
+                {...methods.register('execution_deadline')}
+                placeholder="Ex: 5 dias úteis, Conforme agendamento"
+                className="w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Formas de Pagamento</label>
+              <input
+                type="text"
+                {...methods.register('payment_methods')}
+                placeholder="Ex: PIX, Cartão de Crédito, Boleto"
+                className="w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+              />
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Observações / Escopo da Proposta</label>

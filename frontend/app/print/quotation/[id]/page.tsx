@@ -315,11 +315,11 @@ export default function PrintQuotationPage() {
                   <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Condições Comerciais</h3>
                   <div className="text-xs text-neutral-600 space-y-1.5">
                     <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate}</span></p>
-                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">Conforme agendamento</span></p>
+                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">{quote.executionDeadline || 'Conforme agendamento'}</span></p>
                     <p className="flex items-center gap-1.5">
                       <span className="font-semibold text-neutral-400">Pagamento Sugerido:</span> 
                       <span className="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
-                        {quote.paymentTerms || 'A VISTA'}
+                        {quote.paymentMethods || quote.paymentTerms || 'A VISTA'}
                       </span>
                     </p>
                   </div>

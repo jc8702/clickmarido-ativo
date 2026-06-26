@@ -47,6 +47,5 @@ export async function PATCH(
     }
     return NextResponse.json({ error: 'Erro ao iniciar OS' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
