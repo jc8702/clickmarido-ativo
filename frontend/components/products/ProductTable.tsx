@@ -78,7 +78,7 @@ export function ProductTable({ data, isLoading, onEdit, onDelete, deletingId, on
               </td>
               <td className="p-4 text-neutral-600 dark:text-neutral-400 text-sm">{product.category || '-'}</td>
               <td className="p-4 text-neutral-900 dark:text-neutral-100 font-semibold">
-                R$ {product.price.toFixed(2).replace('.', ',')}
+                R$ {Number(product.price || 0).toFixed(2).replace('.', ',')}
               </td>
               <td className="p-4 text-neutral-600 dark:text-neutral-400 text-sm">{product.unit}</td>
               <td className="p-4">

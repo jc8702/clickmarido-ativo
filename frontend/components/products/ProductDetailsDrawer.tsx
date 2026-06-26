@@ -123,7 +123,7 @@ export function ProductDetailsDrawer({ product, onClose }: Props) {
             <div className="bg-neutral-50 dark:bg-neutral-700/30 p-4 rounded-xl border border-neutral-100 dark:border-neutral-750">
               <span className="text-xs text-neutral-500 dark:text-neutral-400 block mb-1">Preço de Venda</span>
               <span className="text-3xl font-bold text-neutral-950 dark:text-neutral-50">
-                R$ {sellingPrice.toFixed(2).replace('.', ',')}
+                R$ {Number(sellingPrice || 0).toFixed(2).replace('.', ',')}
               </span>
               <span className="text-xs text-neutral-500 dark:text-neutral-400 block mt-1">
                 Cobrado por {product.unit}
@@ -153,7 +153,7 @@ export function ProductDetailsDrawer({ product, onClose }: Props) {
                 <div>
                   <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Total Gasto</span>
                   <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                    R$ {stats.totalSpent.toFixed(2).replace('.', ',')}
+                    R$ {Number(stats.totalSpent || 0).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
                 <div>
@@ -165,19 +165,19 @@ export function ProductDetailsDrawer({ product, onClose }: Props) {
                 <div>
                   <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Custo Médio</span>
                   <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                    R$ {stats.avgPrice.toFixed(2).replace('.', ',')}
+                    R$ {Number(stats.avgPrice || 0).toFixed(2).replace('.', ',')}
                   </span>
                 </div>
                 <div>
                   <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Margem Bruta</span>
                   <span className={`text-lg font-bold block ${markupPercentage && markupPercentage > 0 ? 'text-green-600 dark:text-green-400' : 'text-neutral-600 dark:text-neutral-400'}`}>
-                    {markupPercentage !== null ? `${markupPercentage.toFixed(1)}%` : 'N/A'}
+                    {markupPercentage !== null ? `${Number(markupPercentage).toFixed(1)}%` : 'N/A'}
                   </span>
                 </div>
               </div>
               {stats.lastPurchasePrice && (
                 <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700 flex justify-between text-xs text-neutral-550 dark:text-neutral-400">
-                  <span>Último preço pago: <strong>R$ {stats.lastPurchasePrice.toFixed(2).replace('.', ',')}</strong></span>
+                  <span>Último preço pago: <strong>R$ {Number(stats.lastPurchasePrice || 0).toFixed(2).replace('.', ',')}</strong></span>
                   <span>Fornecedor: <strong>{stats.lastPurchaseVendor}</strong></span>
                 </div>
               )}
@@ -262,11 +262,11 @@ export function ProductDetailsDrawer({ product, onClose }: Props) {
                             <div>
                               <span className="text-[10px] text-neutral-500 dark:text-neutral-400 block">Preço Unitário</span>
                               <strong className="text-neutral-950 dark:text-neutral-50">
-                                R$ {event.unitPrice.toFixed(2).replace('.', ',')}
+                                R$ {Number(event.unitPrice || 0).toFixed(2).replace('.', ',')}
                               </strong>
                             </div>
                             <div className="col-span-2 sm:col-span-3 mt-1 text-[10px] text-neutral-500 dark:text-neutral-400 flex justify-between">
-                              <span>Subtotal: <strong>R$ {event.subtotal.toFixed(2).replace('.', ',')}</strong></span>
+                              <span>Subtotal: <strong>R$ {Number(event.subtotal || 0).toFixed(2).replace('.', ',')}</strong></span>
                               <span className={`font-semibold capitalize ${
                                 event.status === 'recebido' 
                                   ? 'text-green-600 dark:text-green-400' 
@@ -292,7 +292,7 @@ export function ProductDetailsDrawer({ product, onClose }: Props) {
                               Preço Inicial Cadastrado:
                             </span>
                             <strong className="text-neutral-900 dark:text-neutral-100">
-                              R$ {event.price.toFixed(2).replace('.', ',')}
+                              R$ {Number(event.price || 0).toFixed(2).replace('.', ',')}
                             </strong>
                           </div>
                         )}

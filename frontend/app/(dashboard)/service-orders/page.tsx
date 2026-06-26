@@ -148,7 +148,7 @@ export default function ServiceOrdersPage() {
                       {row.scheduledTime ? new Date(row.scheduledTime).toLocaleDateString('pt-BR') : 'A definir'}
                     </TableCell>
                     <TableCell className="font-bold text-neutral-800 dark:text-neutral-200">
-                      R$ {(row.finalTotal || row.quotation?.total || 0).toFixed(2)}
+                      R$ {Number(row.finalTotal || row.quotation?.total || 0).toFixed(2)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusBadgeVariant[row.status] || 'neutral'} size="sm" className="shadow-sm">

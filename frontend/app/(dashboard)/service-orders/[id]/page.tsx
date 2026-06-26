@@ -222,7 +222,7 @@ export default function ServiceOrderDetailPage() {
             <p><span className="text-neutral-500 dark:text-neutral-400">Endereço:</span> <span className="text-neutral-900 dark:text-neutral-100">{os.address || 'Não informado'}</span></p>
             <p><span className="text-neutral-500 dark:text-neutral-400">Data Agendada:</span> <span className="text-neutral-900 dark:text-neutral-100">{os.scheduledTime ? new Date(os.scheduledTime).toLocaleString('pt-BR') : 'Não agendado'}</span></p>
             <p><span className="text-neutral-500 dark:text-neutral-400">Técnico:</span> <span className="text-neutral-900 dark:text-neutral-100">{techName}</span></p>
-            <p><span className="text-neutral-500 dark:text-neutral-400">Valor Total:</span> <span className="text-neutral-900 dark:text-neutral-100 font-bold">R$ {(os.finalTotal || 0).toFixed(2)}</span></p>
+            <p><span className="text-neutral-500 dark:text-neutral-400">Valor Total:</span> <span className="text-neutral-900 dark:text-neutral-100 font-bold">R$ {Number(os.finalTotal || 0).toFixed(2)}</span></p>
           </div>
         </div>
 
@@ -362,8 +362,8 @@ export default function ServiceOrderDetailPage() {
                   <tr key={usage.id} className="border-b border-neutral-100 dark:border-neutral-800/50">
                     <td className="py-2 text-neutral-800 dark:text-neutral-200">{usage.product?.name || 'Peça'}</td>
                     <td className="py-2 text-neutral-600 dark:text-neutral-400">{usage.quantityUsed}</td>
-                    <td className="py-2 text-right text-neutral-600 dark:text-neutral-400">R$ {(usage.product?.price || 0).toFixed(2)}</td>
-                    <td className="py-2 text-right font-medium text-neutral-800 dark:text-neutral-200">R$ {(usage.quantityUsed * (usage.product?.price || 0)).toFixed(2)}</td>
+                    <td className="py-2 text-right text-neutral-600 dark:text-neutral-400">R$ {Number(usage.product?.price || 0).toFixed(2)}</td>
+                    <td className="py-2 text-right font-medium text-neutral-800 dark:text-neutral-200">R$ {(Number(usage.quantityUsed || 0) * Number(usage.product?.price || 0)).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>

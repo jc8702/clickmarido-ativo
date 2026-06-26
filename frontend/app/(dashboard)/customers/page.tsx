@@ -377,7 +377,7 @@ export default function CustomersPage() {
                           <div>
                             <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">{os.number}</div>
                             <div className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(os.createdAt).toLocaleDateString('pt-BR')}</div>
-                            <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">Valor: R$ {(os.finalTotal || 0).toFixed(2)}</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">Valor: R$ {Number(os.finalTotal || 0).toFixed(2)}</div>
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase ${
@@ -406,7 +406,7 @@ export default function CustomersPage() {
                       detailedCustomer.payments.map((payment: any) => (
                         <div key={payment.id} className="border border-neutral-200 dark:border-neutral-700 p-4 rounded-xl bg-white dark:bg-neutral-800 shadow-sm flex justify-between items-center">
                           <div>
-                            <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">R$ {(payment.amount || 0).toFixed(2)}</div>
+                            <div className="font-bold text-sm text-neutral-900 dark:text-neutral-100">R$ {Number(payment.amount || 0).toFixed(2)}</div>
                             <div className="text-xs text-neutral-500 dark:text-neutral-400">{new Date(payment.createdAt).toLocaleDateString('pt-BR')}</div>
                             <div className="text-xs text-neutral-600 dark:text-neutral-300 mt-1">Método: <span className="uppercase">{payment.method}</span></div>
                           </div>

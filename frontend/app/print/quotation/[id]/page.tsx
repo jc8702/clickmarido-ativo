@@ -400,19 +400,19 @@ export default function PrintQuotationPage() {
                 <div className="w-[320px] space-y-2 bg-[#f9fafb] p-4 rounded-2xl border border-[#f3f4f6] text-xs">
                   <div className="flex justify-between text-[#6b7280] font-medium">
                     <span>Subtotal Estimado:</span>
-                    <span>R$ {subtotalAmount.toFixed(2)}</span>
+                    <span>R$ {Number(subtotalAmount || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#6b7280] font-medium">
                     <span>Descontos:</span>
-                    <span>R$ {discountAmount.toFixed(2)}</span>
+                    <span>R$ {Number(discountAmount || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#9ca3af] text-[10px] font-medium">
                     <span>Impostos Estimados (Lei 12.741/12):</span>
-                    <span>R$ {totalTax.toFixed(2)}</span>
+                    <span>R$ {Number(totalTax || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-2 text-[#1f2937] font-title">
                     <span>Total Estimado:</span>
-                    <span className="text-[#9333ea] text-sm">R$ {totalAmount.toFixed(2)}</span>
+                    <span className="text-[#9333ea] text-sm">R$ {Number(totalAmount || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

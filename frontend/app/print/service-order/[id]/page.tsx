@@ -234,8 +234,8 @@ export default function PrintServiceOrderPage() {
                     <tr key={`quote-item-${idx}`} className="hover:bg-neutral-50/40">
                       <td className="p-3.5 pl-5 font-semibold text-neutral-800">{item.product?.name || item.name || 'Serviço Prestado'}</td>
                       <td className="p-3.5 text-center text-neutral-600 font-medium">{item.quantity}</td>
-                      <td className="p-3.5 text-right text-neutral-600 font-medium">R$ {(item.unitPrice || item.unit_price || 0).toFixed(2)}</td>
-                      <td className="p-3.5 text-right pr-5 font-bold text-neutral-800">R$ {((item.unitPrice || item.unit_price || 0) * item.quantity).toFixed(2)}</td>
+                      <td className="p-3.5 text-right text-neutral-600 font-medium">R$ {Number(item.unitPrice || item.unit_price || 0).toFixed(2)}</td>
+                      <td className="p-3.5 text-right pr-5 font-bold text-neutral-800">R$ {(Number(item.unitPrice || item.unit_price || 0) * Number(item.quantity || 1)).toFixed(2)}</td>
                     </tr>
                   ))}
                   {/* Peças de Consumo Extra do Inventário */}
@@ -246,8 +246,8 @@ export default function PrintServiceOrderPage() {
                         <span className="ml-2.5 text-[8px] bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded font-black uppercase tracking-wider">Peça / Estoque</span>
                       </td>
                       <td className="p-3.5 text-center text-neutral-600 font-medium">{usage.quantityUsed}</td>
-                      <td className="p-3.5 text-right text-neutral-600 font-medium">R$ {(usage.product?.price || 0).toFixed(2)}</td>
-                      <td className="p-3.5 text-right pr-5 font-bold text-neutral-800">R$ {(usage.quantityUsed * (usage.product?.price || 0)).toFixed(2)}</td>
+                      <td className="p-3.5 text-right text-neutral-600 font-medium">R$ {Number(usage.product?.price || 0).toFixed(2)}</td>
+                      <td className="p-3.5 text-right pr-5 font-bold text-neutral-800">R$ {(Number(usage.quantityUsed || 0) * Number(usage.product?.price || 0)).toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -260,7 +260,7 @@ export default function PrintServiceOrderPage() {
             <div className="w-[280px] space-y-2 bg-neutral-50/40 p-4 rounded-2xl border border-neutral-100 text-xs">
               <div className="flex justify-between text-neutral-500 font-medium">
                 <span>Subtotal dos Itens:</span>
-                <span>R$ {(os.finalTotal || 0).toFixed(2)}</span>
+                <span>R$ {Number(os.finalTotal || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-neutral-500 font-medium">
                 <span>Descontos:</span>
@@ -268,7 +268,7 @@ export default function PrintServiceOrderPage() {
               </div>
               <div className="flex justify-between text-sm font-black border-t border-neutral-200/60 pt-2 text-neutral-800 font-title">
                 <span>Valor Total Pago:</span>
-                <span className="text-purple-600 text-sm">R$ {(os.finalTotal || 0).toFixed(2)}</span>
+                <span className="text-purple-600 text-sm">R$ {Number(os.finalTotal || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
