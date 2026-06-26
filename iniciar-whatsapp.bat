@@ -1,33 +1,41 @@
 @echo off
-title Inicializador Click Marido - WhatsApp Hub
-echo =======================================================
-echo     INICIALIZADOR DO SERVICO DE WHATSAPP LOCAL
-echo =======================================================
+cd /d "%~dp0"
+echo ========================================
+echo   Click Marido - WhatsApp Local Setup
+echo ========================================
 echo.
 
-docker --version >nul 2>&1
-if errorlevel 1 (
-    echo [ERRO] O Docker nao esta instalado ou nao esta no PATH do sistema.
-    echo Por favor, instale o Docker Desktop antes de prosseguir.
-    pause
-    exit /b
+rem === Variaveis de Ambiente Locais ===
+set DATABASE_URL=postgresql://postgres:postgres@localhost:5432/crm_db
+set JWT_SECRET=clickmarido_local_secret_2026
+set NEXT_PUBLIC_WHATSAPP_API_URL=http://localhost:8080
+set NEXT_PUBLIC_WHATSAPP_API_KEY=clickmarido_key
+
+rem === [1/3] Iniciando PostgreSQL, Redis e Evolution API (Docker) ===
+echo [1/3] Iniciando Docker (PostgreSQL, Redis, Evolution API)...
+docker-compose up -d
+echo Aguardando 5 segundos para o PostgreSQL inicializar...
+timeout /t 5 /nobreak >nul
+echo.
+
+rem === [2/3] Verificando banco de dados ===
+echo [2/3] Verificando banco de dados local...
+cd frontend
+npx prisma migrate deploy 2>nul
+if %errorlevel% neq 0 (
+    echo   Aplicando schema ao banco local...
+    npx prisma db push 2>nul
+    node prisma/seed-local-user.js 2>nul
 )
-
-echo [+] Iniciando Evolution API local com persistencia de conexao...
-docker compose up -d evolution-api
-
-if errorlevel 1 (
-    echo.
-    echo [AVISO] Falha ao rodar com docker compose. Tentando docker run alternativo...
-    docker volume create evolution_instances >nul 2>&1
-    docker run -d --name evolution-api -p 8080:8080 -e AUTHENTICATION_API_KEY=clickmarido_key -e TEMPLATE_ENABLED=true -v evolution_instances:/evolution/instances --restart unless-stopped evoapicloud/evolution-api:v1.8.2
-)
-
 echo.
-echo =======================================================
-echo  [SUCESSO] Servico de WhatsApp iniciado com sucesso!
-echo  Suas credenciais de login serao salvas no computador.
-echo  Pode fechar esta janela agora.
-echo =======================================================
+
+rem === [3/3] Iniciando Frontend ===
+echo [3/3] Iniciando Frontend (Next.js)...
 echo.
-pause
+echo ========================================
+echo   Acesse: http://localhost:3000/chat
+echo   Login: clickmarido@gmail.com
+echo    Senha: Millena@@2017@@
+echo ========================================
+echo.
+npm run dev

@@ -78,7 +78,9 @@ export default function Dashboard() {
     const fetchDashboard = async () => {
       try {
         const response = await api.get('/dashboard');
-        setStats(response.data.data);
+        if (response.data?.data) {
+          setStats(response.data.data);
+        }
       } catch (error) {
         console.error('Erro ao buscar dashboard:', error);
       } finally {
