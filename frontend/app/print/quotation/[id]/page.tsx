@@ -160,7 +160,11 @@ export default function PrintQuotationPage() {
   const customerPhone = quote.customer?.phone || 'Não informado';
   const customerEmail = quote.customer?.email || 'Não informado';
   const formattedCreatedAt = new Date(quote.createdAt).toLocaleDateString('pt-BR');
-  const validUntilDate = new Date(new Date(quote.createdAt).getTime() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'); // validade de 15 dias
+  
+  // Usar a data de validade que vem do banco se disponível, caso contrário calcular 15 dias
+  const validUntilDate = quote.validUntil 
+    ? new Date(quote.validUntil).toLocaleDateString('pt-BR')
+    : new Date(new Date(quote.createdAt).getTime() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR');
 
   const getQuotationItems = (itemsField: any): any[] => {
     try {
@@ -172,7 +176,35 @@ export default function PrintQuotationPage() {
     }
   };
 
+  const getNotesText = (notes: string) => {
+    if (!notes) return '';
+    const trimmed = notes.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(notes);
+        return parsed.notes || parsed.description_notes || '';
+      } catch {
+        return notes;
+      }
+    }
+    return notes;
+  };
+
   const items = getQuotationItems(quote.items);
+
+  // Calcular impostos e totais corretos
+  const totalTax = items.reduce((sum: number, item: any) => {
+    const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
+    const itemQty = Number(item.quantity || 1);
+    const sub = itemPrice * itemQty;
+    const isService = (item.product?.type || item.type || 'SERVICO') === 'SERVICO';
+    const taxRate = isService ? 0.05 : 0.12; // 5% ISS para serviço, 12% para peça
+    return sum + (sub * taxRate);
+  }, 0);
+
+  const discountAmount = Number(quote.discount || 0);
+  const totalAmount = Number(quote.total || 0);
+  const subtotalAmount = totalAmount + discountAmount;
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen py-8 print:py-0 print:bg-white transition-colors duration-200">
@@ -237,145 +269,180 @@ export default function PrintQuotationPage() {
       <div className="flex justify-center w-full">
         <div 
           id="pdf-content" 
-          className="w-[794px] min-h-[1123px] bg-[#ffffff] text-[#111827] p-[40px] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between"
+          className="relative w-[794px] min-h-[1123px] bg-[#ffffff] text-[#111827] p-[40px] shadow-xl print:shadow-none border border-neutral-200/60 print:border-none rounded-none flex flex-col justify-between overflow-hidden"
         >
-        <div>
-          {/* Header do Documento */}
-          <div className="flex justify-between items-start border-b border-neutral-100 pb-6 mb-8">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black font-title tracking-tight text-purple-600">CLICK MARIDO</span>
-                <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg font-bold uppercase tracking-wider">PREMIUM</span>
-              </div>
-              <p className="text-[11px] text-neutral-500 font-medium max-w-[280px]">
-                Soluções residenciais rápidas, profissionais e com garantia legal assegurada.
-              </p>
-            </div>
-            <div className="text-right space-y-1">
-              <h2 className="text-sm font-black font-title text-neutral-400 uppercase tracking-widest">Orçamento / Proposta</h2>
-              <div className="inline-block bg-purple-50 text-purple-700 px-3 py-1 rounded-xl text-lg font-black font-title">
-                #{quote.number || quote.id?.slice(0, 8).toUpperCase()}
-              </div>
-              <p className="text-[9px] text-neutral-400 font-medium">Gerado em {formattedCreatedAt}</p>
-            </div>
+          {/* Marca d'água no fundo com a logo */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.035] z-0">
+            <img src="/logo.jpg" className="w-[85%] max-w-[550px] object-contain" alt="Click Marido Marca d'água" />
           </div>
 
-          {/* Dados Principais (Grid 2 colunas) */}
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
-              <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Cliente</h3>
-              <p className="text-sm font-extrabold text-[#1f2937] leading-tight">{customerName}</p>
-              <div className="text-xs text-neutral-600 space-y-1">
-                <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Tel:</span> {customerPhone}</p>
-                <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">E-mail:</span> {customerEmail}</p>
-              </div>
-            </div>
-            <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
-              <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Condições Comerciais</h3>
-              <div className="text-xs text-neutral-600 space-y-1.5">
-                <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate} (15 dias)</span></p>
-                <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">Conforme agendamento</span></p>
-                <p className="flex items-center gap-1.5">
-                  <span className="font-semibold text-neutral-400">Pagamento Sugerido:</span> 
-                  <span className="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
-                    {quote.paymentTerms || 'A VISTA'}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Observações / Descrição Inicial */}
-          {quote.notes && (
-            <div className="mb-8">
-              <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title mb-2">Escopo dos Serviços / Observações</h3>
-              <div className="bg-[#fafafa] p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-[#374151] leading-relaxed font-medium italic">
-                "{quote.notes}"
-              </div>
-            </div>
-          )}
-
-          {/* Selo e Informação de Garantia Assegurada */}
-          <div className="flex items-center gap-4 bg-[#fdf4ff] border border-[#f3e8ff] p-4 rounded-2xl mb-8">
-            <div className="w-10 h-10 rounded-full bg-[#f3e8ff] flex items-center justify-center text-lg flex-shrink-0">🛡️</div>
+          <div className="relative z-10 flex flex-col justify-between h-full w-full">
             <div>
-              <h4 className="text-xs font-bold text-[#3b0764] uppercase tracking-wide font-title">Garantia Click Marido</h4>
-              <p className="text-[10px] text-[#6b21a8] leading-normal font-medium">
-                Todo serviço contratado conta com a nossa <strong>Garantia de 90 dias</strong>, garantindo sua total tranquilidade contra falhas de material ou mão de obra.
-              </p>
-            </div>
-          </div>
-
-          {/* Tabela de Serviços e Peças */}
-          <div className="mb-8">
-            <h3 className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider font-title mb-3">Serviços Propostos</h3>
-            <div className="border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-xs">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#6b21a8] text-[#ffffff] font-bold font-title">
-                    <th className="p-3.5 pl-5">Descrição do Item / Serviço</th>
-                    <th className="p-3.5 text-center w-20">Qtd</th>
-                    <th className="p-3.5 text-right w-36">Preço Unitário</th>
-                    <th className="p-3.5 text-right pr-5 w-36">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f3f4f6]">
-                  {items.map((item: any, idx: number) => (
-                    <tr key={`quote-item-${idx}`} className="bg-[#ffffff]">
-                      <td className="p-3.5 pl-5 font-semibold text-[#1f2937]">{item.description}</td>
-                      <td className="p-3.5 text-center text-[#4b5563] font-medium">{item.quantity}</td>
-                      <td className="p-3.5 text-right text-[#4b5563] font-medium">R$ {(item.price || 0).toFixed(2)}</td>
-                      <td className="p-3.5 text-right pr-5 font-bold text-[#1f2937]">R$ {((item.price || 0) * item.quantity).toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Resumo Financeiro */}
-          <div className="flex justify-end mb-8">
-            <div className="w-[280px] space-y-2 bg-[#f9fafb] p-4 rounded-2xl border border-[#f3f4f6] text-xs">
-              <div className="flex justify-between text-[#6b7280] font-medium">
-                <span>Subtotal Estimado:</span>
-                <span>R$ {(quote.total || 0).toFixed(2)}</span>
+              {/* Header do Documento */}
+              <div className="flex justify-between items-start border-b border-neutral-100 pb-6 mb-8">
+                <div className="flex items-center gap-4">
+                  <img src="/logo.jpg" className="h-16 w-auto object-contain" alt="Click Marido Logo" />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-black font-title tracking-tight text-[#0f172a]">CLICK MARIDO</span>
+                      <span className="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded-lg font-bold uppercase tracking-wider">PREMIUM</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500 font-medium max-w-[280px]">
+                      Soluções residenciais rápidas, profissionais e com garantia legal assegurada.
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right space-y-1">
+                  <h2 className="text-sm font-black font-title text-neutral-400 uppercase tracking-widest text-xs">Orçamento / Proposta</h2>
+                  <div className="inline-block bg-purple-50 text-purple-700 px-3 py-1 rounded-xl text-lg font-black font-title">
+                    #{quote.number || quote.id?.slice(0, 8).toUpperCase()}
+                  </div>
+                  <p className="text-[9px] text-neutral-400 font-medium">Gerado em {formattedCreatedAt}</p>
+                </div>
               </div>
-              <div className="flex justify-between text-[#6b7280] font-medium">
-                <span>Descontos:</span>
-                <span>R$ 0,00</span>
+
+              {/* Dados Principais (Grid 2 colunas) */}
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
+                  <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Cliente</h3>
+                  <p className="text-sm font-extrabold text-[#1f2937] leading-tight">{customerName}</p>
+                  <div className="text-xs text-neutral-600 space-y-1">
+                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Tel:</span> {customerPhone}</p>
+                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">E-mail:</span> {customerEmail}</p>
+                  </div>
+                </div>
+                <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
+                  <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Condições Comerciais</h3>
+                  <div className="text-xs text-neutral-600 space-y-1.5">
+                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate}</span></p>
+                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">Conforme agendamento</span></p>
+                    <p className="flex items-center gap-1.5">
+                      <span className="font-semibold text-neutral-400">Pagamento Sugerido:</span> 
+                      <span className="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
+                        {quote.paymentTerms || 'A VISTA'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-2 text-[#1f2937] font-title">
-                <span>Total Estimado:</span>
-                <span className="text-[#9333ea] text-sm">R$ {(quote.total || 0).toFixed(2)}</span>
+
+              {/* Observações / Descrição Inicial */}
+              {getNotesText(quote.notes) && (
+                <div className="mb-8">
+                  <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title mb-2">Escopo dos Serviços / Observações</h3>
+                  <div className="bg-[#fafafa] p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-[#374151] leading-relaxed font-medium whitespace-pre-wrap">
+                    {getNotesText(quote.notes)}
+                  </div>
+                </div>
+              )}
+
+              {/* Selo e Informação de Garantia Assegurada */}
+              <div className="flex items-center gap-4 bg-[#fdf4ff] border border-[#f3e8ff] p-4 rounded-2xl mb-8">
+                <div className="w-10 h-10 rounded-full bg-[#f3e8ff] flex items-center justify-center text-lg flex-shrink-0">🛡️</div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#3b0764] uppercase tracking-wide font-title">Garantia Click Marido</h4>
+                  <p className="text-[10px] text-[#6b21a8] leading-normal font-medium">
+                    Todo serviço contratado conta com a nossa <strong>Garantia de 90 dias</strong>, garantindo sua total tranquilidade contra falhas de material ou mão de obra.
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabela de Serviços e Peças */}
+              <div className="mb-8">
+                <h3 className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider font-title mb-3">Serviços Propostos</h3>
+                <div className="border border-[#e5e7eb] rounded-2xl overflow-hidden shadow-xs">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#6b21a8] text-[#ffffff] font-bold font-title text-[10px]">
+                        <th className="p-3 pl-4 w-[15%]">SKU</th>
+                        <th className="p-3 w-[25%]">Item</th>
+                        <th className="p-3 w-[25%]">Descrição</th>
+                        <th className="p-3 text-center w-[8%]">Qtd</th>
+                        <th className="p-3 text-right w-[12%]">Unitário</th>
+                        <th className="p-3 text-right w-[10%]">Impostos (Est.)</th>
+                        <th className="p-3 text-right pr-4 w-[15%]">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f3f4f6]">
+                      {items.map((item: any, idx: number) => {
+                        const itemName = item.product?.name || item.name || item.description || 'Item sem nome';
+                        const itemSku = item.product?.sku || item.sku || 'S/N';
+                        const itemDesc = item.product?.description || item.notes || '';
+                        const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
+                        const itemQty = Number(item.quantity || 1);
+                        const sub = itemPrice * itemQty;
+                        
+                        const isService = (item.product?.type || item.type || 'SERVICO') === 'SERVICO';
+                        const taxRate = isService ? 0.05 : 0.12; // 5% ISS para serviço, 12% para peça
+                        const taxAmount = sub * taxRate;
+
+                        return (
+                          <tr key={`quote-item-${idx}`} className="bg-[#ffffff] text-[11px]">
+                            <td className="p-3 pl-4 font-mono text-neutral-500 uppercase tracking-tight">{itemSku}</td>
+                            <td className="p-3 font-semibold text-[#1f2937]">{itemName}</td>
+                            <td className="p-3 text-neutral-500 font-medium whitespace-pre-wrap">{itemDesc}</td>
+                            <td className="p-3 text-center text-[#4b5563] font-medium">{itemQty}</td>
+                            <td className="p-3 text-right text-[#4b5563] font-medium">R$ {itemPrice.toFixed(2)}</td>
+                            <td className="p-3 text-right text-neutral-500 font-medium">
+                              R$ {taxAmount.toFixed(2)} <span className="text-[9px] text-neutral-400 block">({(taxRate * 100)}%)</span>
+                            </td>
+                            <td className="p-3 text-right pr-4 font-bold text-[#1f2937]">R$ {sub.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Resumo Financeiro */}
+              <div className="flex justify-end mb-8">
+                <div className="w-[320px] space-y-2 bg-[#f9fafb] p-4 rounded-2xl border border-[#f3f4f6] text-xs">
+                  <div className="flex justify-between text-[#6b7280] font-medium">
+                    <span>Subtotal Estimado:</span>
+                    <span>R$ {subtotalAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[#6b7280] font-medium">
+                    <span>Descontos:</span>
+                    <span>R$ {discountAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[#9ca3af] text-[10px] font-medium">
+                    <span>Impostos Estimados (Lei 12.741/12):</span>
+                    <span>R$ {totalTax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-2 text-[#1f2937] font-title">
+                    <span>Total Estimado:</span>
+                    <span className="text-[#9333ea] text-sm">R$ {totalAmount.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Rodapé da Proposta */}
-        <div>
-          {/* Termos e Garantias */}
-          <div className="bg-[#f9fafb] p-4.5 rounded-2xl border border-[#f3f4f6] text-[10px] text-[#6b7280] leading-relaxed mb-8 font-medium">
-            <h4 className="font-bold text-[#374151] uppercase tracking-wider mb-1 font-title">Garantia e Termos de Contratação</h4>
-            1. Esta proposta comercial é válida por 15 dias a contar da data de emissão.
-            <br />
-            2. Todos os serviços executados possuem a garantia estabelecida de 90 dias a contar da conclusão, cobrindo exclusivamente vícios ou defeitos do serviço prestado (CDC art. 26).
-            <br />
-            3. A aprovação do orçamento pode ser realizada digitalmente pelo link enviado ao cliente ou mediante assinatura deste termo.
-          </div>
+            {/* Rodapé da Proposta */}
+            <div>
+              {/* Termos e Garantias */}
+              <div className="bg-[#f9fafb] p-4.5 rounded-2xl border border-[#f3f4f6] text-[10px] text-[#6b7280] leading-relaxed mb-8 font-medium">
+                <h4 className="font-bold text-[#374151] uppercase tracking-wider mb-1 font-title">Garantia e Termos de Contratação</h4>
+                1. Esta proposta comercial é válida por 15 dias a contar da data de emissão.
+                <br />
+                2. Todos os serviços executados possuem a garantia estabelecida de 90 dias a contar da conclusão, cobrindo exclusivamente vícios ou defeitos do serviço prestado (CDC art. 26).
+                <br />
+                3. A aprovação do orçamento pode ser realizada digitalmente pelo link enviado ao cliente ou mediante assinatura deste termo.
+              </div>
 
-          {/* Assinatura de Aceite */}
-          <div className="border-t border-dashed border-[#e5e7eb] pt-8 flex justify-between items-center text-center">
-            <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
-              Assinatura do Técnico / Emissor
-            </div>
-            <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
-              De Acordo do Cliente
+              {/* Assinatura de Aceite */}
+              <div className="border-t border-dashed border-[#e5e7eb] pt-8 flex justify-between items-center text-center">
+                <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
+                  Assinatura do Técnico / Emissor
+                </div>
+                <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
+                  De Acordo do Cliente
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }

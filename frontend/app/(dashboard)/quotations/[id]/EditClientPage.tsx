@@ -26,6 +26,7 @@ export default function EditClientPage() {
       items: [{ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' as const }],
       discount: 0,
       valid_until: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
+      notes: '',
     }
   });
 
@@ -72,6 +73,7 @@ export default function EditClientPage() {
           valid_until: data.validUntil
             ? new Date(data.validUntil).toISOString().split('T')[0]
             : new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
+          notes: data.notes || '',
         });
       } catch (e) {
         setError('Erro ao carregar orçamento');
@@ -109,7 +111,7 @@ export default function EditClientPage() {
             type: item.type || 'SERVICO',
           })),
           total,
-          notes: data.discount ? `Desconto: R$ ${data.discount}` : '',
+          notes: data.notes || '',
         }),
       });
       if (!res.ok) throw new Error('Erro ao salvar');
@@ -155,6 +157,16 @@ export default function EditClientPage() {
           </div>
 
           <ItemsBuilder />
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Observações / Escopo da Proposta</label>
+            <textarea 
+              rows={4} 
+              {...methods.register('notes')} 
+              placeholder="Descreva aqui observações, prazos especiais, termos da garantia ou detalhes do escopo..." 
+              className="w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
 
           <div className="pt-6 flex justify-end">
             <button type="submit" disabled={saving} className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium disabled:opacity-50">

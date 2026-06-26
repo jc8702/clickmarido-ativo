@@ -1,11 +1,22 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Fase 3 Concluída (Integração Backend da UI do Chat) + Correções Críticas na Lógica de Negócio do Chat resolvidas + Fluxo "Aprovar → WhatsApp" restaurado.
+- **Status Atual:** Melhorias no PDF da Proposta e Orçamentos Concluídas. Exibição completa de SKU, itens, descrição, impostos estimados por item, soma de impostos aproximados, logo no cabeçalho, logo em marca d'água de fundo e campo de Observações/Escopo funcional na criação/edição.
 - **Objetivo Central:** Migrar o Módulo WhatsApp para a nova arquitetura sem perder funcionalidades antigas como geração de orçamento integrado e seleção de contatos.
-- **Última Atualização:** 25/06/2026 - 00:00
+- **Última Atualização:** 26/06/2026 - 16:30
 
 ## Histórico de Alterações
+
+### 26/06/2026 - 16:30
+- **Melhorias no PDF da Proposta e Suporte a Observações e Logos:**
+  - Adicionado o campo Observações (`notes`) na validação do schema e nos formulários de criação e edição de orçamentos.
+  - Criada a pasta `frontend/public` e copiado o arquivo de logo oficial (`logo.jpg`).
+  - Implementada a renderização da logo oficial no cabeçalho do PDF da proposta.
+  - Implementada a marca d'água estilizada no fundo do PDF da proposta com opacidade de `0.035`.
+  - Corrigido o mapeamento de itens no PDF para exibir SKU, título correto do item, descrição detalhada e preço/subtotal corretos (não zerados).
+  - Adicionado o cálculo de impostos estimados por item (5% ISS para serviço e 12% ICMS para peças) e exibição do total de impostos estimados no resumo (Lei 12.741/12).
+  - Arquivos modificados: `frontend/lib/validations/quotation.schema.ts`, `frontend/app/(dashboard)/quotations/new/ClientPage.tsx`, `frontend/app/(dashboard)/quotations/[id]/EditClientPage.tsx`, `frontend/app/print/quotation/[id]/page.tsx`
+  - Arquivos criados: `frontend/public/logo.jpg`
 
 ### 25/06/2026 - 00:00
 - **Restauração do Fluxo "Aprovar Orçamento → Enviar WhatsApp":**
