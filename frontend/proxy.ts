@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  const publicRoutes = ['/login', '/api/auth/login', '/api/health', '/api/admin/migrate'];
+  const publicRoutes = ['/login', '/api/auth/login', '/api/health'];
 
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(route)
