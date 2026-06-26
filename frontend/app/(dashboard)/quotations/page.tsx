@@ -358,7 +358,7 @@ export default function QuotationsPage() {
                             {quotation.createdAt ? new Date(quotation.createdAt).toLocaleDateString('pt-BR') : ''}
                           </span>
                           <span className="text-sm font-extrabold text-neutral-800 dark:text-neutral-200">
-                            R$ {quotation.total?.toFixed(2) || '0,00'}
+                            R$ {Number(quotation.total || 0).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -477,15 +477,20 @@ export default function QuotationsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {getQuotationItems(selectedQuotation.items).map((item, idx) => (
-                        <tr key={idx} className="border-b border-neutral-50 dark:border-neutral-700 last:border-0">
-                          <td className="p-3 font-medium text-neutral-800 dark:text-neutral-200">{item.description}</td>
-                          <td className="p-3 text-center text-neutral-600 dark:text-neutral-400">{item.quantity}</td>
-                          <td className="p-3 text-right font-semibold text-neutral-900 dark:text-neutral-100">
-                            R$ {(item.price * item.quantity).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
+                      {getQuotationItems(selectedQuotation.items).map((item: any, idx) => {
+                        const itemName = item.product?.name || item.name || item.description || 'Item sem nome';
+                        const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
+                        const itemQty = Number(item.quantity || 1);
+                        return (
+                          <tr key={idx} className="border-b border-neutral-50 dark:border-neutral-700 last:border-0">
+                            <td className="p-3 font-medium text-neutral-800 dark:text-neutral-200">{itemName}</td>
+                            <td className="p-3 text-center text-neutral-600 dark:text-neutral-400">{itemQty}</td>
+                            <td className="p-3 text-right font-semibold text-neutral-900 dark:text-neutral-100">
+                              R$ {(itemPrice * itemQty).toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -505,7 +510,7 @@ export default function QuotationsPage() {
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">Valor Total</span>
                 <span className="text-2xl font-extrabold text-neutral-900 dark:text-neutral-100">
-                  R$ {selectedQuotation.total?.toFixed(2) || '0,00'}
+                  R$ {Number(selectedQuotation.total || 0).toFixed(2)}
                 </span>
               </div>
 

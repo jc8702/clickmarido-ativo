@@ -81,7 +81,7 @@ function QuotationContent() {
                   <tr key={idx}>
                     <td className="p-3 text-neutral-800 dark:text-neutral-200">{i.name}</td>
                     <td className="p-3 text-center text-neutral-600 dark:text-neutral-400">{i.quantity}</td>
-                    <td className="p-3 text-right text-neutral-800 dark:text-neutral-200">R$ {i.unit_price.toFixed(2)}</td>
+                    <td className="p-3 text-right text-neutral-800 dark:text-neutral-200">R$ {Number(i.unit_price || i.unitPrice || 0).toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -89,9 +89,9 @@ function QuotationContent() {
           </div>
 
           <div className="flex flex-col items-end gap-1">
-            <p className="text-neutral-600 dark:text-neutral-400">Subtotal: R$ {data.subtotal.toFixed(2)}</p>
-            {data.discount > 0 && <p className="text-red-500 dark:text-red-400">Desconto: - R$ {data.discount.toFixed(2)}</p>}
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">Total: R$ {data.total.toFixed(2)}</p>
+            <p className="text-neutral-600 dark:text-neutral-400">Subtotal: R$ {Number(data.subtotal || 0).toFixed(2)}</p>
+            {data.discount > 0 && <p className="text-red-500 dark:text-red-400">Desconto: - R$ {Number(data.discount || 0).toFixed(2)}</p>}
+            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">Total: R$ {Number(data.total || 0).toFixed(2)}</p>
           </div>
 
           <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6">
