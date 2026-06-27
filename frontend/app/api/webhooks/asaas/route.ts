@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
+import { logFinancialTransaction } from '@/lib/finance-sync';
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
@@ -76,6 +77,13 @@ export async function POST(request: NextRequest): Promise<Response> {
         newValue: { status: 'pago' },
         createdBy: 'system_webhook_asaas',
       },
+    });
+
+    await logFinancialTransaction({
+      type: 'PAYMENT_RECEIVED',
+      paymentId: payment.id,
+      credit: Number(updated.amount),
+      description: `Pagamento recebido via webhook Asaas (${updated.method || 'pix'})`,
     });
 
     // 7. Gerar Invoice se não existir (idempotente)

@@ -58,10 +58,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // 5. Técnicos disponíveis ativos
-    const availableTechnicians = await prisma.technician.count({
-      where: { active: true }
-    });
+    // 5. [Removido] Técnicos disponíveis ativos
 
     // 6. Taxa de Conversão de Orçamentos ((Aprovados / Total) * 100)
     const totalQuotations = await prisma.quotation.count();
@@ -153,22 +150,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // 10. Performance do Técnico (receita de OS concluídas agrupadas por técnico)
-    const completedOrders = await prisma.serviceOrder.findMany({
-      where: { status: 'concluida' },
-      include: { technician: true }
-    });
-
-    const techRevenue: Record<string, number> = {};
-    completedOrders.forEach(order => {
-      const techName = order.technician?.name || 'Sem Técnico';
-      techRevenue[techName] = (techRevenue[techName] || 0) + Number(order.finalTotal);
-    });
-
-    const technicianPerformance = Object.entries(techRevenue).map(([name, valor]) => ({
-      name,
-      valor: Number(valor.toFixed(2))
-    }));
+    // 10. [Removido] Performance do Técnico
 
     // 11. Distribuição de Ordens por Status
     const ordersStatusDb = await prisma.serviceOrder.groupBy({
@@ -189,12 +171,10 @@ export async function GET(request: NextRequest) {
         ordersInProgress,
         conversionRate,
         customersTotal,
-        availableTechnicians,
         lastOrders,
         topServices,
         revenueHistory,
         servicesDistribution,
-        technicianPerformance,
         ordersStatusDistribution
       },
     });

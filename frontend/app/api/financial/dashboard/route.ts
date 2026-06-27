@@ -32,31 +32,23 @@ export async function GET(request: NextRequest) {
     // Buscar dados em paralelo
     const [
       totalInvoices,
-      paidInvoices,
       pendingInvoices,
       overdueInvoices,
-      todayPayments,
-      todayExpenses,
       recentPayments,
       recentExpenses,
-      allPaidExpenses,
       pendingExpensesSum,
       overdueExpenses,
       pendingFutureExpenses,
       expensesByCategory,
-      expensesByCostCenter
+      expensesByCostCenter,
+      // Novas consultas via FinancialTransaction (Ledger)
+      ledgerTotals,
+      todayLedger
     ] = await Promise.all([
       // Total de invoices (valor total)
       prisma.invoice.aggregate({
         where: { status: { not: 'cancelada' } },
         _sum: { totalAmount: true },
-        _count: true,
-      }),
-
-      // Invoices pagas (pagamentos confirmados)
-      prisma.payment.aggregate({
-        where: { status: 'confirmado' },
-        _sum: { amount: true },
         _count: true,
       }),
 
@@ -76,26 +68,6 @@ export async function GET(request: NextRequest) {
           dueDate: { lt: now },
         },
         select: { totalAmount: true, dueDate: true },
-      }),
-
-      // Pagamentos de hoje
-      prisma.payment.aggregate({
-        where: {
-          status: 'confirmado',
-          paidAt: { gte: todayStart, lt: todayEnd },
-        },
-        _sum: { amount: true },
-        _count: true,
-      }),
-
-      // Despesas de hoje
-      prisma.expense.aggregate({
-        where: {
-          status: 'paga',
-          paidAt: { gte: todayStart, lt: todayEnd },
-        },
-        _sum: { amount: true },
-        _count: true,
       }),
 
       // Últimos pagamentos
@@ -124,12 +96,6 @@ export async function GET(request: NextRequest) {
           category: true,
           description: true,
         },
-      }),
-
-      // Soma de todas as despesas pagas para o saldo real
-      prisma.expense.aggregate({
-        where: { status: 'paga' },
-        _sum: { amount: true }
       }),
 
       // Soma das despesas pendentes (a pagar)
@@ -168,6 +134,20 @@ export async function GET(request: NextRequest) {
         by: ['costCenter'],
         where: { status: 'paga' },
         _sum: { amount: true }
+      }),
+
+      // Ledger: Total de Créditos e Débitos na conta
+      prisma.financialTransaction.aggregate({
+        _sum: { credit: true, debit: true }
+      }),
+
+      // Ledger: Movimentação de hoje
+      prisma.financialTransaction.aggregate({
+        where: {
+          transactionDate: { gte: todayStart, lt: todayEnd }
+        },
+        _sum: { credit: true, debit: true },
+        _count: true
       })
     ]);
 
@@ -181,8 +161,8 @@ export async function GET(request: NextRequest) {
     const receivablePending = Math.max(0, totalReceivable - totalOverdue);
     const payablePending = Math.max(0, totalPayable - totalPayableOverdue);
 
-    // Saldo real: pagamentos confirmados - despesas pagas
-    const currentBalance = Number(paidInvoices._sum.amount || 0) - Number(allPaidExpenses._sum.amount || 0);
+    // Saldo real: Lê diretamente do Livro-Caixa (FinancialTransaction)
+    const currentBalance = Number(ledgerTotals._sum.credit || 0) - Number(ledgerTotals._sum.debit || 0);
 
     // Saldo projetado: saldo real - despesas pendentes (compromissos a pagar)
     const projectedBalance = currentBalance - totalPayable;
@@ -230,8 +210,8 @@ export async function GET(request: NextRequest) {
         forecast90,
       },
       today: {
-        inflow: todayPayments._sum.amount || 0,
-        outflow: todayExpenses._sum.amount || 0,
+        inflow: todayLedger._sum.credit || 0,
+        outflow: todayLedger._sum.debit || 0,
       },
       receivable: {
         overdue: totalOverdue,
@@ -245,9 +225,9 @@ export async function GET(request: NextRequest) {
       },
       counts: {
         totalInvoices: totalInvoices._count,
-        confirmedPayments: paidInvoices._count,
-        todayPayments: todayPayments._count,
-        todayExpenses: todayExpenses._count,
+        confirmedPayments: 0, // Removed to avoid extra queries, or can be fetched if needed
+        todayPayments: todayLedger._count,
+        todayExpenses: 0, // Replaced by todayLedger count
       },
       recentActivity: {
         payments: recentPayments,

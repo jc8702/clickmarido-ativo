@@ -141,6 +141,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     });
 
+    // Se a despesa foi cancelada, remover qualquer débito fantasma gerado no Livro-Caixa
+    if (status === 'cancelada') {
+      await prisma.financialTransaction.deleteMany({
+        where: { expenseId: id }
+      });
+    }
+
     return NextResponse.json(expense);
   } catch (error) {
     console.error('PUT /api/expenses/[id] error:', error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
+import { logFinancialTransaction } from '@/lib/finance-sync';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -126,6 +127,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         quotation: { select: { id: true, total: true } },
       },
     });
+
+    if (status === 'emitida' && existingInvoice.status === 'rascunho') {
+      await logFinancialTransaction({
+        type: 'INVOICE_ISSUED',
+        invoiceId: invoice.id,
+        description: `Fatura #${invoice.invoiceNumber} emitida para ${invoice.customer.name}`,
+      });
+    }
 
     return NextResponse.json(invoice);
   } catch (error) {

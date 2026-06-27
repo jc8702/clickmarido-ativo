@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
+import { logFinancialTransaction } from '@/lib/finance-sync';
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -83,6 +84,29 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
+    // P2: Bloqueio contra múltiplos recebimentos que excedam o valor total
+    if (quotationId) {
+      const quotation = await prisma.quotation.findUnique({
+        where: { id: quotationId },
+        include: { payments: true }
+      });
+      if (!quotation) {
+        return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
+      }
+      
+      const paidSoFar = quotation.payments
+        .filter(p => p.status === 'confirmado')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+        
+      const balanceDue = Number(quotation.total) - paidSoFar;
+      if (numericAmount > balanceDue && balanceDue >= 0) {
+        return NextResponse.json(
+          { error: `Valor excede o saldo devedor. Saldo atual: R$ ${balanceDue.toFixed(2)}` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Normalizar status: 'aprovado' do front vira 'confirmado' no banco
     const normalizedStatus = status === 'aprovado' ? 'confirmado' : (status || 'pendente');
 
@@ -114,6 +138,16 @@ export async function POST(request: NextRequest): Promise<Response> {
         method: payment.method,
       },
     });
+
+    if (normalizedStatus === 'confirmado') {
+      await logFinancialTransaction({
+        type: 'PAYMENT_RECEIVED',
+        paymentId: payment.id,
+        credit: Number(payment.amount),
+        description: `Pagamento recebido via ${payment.method}`,
+        userId: '',
+      });
+    }
 
     return NextResponse.json(payment, { status: 201 });
 

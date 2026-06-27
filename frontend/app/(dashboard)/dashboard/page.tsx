@@ -47,10 +47,6 @@ interface ServiceDistributionItem {
   value: number;
 }
 
-interface TechnicianPerformanceItem {
-  name: string;
-  valor: number;
-}
 
 interface OrderStatusDistributionItem {
   status: string;
@@ -71,7 +67,6 @@ export default function Dashboard() {
     topServices: [] as Service[],
     revenueHistory: [] as RevenueHistoryItem[],
     servicesDistribution: [] as ServiceDistributionItem[],
-    technicianPerformance: [] as TechnicianPerformanceItem[],
     ordersStatusDistribution: [] as OrderStatusDistributionItem[],
   });
   const [loading, setLoading] = useState(true);
@@ -344,9 +339,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Mais Gráficos: Categorias e Técnicos */}
+        {/* Gráfico Adicional: Categorias de Serviços */}
         {!loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+          <div className="mb-10">
             {/* Categorias de Serviços (Pizza) */}
             <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
               <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Receita por Categoria</h3>
@@ -359,23 +354,6 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Valor']} />
                     <Bar dataKey="value" fill="#6347F9" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            {/* Produtividade de Técnicos (Barras Horizontais) */}
-            <Card className="border border-neutral-150 dark:border-neutral-700 shadow-sm p-6 bg-white dark:bg-neutral-800">
-              <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-200 mb-1">Performance de Técnicos</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-6">Faturamento gerado por cada técnico com ordens concluídas</p>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.technicianPerformance} layout="vertical">
-                    <XAxis type="number" stroke="#888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
-                    <YAxis dataKey="name" type="category" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Total OS']} />
-                    <Bar dataKey="valor" fill="#1FAA63" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

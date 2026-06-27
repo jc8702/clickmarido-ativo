@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
+import { logFinancialTransaction } from '@/lib/finance-sync';
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -130,6 +131,15 @@ export async function POST(request: NextRequest) {
         vendor: { select: { id: true, name: true } },
       },
     });
+
+    if (expense.status === 'paga' || expense.status === 'pendente') {
+      await logFinancialTransaction({
+        type: 'EXPENSE_RECORDED',
+        expenseId: expense.id,
+        debit: Number(expense.amount),
+        description: `Despesa registrada: ${expense.description}`,
+      });
+    }
 
     return NextResponse.json(expense, { status: 201 });
   } catch (error: any) {

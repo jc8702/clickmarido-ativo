@@ -12,19 +12,11 @@ interface ReportData {
     profitMarginPercent: number;
     materialsCost: number;
   };
-  technicianPerformance: Array<{
-    id: string;
-    name: string;
-    osCount: number;
-    revenue: number;
-    commission: number;
-  }>;
   osMargins: Array<{
     id: string;
     number: string;
     total: number;
     materialsCost: number;
-    commission: number;
     netProfit: number;
     profitMarginPercent: number;
   }>;
@@ -221,7 +213,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="mb-6">
               {/* Cash Flow Evolution */}
               <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-100">Fluxo de Caixa Diário</h3>
@@ -249,24 +241,6 @@ export default function ReportsPage() {
                   </ResponsiveContainer>
                 </div>
               </div>
-
-              {/* Technician Performance Chart */}
-              <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
-                <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-100">Desempenho e Comissão de Técnicos</h3>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.technicianPerformance}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
-                      <XAxis dataKey="name" className="text-xs text-neutral-500" />
-                      <YAxis className="text-xs text-neutral-500" />
-                      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                      <Legend />
-                      <Bar dataKey="revenue" name="Faturamento Realizado" fill="#6347F9" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="commission" name="Comissão Calculada" fill="#FB8500" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
             </div>
 
             {/* OS Margins Table */}
@@ -279,7 +253,6 @@ export default function ReportsPage() {
                       <th className="py-3 px-4">Número OS</th>
                       <th className="py-3 px-4">Faturamento</th>
                       <th className="py-3 px-4">Materiais Usados</th>
-                      <th className="py-3 px-4">Comissão Técnico</th>
                       <th className="py-3 px-4">Lucro Líquido</th>
                       <th className="py-3 px-4 text-right">Margem OS</th>
                     </tr>
@@ -287,7 +260,7 @@ export default function ReportsPage() {
                   <tbody>
                     {data.osMargins.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-center py-6 text-neutral-400">Nenhuma Ordem de Serviço concluída no período.</td>
+                        <td colSpan={5} className="text-center py-6 text-neutral-400">Nenhuma Ordem de Serviço concluída no período.</td>
                       </tr>
                     ) : (
                       data.osMargins.map(os => (
@@ -295,7 +268,6 @@ export default function ReportsPage() {
                           <td className="py-3 px-4 font-semibold text-primary-600 dark:text-primary-400">{os.number}</td>
                           <td className="py-3 px-4">{formatCurrency(os.total)}</td>
                           <td className="py-3 px-4 text-red-500">{formatCurrency(os.materialsCost)}</td>
-                          <td className="py-3 px-4 text-orange-500">{formatCurrency(os.commission)}</td>
                           <td className="py-3 px-4 font-semibold text-green-600 dark:text-green-400">{formatCurrency(os.netProfit)}</td>
                           <td className="py-3 px-4 text-right font-bold">
                             <span className={`px-2 py-0.5 rounded ${os.profitMarginPercent >= 50 ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300' : 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'}`}>
