@@ -52,7 +52,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// DELETE /api/payments/[id] - Excluir pagamento
+// DELETE /api/payments/[id] - Excluir pagamento e dados vinculados
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   try {
@@ -62,29 +62,48 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const existingPayment = await prisma.payment.findUnique({
       where: { id },
+      include: { invoice: true, quotation: true },
     });
 
     if (!existingPayment) {
       return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
     }
 
-    // Verificar se há transações financeiras vinculadas
-    const linkedTransactions = await prisma.financialTransaction.findMany({
-      where: { paymentId: id },
+    // Executar exclusão em transação para manter consistência
+    await prisma.$transaction(async (tx) => {
+      // 1. Excluir transações financeiras vinculadas
+      await tx.financialTransaction.deleteMany({
+        where: { paymentId: id },
+      });
+
+      // 2. Excluir logs de auditoria vinculados
+      await tx.auditLog.deleteMany({
+        where: { entityId: id, entity: 'payment' },
+      });
+
+      // 3. Reverter status da fatura (paga → emitida) se aplicável
+      if (existingPayment.invoiceId && existingPayment.invoice?.status === 'paga') {
+        await tx.invoice.update({
+          where: { id: existingPayment.invoiceId },
+          data: { status: 'emitida' },
+        });
+      }
+
+      // 4. Reverter status da proposta (aceito → enviada) se aplicável
+      if (existingPayment.quotationId && existingPayment.quotation?.status === 'aceito') {
+        await tx.quotation.update({
+          where: { id: existingPayment.quotationId },
+          data: { status: 'enviada' },
+        });
+      }
+
+      // 5. Excluir o pagamento
+      await tx.payment.delete({
+        where: { id },
+      });
     });
 
-    if (linkedTransactions.length > 0) {
-      return NextResponse.json(
-        { error: 'Pagamento possui transações financeiras vinculadas. Não é possível excluir.' },
-        { status: 400 }
-      );
-    }
-
-    await prisma.payment.delete({
-      where: { id },
-    });
-
-    // Registrar log de auditoria
+    // Registrar log de auditoria (após exclusão bem-sucedida)
     const { logAudit } = await import('@/lib/audit');
     await logAudit({
       request,
@@ -96,6 +115,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         customerId: existingPayment.customerId,
         amount: existingPayment.amount,
         status: existingPayment.status,
+        invoiceId: existingPayment.invoiceId,
+        quotationId: existingPayment.quotationId,
       },
     });
 
