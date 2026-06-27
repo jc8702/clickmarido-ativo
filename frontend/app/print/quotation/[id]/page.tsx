@@ -327,14 +327,14 @@ export default function PrintQuotationPage() {
                 <div className="bg-[#fafafa] p-5 rounded-2xl border border-neutral-100 space-y-2.5">
                   <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title">Condições Comerciais</h3>
                   <div className="text-xs text-neutral-600 space-y-1.5">
-                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate}</span></p>
-                    <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">{quote.executionDeadline || 'Conforme agendamento'}</span></p>
-                    <p className="flex items-center gap-1.5">
-                      <span className="font-semibold text-neutral-400 whitespace-nowrap">Formas de Pagamento Aceito:</span> 
-                      <span className="ml-1.5 text-neutral-700 font-semibold whitespace-nowrap">
+                    <p className="flex items-start gap-1.5"><span className="font-semibold text-neutral-400 whitespace-nowrap">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate}</span></p>
+                    <p className="flex items-start gap-1.5"><span className="font-semibold text-neutral-400 whitespace-nowrap">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">{quote.executionDeadline || 'Conforme agendamento'}</span></p>
+                    <div className="flex flex-col gap-0.5 mt-1">
+                      <span className="font-semibold text-neutral-400">Formas de Pagamento Aceito:</span> 
+                      <span className="text-neutral-700 font-semibold leading-snug break-words">
                         {quote.paymentMethods || 'PIX / Dinheiro / Cartão de Crédito'}
                       </span>
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
