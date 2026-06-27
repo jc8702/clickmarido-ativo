@@ -5,6 +5,7 @@ import api from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/Card';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
+import { RichTextEditor } from './RichTextEditor';
 
 interface QuotationFormProps {
   onSuccess?: () => void;
@@ -192,12 +193,10 @@ export default function QuotationForm({ onSuccess, onCancel }: QuotationFormProp
       {/* Observações / Descrição Geral */}
       <div>
         <label className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200 mb-2 font-medium">Observações do Serviço</label>
-        <textarea
-          placeholder="Detalhes adicionais, recomendações ou observações gerais..."
-          className="w-full px-4 py-3 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 dark:focus:ring-primary-900/30 focus:outline-none transition-all duration-200 min-h-[96px] text-sm"
-          rows={3}
+        <RichTextEditor
           value={formData.description_notes}
-          onChange={(e) => setFormData({ ...formData, description_notes: e.target.value })}
+          onChange={(value) => setFormData({ ...formData, description_notes: value })}
+          placeholder="Detalhes adicionais, recomendações ou observações gerais..."
         />
       </div>
 

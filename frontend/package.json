@@ -30,6 +30,7 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-hook-form": "^7.80.0",
     "react-hot-toast": "^2.6.0",
+    "react-quill": "^2.0.0",
     "recharts": "^2.15.0",
     "swr": "^2.4.2",
     "uuid": "^14.0.0",

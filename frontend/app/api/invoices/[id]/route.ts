@@ -74,6 +74,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invoice não encontrada' }, { status: 404 });
     }
 
+    // Validar transições de status
+    if (status && status !== existingInvoice.status) {
+      const validTransitions: Record<string, string[]> = {
+        rascunho: ['emitida', 'cancelada'],
+        emitida: ['paga', 'cancelada'],
+        paga: [],
+        cancelada: [],
+      };
+
+      const allowed = validTransitions[existingInvoice.status] || [];
+      if (!allowed.includes(status)) {
+        return NextResponse.json(
+          { error: `Transição de "${existingInvoice.status}" para "${status}" não é permitida` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Só permitir editar campos financeiros se estiver em rascunho
     if (existingInvoice.status !== 'rascunho') {
       // Para status emitida/paga/cancelada, só permitir alterar description e notes

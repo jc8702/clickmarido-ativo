@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../../../lib/api';
-import { Card, CardContent } from '@/components/Card';
+import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
-import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
 import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+import { formatCurrency } from '@/lib/format';
 
 interface Invoice {
   id: string;
@@ -49,8 +49,6 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function InvoicesPage() {
-  const { user, logout } = useAuth();
-  const authUser = user as { name?: string; email: string; role: string } | null;
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +68,12 @@ export default function InvoicesPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [detailData, setDetailData] = useState<Invoice | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Issue (emitir) confirmation
+  const [isIssueOpen, setIsIssueOpen] = useState(false);
+  const [issueLoading, setIssueLoading] = useState(false);
+  const [issueError, setIssueError] = useState('');
 
   // Pay modal
   const [isPayOpen, setIsPayOpen] = useState(false);
@@ -94,10 +98,11 @@ export default function InvoicesPage() {
   const [cancelError, setCancelError] = useState('');
 
   useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
-  useEscapeToClose(selectedInvoice !== null && !isPayOpen && !isEditOpen && !isCancelOpen, () => { setSelectedInvoice(null); setDetailData(null); });
+  useEscapeToClose(selectedInvoice !== null && !isPayOpen && !isEditOpen && !isCancelOpen && !isIssueOpen, () => { setSelectedInvoice(null); setDetailData(null); });
   useEscapeToClose(isPayOpen, () => setIsPayOpen(false));
   useEscapeToClose(isEditOpen, () => setIsEditOpen(false));
   useEscapeToClose(isCancelOpen, () => setIsCancelOpen(false));
+  useEscapeToClose(isIssueOpen, () => setIsIssueOpen(false));
 
   const fetchInvoices = async (p = page) => {
     setLoading(true);
@@ -128,10 +133,13 @@ export default function InvoicesPage() {
 
   const fetchInvoiceDetail = async (id: string) => {
     setLoadingDetail(true);
+    setDetailError(null);
     try {
       const res = await api.get(`/invoices/${id}`);
       setDetailData(res.data);
-    } catch {
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao carregar detalhes da fatura.';
+      setDetailError(msg);
       setDetailData(selectedInvoice);
     } finally {
       setLoadingDetail(false);
@@ -170,6 +178,24 @@ export default function InvoicesPage() {
       setCreateError(msg);
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const handleIssueInvoice = async () => {
+    if (!selectedInvoice) return;
+    setIssueLoading(true);
+    setIssueError('');
+    try {
+      await api.put(`/invoices/${selectedInvoice.id}`, { status: 'emitida' });
+      setIsIssueOpen(false);
+      setSelectedInvoice(null);
+      setDetailData(null);
+      fetchInvoices();
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao emitir fatura.';
+      setIssueError(msg);
+    } finally {
+      setIssueLoading(false);
     }
   };
 
@@ -250,13 +276,17 @@ export default function InvoicesPage() {
     setIsEditOpen(true);
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  };
-
   const canEdit = detailData?.status === 'rascunho';
+  const canIssue = detailData?.status === 'rascunho';
   const canCancel = detailData && detailData.status !== 'paga' && detailData.status !== 'cancelada';
   const canPay = detailData && detailData.status !== 'paga' && detailData.status !== 'cancelada';
+
+  const verifyTotalConsistency = (inv: Invoice): boolean => {
+    const expectedTax = Number(inv.subtotal) * ((inv.issRate ?? 5) / 100);
+    const taxDiff = Math.abs(Number(inv.taxAmount) - expectedTax);
+    const totalDiff = Math.abs(Number(inv.totalAmount) - (Number(inv.subtotal) + Number(inv.taxAmount)));
+    return taxDiff < 0.01 && totalDiff < 0.01;
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
@@ -349,13 +379,13 @@ export default function InvoicesPage() {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nova Fatura">
         <form onSubmit={handleCreateInvoice} className="space-y-4">
           {createError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {createError}
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Orçamento
+            <label htmlFor="invoice-quotation" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Orçamento *
             </label>
             {loadingQuotations ? (
               <div className="h-10 bg-neutral-100 dark:bg-neutral-700 animate-pulse rounded-xl" />
@@ -363,9 +393,11 @@ export default function InvoicesPage() {
               <p className="text-sm text-neutral-500 py-2">Nenhum orçamento aceito disponível para faturar.</p>
             ) : (
               <select
+                id="invoice-quotation"
                 value={quotationId}
                 onChange={(e) => setQuotationId(e.target.value)}
                 required
+                aria-label="Selecione um orçamento"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
               >
                 <option value="">Selecione um orçamento...</option>
@@ -378,13 +410,15 @@ export default function InvoicesPage() {
             )}
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label htmlFor="invoice-dueDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
               Data de Vencimento
             </label>
             <input
+              id="invoice-dueDate"
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              autoComplete="off"
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
             />
           </div>
@@ -400,8 +434,17 @@ export default function InvoicesPage() {
       </Modal>
 
       {/* Modal Detalhes da Fatura */}
-      <Modal isOpen={selectedInvoice !== null && !isPayOpen && !isEditOpen && !isCancelOpen} onClose={() => { setSelectedInvoice(null); setDetailData(null); }} title={`Fatura #${selectedInvoice?.invoiceNumber}`}>
-        {detailData ? (
+      <Modal isOpen={selectedInvoice !== null && !isPayOpen && !isEditOpen && !isCancelOpen && !isIssueOpen} onClose={() => { setSelectedInvoice(null); setDetailData(null); }} title={`Fatura #${selectedInvoice?.invoiceNumber}`}>
+        {loadingDetail ? (
+          <div className="text-center py-8 text-neutral-500">Carregando detalhes...</div>
+        ) : detailError ? (
+          <div className="text-center py-8 space-y-3">
+            <p className="text-red-600 dark:text-red-400 font-semibold text-sm">{detailError}</p>
+            <Button onClick={() => selectedInvoice && fetchInvoiceDetail(selectedInvoice.id)} variant="outline" size="sm">
+              Tentar Novamente
+            </Button>
+          </div>
+        ) : detailData ? (
           <div className="space-y-5 text-neutral-800 dark:text-neutral-200">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -423,6 +466,11 @@ export default function InvoicesPage() {
               <div className="col-span-2">
                 <span className="text-xs text-neutral-500 block font-bold uppercase">Valor Total</span>
                 <strong className="text-lg font-extrabold text-neutral-900 dark:text-white">{formatCurrency(Number(detailData.totalAmount))}</strong>
+                {!verifyTotalConsistency(detailData) && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Atenção: Valores podem estar inconsistentes. Verifique subtotal e impostos.
+                  </p>
+                )}
               </div>
               <div>
                 <span className="text-xs text-neutral-500 block font-bold uppercase">Status</span>
@@ -448,6 +496,11 @@ export default function InvoicesPage() {
               <Button variant="outline" onClick={() => { setSelectedInvoice(null); setDetailData(null); }}>
                 Fechar
               </Button>
+              {canIssue && (
+                <Button onClick={() => setIsIssueOpen(true)}>
+                  Emitir Fatura
+                </Button>
+              )}
               {canEdit && (
                 <Button variant="outline" onClick={openEditModal}>
                   Editar
@@ -466,36 +519,59 @@ export default function InvoicesPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-neutral-500">Carregando detalhes...</div>
+          <div className="text-center py-8 text-neutral-500">Nenhum dado disponível</div>
         )}
+      </Modal>
+
+      {/* Modal Emitir Fatura */}
+      <Modal isOpen={isIssueOpen} onClose={() => setIsIssueOpen(false)} title="Emitir Fatura">
+        <div className="space-y-4">
+          {issueError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
+              {issueError}
+            </div>
+          )}
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Deseja emitir a fatura <strong>#{selectedInvoice?.invoiceNumber}</strong> no valor de <strong>{selectedInvoice ? formatCurrency(selectedInvoice.totalAmount) : ''}</strong>?
+          </p>
+          <p className="text-xs text-neutral-500">
+            A fatura mudará de "Rascunho" para "Emitida". Após a emissão, ela poderá ser baixada como paga ou cancelada.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setIsIssueOpen(false)}>Cancelar</Button>
+            <Button onClick={handleIssueInvoice} isLoading={issueLoading}>Sim, Emitir</Button>
+          </div>
+        </div>
       </Modal>
 
       {/* Modal Editar Fatura */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Editar Fatura">
         <form onSubmit={handleEditInvoice} className="space-y-4">
           {editError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {editError}
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
-            <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+            <label htmlFor="edit-dueDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
+            <input id="edit-dueDate" type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+              autoComplete="off"
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white" />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Alíquota ISS (%)</label>
-            <input type="number" step="0.1" min="0" max="100" value={editIssRate} onChange={(e) => setEditIssRate(e.target.value)}
+            <label htmlFor="edit-issRate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Alíquota ISS (%)</label>
+            <input id="edit-issRate" type="number" step="0.1" min="0" max="100" value={editIssRate} onChange={(e) => setEditIssRate(e.target.value)}
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white" />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição</label>
-            <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
+            <label htmlFor="edit-description" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição</label>
+            <input id="edit-description" type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)}
+              autoComplete="off"
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white" />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
-            <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
+            <label htmlFor="edit-notes" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
+            <textarea id="edit-notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white" />
           </div>
           <div className="flex justify-end gap-2">
@@ -509,15 +585,15 @@ export default function InvoicesPage() {
       <Modal isOpen={isCancelOpen} onClose={() => setIsCancelOpen(false)} title="Cancelar Fatura">
         <div className="space-y-4">
           {cancelError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {cancelError}
             </div>
           )}
           <p className="text-sm text-neutral-700 dark:text-neutral-300">
-            Tem certeza que deseja cancelar a fatura <strong>#{selectedInvoice?.invoiceNumber}</strong>?
+            Tem certeza que deseja cancelar a fatura <strong>#{selectedInvoice?.invoiceNumber}</strong> no valor de <strong>{selectedInvoice ? formatCurrency(selectedInvoice.totalAmount) : ''}</strong>?
           </p>
           <p className="text-xs text-neutral-500">
-            Esta ação irá alterar o status para "Cancelada". Faturas canceladas não podem ser reativadas.
+            Esta ação irá alterar o status para "Cancelada" e reverter o orçamento vinculado para "Enviada". Faturas canceladas não podem ser reativadas.
           </p>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setIsCancelOpen(false)}>Voltar</Button>
@@ -532,15 +608,16 @@ export default function InvoicesPage() {
       <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Baixar Fatura como Paga">
         <form onSubmit={handlePayInvoice} className="space-y-4">
           {payError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {payError}
             </div>
           )}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Método de Recebimento
+            <label htmlFor="pay-method" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+              Método de Recebimento *
             </label>
-            <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}
+            <select id="pay-method" value={payMethod} onChange={(e) => setPayMethod(e.target.value)}
+              aria-label="Método de recebimento"
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white">
               <option value="pix">PIX</option>
               <option value="dinheiro">Dinheiro</option>
@@ -549,17 +626,18 @@ export default function InvoicesPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label htmlFor="pay-date" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
               Data do Pagamento
             </label>
-            <input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)}
+            <input id="pay-date" type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)}
+              autoComplete="off"
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white" />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
+            <label htmlFor="pay-notes" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
               Observações
             </label>
-            <textarea value={payNotes} onChange={(e) => setPayNotes(e.target.value)} rows={3}
+            <textarea id="pay-notes" value={payNotes} onChange={(e) => setPayNotes(e.target.value)} rows={3}
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
               placeholder="Ex: Recebido via PIX manual" />
           </div>
