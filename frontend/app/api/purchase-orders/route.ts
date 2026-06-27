@@ -260,8 +260,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(purchaseOrder, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST /api/purchase-orders error:', error);
-    return NextResponse.json({ error: 'Erro ao criar ordem de compra' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Erro ao criar ordem de compra' }, { status: 500 });
   }
 }

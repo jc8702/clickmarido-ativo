@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Filtrar apenas peças do orçamento associado à OS
-    const pieceItems = serviceOrder.quotation.items.filter(item => item.product.type === 'PECA');
+    const pieceItems = serviceOrder.quotation.items.filter(item => item.product?.type === 'PECA');
 
     if (pieceItems.length === 0) {
       return NextResponse.json(
@@ -177,8 +177,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     return NextResponse.json(purchaseOrder, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST /api/purchase-orders/from-service-order error:', error);
-    return NextResponse.json({ error: 'Erro ao criar ordem de compra a partir da ordem de serviço' }, { status: 500 });
+    return NextResponse.json({ error: error?.message || 'Erro ao criar ordem de compra a partir da ordem de serviço' }, { status: 500 });
   }
 }
