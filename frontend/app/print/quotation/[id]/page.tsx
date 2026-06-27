@@ -322,7 +322,7 @@ export default function PrintQuotationPage() {
                     <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Validade da Proposta:</span> <span className="text-neutral-700 font-semibold">{validUntilDate}</span></p>
                     <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">{quote.executionDeadline || 'Conforme agendamento'}</span></p>
                     <p className="flex items-center gap-1.5">
-                      <span className="font-semibold text-neutral-400">Formas de Pagamento Aceito:</span> 
+                      <span className="font-semibold text-neutral-400 whitespace-nowrap">Formas de Pagamento Aceito:</span> 
                       <span className="ml-1.5 text-neutral-700 font-semibold">
                         {quote.paymentMethods || 'PIX / Dinheiro / Cartão de Crédito'}
                       </span>
@@ -383,7 +383,7 @@ export default function PrintQuotationPage() {
                             <td className="p-3 text-neutral-500 font-medium whitespace-pre-wrap">{itemDesc}</td>
                             <td className="p-3 text-center text-[#4b5563] font-medium">{itemQty}</td>
                             <td className="p-3 text-right text-[#4b5563] font-medium">R$ {itemPrice.toFixed(2)}</td>
-                            <td className="p-3 text-right pr-4 font-bold text-[#1f2937]">R$ {sub.toFixed(2)}</td>
+                            <td className="p-3 text-right pr-4 font-bold text-[#1f2937] whitespace-nowrap">R$ {sub.toFixed(2)}</td>
                           </tr>
                         );
                       })}
