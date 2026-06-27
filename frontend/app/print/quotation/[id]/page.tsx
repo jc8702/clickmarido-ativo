@@ -202,9 +202,22 @@ export default function PrintQuotationPage() {
     return sum + (sub * taxRate);
   }, 0);
 
-  const discountAmount = Number(quote.discount || 0);
+  const discountPercentage = Number(quote.discountPercentage || 0);
+  const marginPercentage = Number(quote.marginPercentage || 0);
   const totalAmount = Number(quote.total || 0);
-  const subtotalAmount = totalAmount + discountAmount;
+  
+  // Recalcular subtotal a partir dos itens
+  const itemsForCalc = getQuotationItems(quote.items);
+  const subtotal = itemsForCalc.reduce((sum: number, item: any) => {
+    const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
+    const itemQty = Number(item.quantity || 1);
+    return sum + (itemPrice * itemQty);
+  }, 0);
+  
+  // Recalcular folga e desconto
+  const marginAmount = subtotal * (marginPercentage / 100);
+  const subtotalWithMargin = subtotal + marginAmount;
+  const discountAmount = subtotalWithMargin * (discountPercentage / 100);
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen py-8 print:py-0 print:bg-white transition-colors duration-200">
@@ -414,7 +427,11 @@ export default function PrintQuotationPage() {
                     <span>R$ {Number(totalTax || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#6b7280] font-medium">
-                    <span>Descontos:</span>
+                    <span>Folga de Venda ({marginPercentage}%):</span>
+                    <span>+ R$ {Number(marginAmount || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[#6b7280] font-medium">
+                    <span>Desconto ({discountPercentage}%):</span>
                     <span>- R$ {Number(discountAmount || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-3 text-[#1f2937] font-title">

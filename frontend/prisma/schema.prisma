@@ -88,6 +88,7 @@ model Quotation {
   paymentMethod String?  @default("PIX")  // PIX, DINHEIRO, CARTAO_CREDITO
   installments  Int?     @default(1)      // 1-10 parcelas
   marginPercentage Decimal? @default(0) @db.Decimal(5, 2)  // 0-100%
+  discountPercentage Decimal? @default(0) @db.Decimal(5, 2)  // 0-100% Desconto
 
   // Automação
   expiryNotificationSent Boolean @default(false)

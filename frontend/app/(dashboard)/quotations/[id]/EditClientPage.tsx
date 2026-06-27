@@ -24,7 +24,7 @@ export default function EditClientPage() {
     defaultValues: {
       customer_id: '',
       items: [{ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' as const }],
-      discount: 0,
+      discount_percentage: 0,
       valid_until: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
       notes: '',
       payment_methods: '',
@@ -74,7 +74,7 @@ export default function EditClientPage() {
         methods.reset({
           customer_id: data.customerId,
           items: mappedItems.length > 0 ? mappedItems : [{ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' as const }],
-          discount: data.discount || 0,
+          discount_percentage: data.discountPercentage || 0,
           valid_until: data.validUntil
             ? new Date(data.validUntil).toISOString().split('T')[0]
             : new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
@@ -99,11 +99,23 @@ export default function EditClientPage() {
     try {
       const token = getToken();
 
-      // Recalculate total from items
-      const total = data.items.reduce(
+      // Recalculate total from items with Folga de Venda and Desconto percentual
+      const subtotal = data.items.reduce(
         (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
         0
-      ) - (data.discount || 0);
+      );
+      const marginPercentage = data.margin_percentage || 0;
+      const discountPercentage = data.discount_percentage || 0;
+      
+      // Folga de Venda: percentual adicionado ao subtotal
+      const marginAmount = subtotal * (marginPercentage / 100);
+      const subtotalWithMargin = subtotal + marginAmount;
+      
+      // Desconto: percentual aplicado sobre o subtotal com folga
+      const discountAmount = subtotalWithMargin * (discountPercentage / 100);
+      
+      // Total final = subtotal + folga - desconto
+      const total = subtotalWithMargin - discountAmount;
 
       const res = await fetch(`/api/quotations/${id}`, {
         method: 'PUT',
@@ -127,6 +139,7 @@ export default function EditClientPage() {
           payment_method: data.payment_method || 'PIX',
           installments: data.installments || 1,
           margin_percentage: data.margin_percentage || 0,
+          discount_percentage: data.discount_percentage || 0,
         }),
       });
       if (!res.ok) throw new Error('Erro ao salvar');

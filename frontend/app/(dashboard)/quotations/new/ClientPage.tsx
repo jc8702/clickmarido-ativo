@@ -19,7 +19,7 @@ export default function NewQuotationPage() {
     defaultValues: {
       customer_id: '',
       items: [{ name: '', quantity: 1, unit_price: 0 }],
-      discount: 0,
+      discount_percentage: 0,
       valid_until: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
       notes: '',
       payment_methods: '',

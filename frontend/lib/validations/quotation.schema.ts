@@ -13,7 +13,7 @@ export const quotationItemSchema = z.object({
 export const quotationSchema = z.object({
   customer_id: z.string().min(1, 'Selecione um cliente'),
   items: z.array(quotationItemSchema).min(1, 'Adicione pelo menos 1 item'),
-  discount: z.number().min(0),
+  discount_percentage: z.number().min(0).max(100).default(0),
   valid_until: z.string().min(1, 'Data de validade é obrigatória'),
   notes: z.string().optional(),
   payment_methods: z.string().optional(),

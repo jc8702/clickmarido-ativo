@@ -24,7 +24,7 @@ export function ItemsBuilder() {
   });
 
   const items = watch('items') || [];
-  const discount = watch('discount') || 0;
+  const discountPercentage = watch('discount_percentage') || 0;
   const paymentMethod = watch('payment_method') || 'PIX';
   const marginPercentage = watch('margin_percentage') || 0;
   const [showPicker, setShowPicker] = useState(false);
@@ -76,8 +76,16 @@ export function ItemsBuilder() {
   };
 
   const subtotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
-  const totalWithoutFee = subtotal - discount;
+  
+  // Folga de Venda: percentual adicionado ao subtotal para ter margem de segurança
   const marginAmount = subtotal * (marginPercentage / 100);
+  const subtotalWithMargin = subtotal + marginAmount;
+  
+  // Desconto: percentual aplicado sobre o subtotal com folga
+  const discountAmount = subtotalWithMargin * (discountPercentage / 100);
+  
+  // Total final = subtotal + folga - desconto
+  const total = subtotalWithMargin - discountAmount;
 
   const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
     append({
@@ -216,9 +224,9 @@ export function ItemsBuilder() {
           </div>
         </div>
 
-        {/* Margem de Negociação */}
+        {/* Folga de Venda */}
         <div className="border-b border-primary-200 dark:border-primary-700 pb-4">
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Margem de Negociacao (%)</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Folga de Venda (%)</label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -237,10 +245,23 @@ export function ItemsBuilder() {
           </div>
         </div>
 
-        {/* Desconto */}
+        {/* Desconto % */}
         <div className="flex justify-end items-center gap-2">
-          <label className="text-neutral-600 dark:text-neutral-400 text-sm">Desconto: R$</label>
-          <input type="number" step="0.01" {...register('discount', { valueAsNumber: true })} className="w-24 p-1 border border-neutral-300 dark:border-neutral-600 rounded text-right bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
+          <label className="text-neutral-600 dark:text-neutral-400 text-sm">Desconto: %</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            {...register('discount_percentage', { valueAsNumber: true })}
+            className="w-24 p-1 border border-neutral-300 dark:border-neutral-600 rounded text-right bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+          />
+          <span className="text-sm text-neutral-600 dark:text-neutral-400">%</span>
+          {discountPercentage > 0 && (
+            <span className="text-xs text-red-500 dark:text-red-400">
+              (- R$ {discountAmount.toFixed(2)})
+            </span>
+          )}
         </div>
 
         {/* Totais */}
@@ -248,8 +269,18 @@ export function ItemsBuilder() {
           <p className="text-neutral-600 dark:text-neutral-400">
             Subtotal: <span className="font-semibold">R$ {Number(subtotal || 0).toFixed(2)}</span>
           </p>
+          {marginPercentage > 0 && (
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+              + Folga ({marginPercentage}%): <span className="font-medium">R$ {marginAmount.toFixed(2)}</span>
+            </p>
+          )}
+          {discountPercentage > 0 && (
+            <p className="text-red-500 dark:text-red-400 text-sm">
+              - Desconto ({discountPercentage}%): <span className="font-medium">R$ {discountAmount.toFixed(2)}</span>
+            </p>
+          )}
           <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-            Total a Vista: R$ {Number(totalWithoutFee || 0).toFixed(2)}
+            Total a Vista: R$ {Number(total || 0).toFixed(2)}
           </p>
         </div>
       </div>

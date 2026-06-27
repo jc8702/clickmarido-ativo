@@ -103,7 +103,21 @@ function QuotationContent() {
 
           <div className="flex flex-col items-end gap-1">
             <p className="text-neutral-600 dark:text-neutral-400">Subtotal: R$ {Number(data.subtotal || 0).toFixed(2)}</p>
-            {data.discount > 0 && <p className="text-red-500 dark:text-red-400">Desconto: - R$ {Number(data.discount || 0).toFixed(2)}</p>}
+            {data.marginPercentage > 0 && (
+              <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                + Folga ({data.marginPercentage}%): R$ {(Number(data.subtotal || 0) * (Number(data.marginPercentage) / 100)).toFixed(2)}
+              </p>
+            )}
+            {data.discountPercentage > 0 && (
+              <p className="text-red-500 dark:text-red-400">
+                Desconto ({data.discountPercentage}%): - R$ {(() => {
+                  const subtotal = Number(data.subtotal || 0);
+                  const marginAmount = subtotal * (Number(data.marginPercentage || 0) / 100);
+                  const subtotalWithMargin = subtotal + marginAmount;
+                  return (subtotalWithMargin * (Number(data.discountPercentage) / 100)).toFixed(2);
+                })()}
+              </p>
+            )}
             <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">Total: R$ {Number(data.total || 0).toFixed(2)}</p>
           </div>
 

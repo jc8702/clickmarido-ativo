@@ -89,11 +89,23 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
-    // Calcular total
-    const total = items.reduce(
+    // Calcular total com Folga de Venda e Desconto percentual
+    const subtotal = items.reduce(
       (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || item.price || 0),
       0
-    ) - (body.discount || 0);
+    );
+    const marginPercentage = body.margin_percentage || 0;
+    const discountPercentage = body.discount_percentage || 0;
+    
+    // Folga de Venda: percentual adicionado ao subtotal
+    const marginAmount = subtotal * (marginPercentage / 100);
+    const subtotalWithMargin = subtotal + marginAmount;
+    
+    // Desconto: percentual aplicado sobre o subtotal com folga
+    const discountAmount = subtotalWithMargin * (discountPercentage / 100);
+    
+    // Total final = subtotal + folga - desconto
+    const total = subtotalWithMargin - discountAmount;
 
     const notes = body.notes || '';
 
@@ -130,6 +142,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         paymentMethod: body.payment_method || 'PIX',
         installments: body.installments || 1,
         marginPercentage: body.margin_percentage || 0,
+        discountPercentage: body.discount_percentage || 0,
       },
       include: { customer: true },
     });

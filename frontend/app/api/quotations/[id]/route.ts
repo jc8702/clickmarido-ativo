@@ -85,6 +85,7 @@ export async function PUT(
     if (body.payment_method !== undefined) updateData.paymentMethod = body.payment_method;
     if (body.installments !== undefined) updateData.installments = body.installments;
     if (body.margin_percentage !== undefined) updateData.marginPercentage = body.margin_percentage;
+    if (body.discount_percentage !== undefined) updateData.discountPercentage = body.discount_percentage;
 
     const quotation = await prisma.quotation.update({
       where: { id },
@@ -99,11 +100,23 @@ export async function PUT(
         where: { quotationId: id },
       });
 
-      // Calculate total from items
-      const total = body.items.reduce(
+      // Calculate total from items with Folga de Venda and Desconto percentual
+      const subtotal = body.items.reduce(
         (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
         0
       );
+      const marginPercentage = body.margin_percentage || 0;
+      const discountPercentage = body.discount_percentage || 0;
+      
+      // Folga de Venda: percentual adicionado ao subtotal
+      const marginAmount = subtotal * (marginPercentage / 100);
+      const subtotalWithMargin = subtotal + marginAmount;
+      
+      // Desconto: percentual aplicado sobre o subtotal com folga
+      const discountAmount = subtotalWithMargin * (discountPercentage / 100);
+      
+      // Total final = subtotal + folga - desconto
+      const total = subtotalWithMargin - discountAmount;
 
       // Update total
       await prisma.quotation.update({

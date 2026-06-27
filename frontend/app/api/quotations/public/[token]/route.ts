@@ -39,7 +39,7 @@ export async function GET(
       status: quotation.status,
       total: Number(quotation.total),
       subtotal: Number(quotation.total),
-      discount: 0,
+      discountPercentage: Number(quotation.discountPercentage || 0),
       notes: quotation.notes,
       paymentMethods: quotation.paymentMethods || '',
       executionDeadline: quotation.executionDeadline || '',
