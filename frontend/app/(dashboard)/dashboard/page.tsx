@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuotations } from '@/hooks/useQuotations';
+import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
 import { CardShimmer } from '@/components/Shimmer';
 import {
   ResponsiveContainer,
@@ -73,6 +75,9 @@ export default function Dashboard() {
     ordersStatusDistribution: [] as OrderStatusDistributionItem[],
   });
   const [loading, setLoading] = useState(true);
+
+  const { data: quotationsData, isLoading: isLoadingQuotations, mutate: mutateQuotations } = useQuotations(undefined, 1);
+  const quotations = (quotationsData?.data || []) as any[];
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -237,6 +242,40 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+
+        {/* Kanban de Orçamentos */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-neutral-800 dark:text-neutral-200">Funil de Orçamentos</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Acompanhe as propostas em aberto e suas temperaturas</p>
+            </div>
+          </div>
+          {isLoadingQuotations ? (
+             <div className="h-64 bg-neutral-100 dark:bg-neutral-800 rounded-2xl animate-pulse w-full"></div>
+          ) : (
+            <KanbanBoard 
+              quotations={quotations} 
+              onUpdateStatus={async (id, newStatus) => {
+                try {
+                  const response = await fetch(`/api/quotations/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    body: JSON.stringify({ status: newStatus }),
+                  });
+                  if (response.ok) {
+                    mutateQuotations();
+                  }
+                } catch (err) {
+                  console.error('Erro ao atualizar status:', err);
+                }
+              }} 
+            />
+          )}
+        </div>
 
         {/* Gráficos de Análise */}
         {!loading && (
