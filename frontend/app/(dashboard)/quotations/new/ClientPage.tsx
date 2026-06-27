@@ -24,6 +24,9 @@ export default function NewQuotationPage() {
       notes: '',
       payment_methods: '',
       execution_deadline: '',
+      payment_method: 'PIX',
+      installments: 1,
+      margin_percentage: 0,
     }
   });
 

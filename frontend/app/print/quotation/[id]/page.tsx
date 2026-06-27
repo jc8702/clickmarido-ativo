@@ -319,7 +319,12 @@ export default function PrintQuotationPage() {
                     <p className="flex items-center gap-1.5">
                       <span className="font-semibold text-neutral-400">Pagamento Sugerido:</span> 
                       <span className="ml-1.5 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase bg-purple-100 text-purple-700 border border-purple-200">
-                        {quote.paymentMethods || quote.paymentTerms || 'A VISTA'}
+                        {quote.paymentMethod === 'CARTAO_CREDITO' 
+                          ? `Cartão de Crédito ${quote.installments || 1}x`
+                          : quote.paymentMethod === 'DINHEIRO' 
+                            ? 'Dinheiro'
+                            : 'PIX'
+                        }
                       </span>
                     </p>
                   </div>

@@ -29,6 +29,9 @@ export default function EditClientPage() {
       notes: '',
       payment_methods: '',
       execution_deadline: '',
+      payment_method: 'PIX',
+      installments: 1,
+      margin_percentage: 0,
     }
   });
 
@@ -78,6 +81,9 @@ export default function EditClientPage() {
           notes: data.notes || '',
           payment_methods: data.paymentMethods || '',
           execution_deadline: data.executionDeadline || '',
+          payment_method: data.paymentMethod || 'PIX',
+          installments: data.installments || 1,
+          margin_percentage: data.marginPercentage || 0,
         });
       } catch (e) {
         setError('Erro ao carregar orçamento');
@@ -118,6 +124,9 @@ export default function EditClientPage() {
           notes: data.notes || '',
           payment_methods: data.payment_methods || '',
           execution_deadline: data.execution_deadline || '',
+          payment_method: data.payment_method || 'PIX',
+          installments: data.installments || 1,
+          margin_percentage: data.margin_percentage || 0,
         }),
       });
       if (!res.ok) throw new Error('Erro ao salvar');

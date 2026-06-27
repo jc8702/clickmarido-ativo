@@ -68,8 +68,15 @@ function QuotationContent() {
             {data.executionDeadline && (
               <p className="mt-1 text-neutral-600 dark:text-neutral-400 text-sm">Prazo de execução: <strong>{data.executionDeadline}</strong></p>
             )}
-            {data.paymentMethods && (
-              <p className="mt-1 text-neutral-600 dark:text-neutral-400 text-sm">Formas de pagamento: <strong>{data.paymentMethods}</strong></p>
+            {data.paymentMethod && (
+              <p className="mt-1 text-neutral-600 dark:text-neutral-400 text-sm">Forma de pagamento: <strong>
+                {data.paymentMethod === 'CARTAO_CREDITO' 
+                  ? `Cartão de Crédito ${data.installments || 1}x`
+                  : data.paymentMethod === 'DINHEIRO' 
+                    ? 'Dinheiro'
+                    : 'PIX'
+                }
+              </strong></p>
             )}
           </div>
 

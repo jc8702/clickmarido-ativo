@@ -84,6 +84,11 @@ model Quotation {
   paymentMethods String? @default("")  // Ex: "PIX, Cartão de Crédito, Boleto"
   executionDeadline String? @default("")  // Ex: "5 dias úteis", "Conforme agendamento"
 
+  // Pagamento e Margem
+  paymentMethod String?  @default("PIX")  // PIX, DINHEIRO, CARTAO_CREDITO
+  installments  Int?     @default(1)      // 1-10 parcelas
+  marginPercentage Decimal? @default(0) @db.Decimal(5, 2)  // 0-100%
+
   // Automação
   expiryNotificationSent Boolean @default(false)
 

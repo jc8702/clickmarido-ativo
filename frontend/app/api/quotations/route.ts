@@ -127,6 +127,9 @@ export async function POST(request: NextRequest): Promise<Response> {
         notes,
         paymentMethods: body.payment_methods || '',
         executionDeadline: body.execution_deadline || '',
+        paymentMethod: body.payment_method || 'PIX',
+        installments: body.installments || 1,
+        marginPercentage: body.margin_percentage || 0,
       },
       include: { customer: true },
     });

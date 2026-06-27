@@ -18,6 +18,9 @@ export const quotationSchema = z.object({
   notes: z.string().optional(),
   payment_methods: z.string().optional(),
   execution_deadline: z.string().optional(),
+  payment_method: z.enum(['PIX', 'DINHEIRO', 'CARTAO_CREDITO']).default('PIX'),
+  installments: z.number().min(1).max(10).default(1),
+  margin_percentage: z.number().min(0).max(100).default(0),
 });
 
 export type QuotationFormValues = z.infer<typeof quotationSchema>;

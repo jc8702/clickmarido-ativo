@@ -43,6 +43,9 @@ export async function GET(
       notes: quotation.notes,
       paymentMethods: quotation.paymentMethods || '',
       executionDeadline: quotation.executionDeadline || '',
+      paymentMethod: quotation.paymentMethod || 'PIX',
+      installments: quotation.installments || 1,
+      marginPercentage: Number(quotation.marginPercentage || 0),
       items,
     });
 

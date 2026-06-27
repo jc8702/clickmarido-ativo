@@ -82,6 +82,9 @@ export async function PUT(
     if (body.total !== undefined) updateData.total = body.total;
     if (body.payment_methods !== undefined) updateData.paymentMethods = body.payment_methods;
     if (body.execution_deadline !== undefined) updateData.executionDeadline = body.execution_deadline;
+    if (body.payment_method !== undefined) updateData.paymentMethod = body.payment_method;
+    if (body.installments !== undefined) updateData.installments = body.installments;
+    if (body.margin_percentage !== undefined) updateData.marginPercentage = body.margin_percentage;
 
     const quotation = await prisma.quotation.update({
       where: { id },
