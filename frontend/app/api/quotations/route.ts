@@ -189,11 +189,11 @@ export async function POST(request: NextRequest): Promise<Response> {
           data: {
             quotationId: quotation.id,
             productId: product.id,
-            quantity: itemQuantity,
-            unitPrice: itemPrice,
-            costPrice: item.cost_price || 0,
-            markup: item.markup || 1,
-            subtotal: itemQuantity * itemPrice,
+            quantity: Number(itemQuantity),
+            unitPrice: Number(itemPrice),
+            costPrice: Number(item.cost_price) || 0,
+            markup: Number(item.markup) || 1,
+            subtotal: Number(itemQuantity) * Number(itemPrice),
           },
         });
       }

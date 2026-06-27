@@ -128,10 +128,10 @@ export default function EditClientPage() {
         body: JSON.stringify({
           items: data.items.map((item: any) => ({
             name: item.name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            cost_price: item.cost_price || 0,
-            markup: item.markup || 1,
+            quantity: Number(item.quantity) || 1,
+            unit_price: Number(item.unit_price) || 0,
+            cost_price: Number(item.cost_price) || 0,
+            markup: Number(item.markup) || 1,
             sku: item.sku || '',
             product_id: item.product_id || '',
             type: item.type || 'SERVICO',

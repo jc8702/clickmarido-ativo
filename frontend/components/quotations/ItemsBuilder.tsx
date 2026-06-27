@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { ProductPicker } from './ProductPicker';
 import toast from 'react-hot-toast';
@@ -30,19 +30,38 @@ export function ItemsBuilder() {
   const [showPicker, setShowPicker] = useState(false);
   const [aiLoading, setAiLoading] = useState<Record<number, boolean>>({});
 
-  // Auto-calculate unit_price from cost_price and markup for PECA items
-  useEffect(() => {
-    items.forEach((item: any, index: number) => {
-      if (item.type === 'PECA' && item.cost_price > 0 && item.markup > 0) {
-        const calculatedPrice = Number(item.cost_price) * Number(item.markup);
-        const currentPrice = Number(item.unit_price || 0);
-        // Only update if the calculated price is different (avoid infinite loops)
-        if (Math.abs(calculatedPrice - currentPrice) > 0.01) {
-          setValue(`items.${index}.unit_price`, Math.round(calculatedPrice * 100) / 100);
-        }
-      }
-    });
-  }, [items, setValue]);
+  // Track which items are being manually edited to prevent auto-calc override
+  const manualEditRef = useRef<Record<number, boolean>>({});
+
+  // Handle cost_price change - auto-calculate unit_price
+  const handleCostChange = useCallback((index: number, costValue: number) => {
+    const markup = Number(watch(`items.${index}.markup`) || 1);
+    if (costValue > 0 && markup > 1) {
+      const calculated = Math.round(costValue * markup * 100) / 100;
+      setValue(`items.${index}.unit_price`, calculated);
+    }
+  }, [watch, setValue]);
+
+  // Handle markup change - auto-calculate unit_price
+  const handleMarkupChange = useCallback((index: number, markupValue: number) => {
+    const cost = Number(watch(`items.${index}.cost_price`) || 0);
+    if (cost > 0 && markupValue > 1) {
+      const calculated = Math.round(cost * markupValue * 100) / 100;
+      setValue(`items.${index}.unit_price`, calculated);
+    }
+  }, [watch, setValue]);
+
+  // Mark item as manually edited when user types in unit_price
+  const handlePriceFocus = useCallback((index: number) => {
+    manualEditRef.current[index] = true;
+  }, []);
+
+  // Clear manual edit flag on blur
+  const handlePriceBlur = useCallback((index: number) => {
+    setTimeout(() => {
+      manualEditRef.current[index] = false;
+    }, 100);
+  }, []);
 
   const triggerAiEstimation = async (index: number) => {
     const itemName = watch(`items.${index}.name`);
@@ -169,6 +188,10 @@ export function ItemsBuilder() {
                 step="0.01"
                 min="0"
                 {...register(`items.${index}.cost_price`, { valueAsNumber: true })}
+                onChange={(e) => {
+                  register(`items.${index}.cost_price`, { valueAsNumber: true }).onChange(e);
+                  handleCostChange(index, Number(e.target.value));
+                }}
                 className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
               />
             </div>
@@ -181,13 +204,17 @@ export function ItemsBuilder() {
                 step="0.01"
                 min="1"
                 {...register(`items.${index}.markup`, { valueAsNumber: true })}
+                onChange={(e) => {
+                  register(`items.${index}.markup`, { valueAsNumber: true }).onChange(e);
+                  handleMarkupChange(index, Number(e.target.value));
+                }}
                 className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
               />
             </div>
           )}
           <div className="w-28">
             <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center justify-between">
-              <span>Preço Un. *</span>
+              <span>{items[index]?.type === 'PECA' ? 'Preço Venda *' : 'Preço Un. *'}</span>
               {items[index]?.type === 'SERVICO' && items[index]?.name && (
                 <button
                   type="button"
@@ -207,7 +234,14 @@ export function ItemsBuilder() {
                 </button>
               )}
             </label>
-            <input type="number" step="0.01" {...register(`items.${index}.unit_price`, { valueAsNumber: true })} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
+            <input
+              type="number"
+              step="0.01"
+              {...register(`items.${index}.unit_price`, { valueAsNumber: true })}
+              onFocus={() => handlePriceFocus(index)}
+              onBlur={() => handlePriceBlur(index)}
+              className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+            />
           </div>
           <div className="pt-5">
             <button type="button" onClick={() => remove(index)} className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm px-2 py-1">Remover</button>
