@@ -167,17 +167,53 @@ export async function GET(request: NextRequest) {
     const totalPayable = Number(pendingExpensesSum._sum.amount || 0);
     const totalPayableOverdue = overdueExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-    // Calcular saldo atual (real consolidado)
+    // Garantir que pending não seja negativo (overdue já está incluído no total)
+    const receivablePending = Math.max(0, totalReceivable - totalOverdue);
+    const payablePending = Math.max(0, totalPayable - totalPayableOverdue);
+
+    // Saldo real: pagamentos confirmados - despesas pagas
     const currentBalance = Number(paidInvoices._sum.amount || 0) - Number(allPaidExpenses._sum.amount || 0);
 
-    // Previsão 30/60/90 dias (simplificada)
-    const forecast30 = currentBalance + (totalReceivable * 0.7) - totalPayable;
-    const forecast60 = currentBalance + (totalReceivable * 0.9) - totalPayable;
-    const forecast90 = currentBalance + totalReceivable - totalPayable;
+    // Saldo projetado: saldo real - despesas pendentes (compromissos a pagar)
+    const projectedBalance = currentBalance - totalPayable;
+
+    // Previsão 30/60/90 dias — ponderada por datas de vencimento reais
+    const now30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const now60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+    const now90 = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+    // Receitas previstas: faturas emitidas que vencerão no período
+    const forecastableReceivable = pendingInvoices;
+    const forecast30Receivable = forecastableReceivable
+      .filter(inv => inv.dueDate <= now30)
+      .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+    const forecast60Receivable = forecastableReceivable
+      .filter(inv => inv.dueDate <= now60)
+      .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+    const forecast90Receivable = forecastableReceivable
+      .filter(inv => inv.dueDate <= now90)
+      .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+
+    // Despesas previstas: despesas pendentes que vencerão no período (apenas as que têm dueDate)
+    const forecast30Payable = overdueExpenses
+      .filter(exp => exp.dueDate && exp.dueDate <= now30)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    const forecast60Payable = overdueExpenses
+      .filter(exp => exp.dueDate && exp.dueDate <= now60)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+    const forecast90Payable = overdueExpenses
+      .filter(exp => exp.dueDate && exp.dueDate <= now90)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0);
+
+    // Forecast = saldo atual + receitas previstas - despesas previstas no período
+    const forecast30 = currentBalance + forecast30Receivable - forecast30Payable;
+    const forecast60 = currentBalance + forecast60Receivable - forecast60Payable;
+    const forecast90 = currentBalance + forecast90Receivable - forecast90Payable;
 
     const response = NextResponse.json({
       balance: {
         current: currentBalance,
+        projected: projectedBalance,
         forecast30,
         forecast60,
         forecast90,
@@ -188,19 +224,19 @@ export async function GET(request: NextRequest) {
       },
       receivable: {
         overdue: totalOverdue,
-        pending: totalReceivable - totalOverdue,
+        pending: receivablePending,
         total: totalReceivable,
       },
       payable: {
         overdue: totalPayableOverdue,
-        pending: totalPayable - totalPayableOverdue,
+        pending: payablePending,
         total: totalPayable,
       },
       counts: {
         totalInvoices: totalInvoices._count,
-        paidInvoices: paidInvoices._count,
-        pendingPayments: todayPayments._count,
-        pendingExpenses: todayExpenses._count,
+        confirmedPayments: paidInvoices._count,
+        todayPayments: todayPayments._count,
+        todayExpenses: todayExpenses._count,
       },
       recentActivity: {
         payments: recentPayments,

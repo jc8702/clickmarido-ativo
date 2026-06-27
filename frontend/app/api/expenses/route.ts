@@ -91,12 +91,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0 || !isFinite(numericAmount)) {
+      return NextResponse.json({ error: 'Valor da despesa deve ser um número positivo válido' }, { status: 400 });
+    }
+
     const expense = await prisma.expense.create({
       data: {
         category,
         costCenter: costCenter || 'OUTROS',
         description,
-        amount: Number(amount),
+        amount: numericAmount,
         vendorId: vendorId || null,
         vendorName: vendorName || '',
         expenseDate: expenseDate ? new Date(expenseDate) : new Date(),

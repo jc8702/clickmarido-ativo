@@ -99,12 +99,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (category) updateData.category = category;
     if (costCenter !== undefined) updateData.costCenter = costCenter;
     if (description) updateData.description = description;
-    if (amount !== undefined) updateData.amount = Number(amount);
+    if (amount !== undefined) {
+      const numericAmount = Number(amount);
+      if (isNaN(numericAmount) || numericAmount <= 0 || !isFinite(numericAmount)) {
+        return NextResponse.json({ error: 'Valor deve ser um número positivo válido' }, { status: 400 });
+      }
+      updateData.amount = numericAmount;
+    }
     if (vendorId !== undefined) updateData.vendorId = vendorId;
     if (vendorName !== undefined) updateData.vendorName = vendorName;
     if (expenseDate) updateData.expenseDate = new Date(expenseDate);
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
-    if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : null;
+    // paidAt só deve ser definido pelo endpoint mark-paid
     if (status) updateData.status = status;
     if (documentType !== undefined) updateData.documentType = documentType;
     if (documentNumber !== undefined) updateData.documentNumber = documentNumber;
@@ -154,8 +160,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await prisma.expense.delete({
-      where: { id },
+    // Usar transação para garantir consistência
+    await prisma.$transaction(async (tx) => {
+      // Remover audit logs vinculados
+      await tx.auditLog.deleteMany({ where: { entityId: id } });
+      // Excluir despesa
+      await tx.expense.delete({ where: { id } });
     });
 
     return NextResponse.json({ message: 'Despesa excluída com sucesso' });

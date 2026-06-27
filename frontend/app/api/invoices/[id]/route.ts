@@ -74,12 +74,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invoice não encontrada' }, { status: 404 });
     }
 
-    // Só permitir editar se estiver em rascunho
-    if (existingInvoice.status !== 'rascunho' && status !== existingInvoice.status) {
-      return NextResponse.json(
-        { error: 'Só é possível editar invoices em rascunho' },
-        { status: 400 }
-      );
+    // Só permitir editar campos financeiros se estiver em rascunho
+    if (existingInvoice.status !== 'rascunho') {
+      // Para status emitida/paga/cancelada, só permitir alterar description e notes
+      const forbiddenFields = ['dueDate', 'issRate', 'status'];
+      const attemptedFields = Object.keys(body).filter(k => forbiddenFields.includes(k));
+      if (attemptedFields.length > 0) {
+        return NextResponse.json(
+          { error: `Campos ${attemptedFields.join(', ')} não podem ser editados para invoices com status "${existingInvoice.status}"` },
+          { status: 400 }
+        );
+      }
     }
 
     // Recalcular impostos se issRate mudou
@@ -141,10 +146,31 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Soft delete - mudar status para cancelada
-    const invoice = await prisma.invoice.update({
-      where: { id },
-      data: { status: 'cancelada' },
+    // Soft delete - mudar status para cancelada e cancelar pagamentos pendentes
+    const invoice = await prisma.$transaction(async (tx) => {
+      const updatedInvoice = await tx.invoice.update({
+        where: { id },
+        data: { status: 'cancelada' },
+      });
+
+      // Cancelar pagamentos pendentes vinculados
+      await tx.payment.updateMany({
+        where: { invoiceId: id, status: 'pendente' },
+        data: { status: 'cancelado' },
+      });
+
+      // Reverter quotation para status anterior (se aplicável)
+      if (existingInvoice.quotationId) {
+        const quotation = await tx.quotation.findUnique({ where: { id: existingInvoice.quotationId } });
+        if (quotation && quotation.status === 'aceito') {
+          await tx.quotation.update({
+            where: { id: existingInvoice.quotationId },
+            data: { status: 'enviada' },
+          });
+        }
+      }
+
+      return updatedInvoice;
     });
 
     return NextResponse.json({ message: 'Invoice cancelada', invoice });

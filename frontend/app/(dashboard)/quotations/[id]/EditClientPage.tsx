@@ -107,6 +107,26 @@ export default function EditClientPage() {
     if (id) fetchQuotation();
   }, [id, getToken, methods]);
 
+  const extractErrorMessages = (errors: any): string[] => {
+    const messages: string[] = [];
+    const walk = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      if (obj.message) {
+        messages.push(obj.message);
+        return;
+      }
+      for (const key of Object.keys(obj)) {
+        if (Array.isArray(obj[key])) {
+          obj[key].forEach((item: any) => walk(item));
+        } else if (typeof obj[key] === 'object') {
+          walk(obj[key]);
+        }
+      }
+    };
+    walk(errors);
+    return messages;
+  };
+
   const onSubmit = async (data: QuotationFormValues) => {
     setSaving(true);
     setError('');
@@ -197,7 +217,7 @@ export default function EditClientPage() {
 
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit, (formErrors) => {
-          const messages = Object.values(formErrors).map(e => e?.message).filter(Boolean);
+          const messages = extractErrorMessages(formErrors);
           setError(messages.length > 0 ? messages.join('. ') : 'Verifique os campos obrigatórios.');
         })} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
           {error && (

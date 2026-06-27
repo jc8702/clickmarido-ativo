@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     // 3. Buscar despesas pagas no período (Saídas)
     const expenses = await prisma.expense.findMany({
       where: {
-        status: 'pago',
+        status: 'paga',
         expenseDate: { gte: startDate, lte: endDate }
       }
     });
@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         status: 'concluida',
         completedAt: { gte: startDate, lte: endDate }
       },
-      include: { technician: true, productUsages: { include: { product: true } } }
+      include: { technician: true, customer: true, productUsages: { include: { product: true } } }
     });
 
     const technicianPerformanceMap: Record<string, { id: string; name: string; osCount: number; revenue: number; commission: number }> = {};
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       return {
         id: so.id,
         number: so.number,
-        client: so.customerId,
+        client: so.customer?.name || so.customerId,
         total: so.finalTotal,
         materialsCost: osMaterialsCost,
         commission: osCommission,

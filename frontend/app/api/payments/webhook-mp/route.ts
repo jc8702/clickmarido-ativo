@@ -131,85 +131,87 @@ export async function POST(request: NextRequest): Promise<Response> {
     // 7. Atualizar status (idempotente - só atualiza se mudou)
     const oldStatus = payment.status;
 
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: internalStatus,
-        mpStatus,
-        confirmedAt: isPaymentApproved(mpStatus) ? new Date() : payment.confirmedAt,
-        paidAt: isPaymentApproved(mpStatus) ? new Date() : payment.paidAt,
-      },
-    });
-
-    // Auditoria (só se status mudou)
-    if (oldStatus !== internalStatus) {
-      await prisma.auditLog.create({
+    await prisma.$transaction(async (tx) => {
+      await tx.payment.update({
+        where: { id: payment!.id },
         data: {
-          entity: 'payment',
-          entityId: payment.id,
-          action: 'updated',
-          oldValue: { status: oldStatus },
-          newValue: { status: internalStatus },
-          createdBy: 'system_webhook_mp',
+          status: internalStatus,
+          mpStatus,
+          confirmedAt: isPaymentApproved(mpStatus) ? new Date() : payment!.confirmedAt,
+          paidAt: isPaymentApproved(mpStatus) ? new Date() : payment!.paidAt,
         },
       });
-    }
 
-    // 8. Se pagamento aprovado, verificar invoice
-    if (isPaymentApproved(mpStatus) && payment.invoiceId) {
-      const allPayments = await prisma.payment.findMany({
-        where: { invoiceId: payment.invoiceId },
-      });
+      // Auditoria (só se status mudou)
+      if (oldStatus !== internalStatus) {
+        await tx.auditLog.create({
+          data: {
+            entity: 'payment',
+            entityId: payment!.id,
+            action: 'updated',
+            oldValue: { status: oldStatus },
+            newValue: { status: internalStatus },
+            createdBy: 'system_webhook_mp',
+          },
+        });
+      }
 
-      const allConfirmed = allPayments.every(
-        (p) => p.status === 'confirmado' || p.id === payment!.id
-      );
-
-      if (allConfirmed) {
-        const invoice = await prisma.invoice.findUnique({
-          where: { id: payment.invoiceId },
+      // 8. Se pagamento aprovado, verificar invoice
+      if (isPaymentApproved(mpStatus) && payment!.invoiceId) {
+        const allPayments = await tx.payment.findMany({
+          where: { invoiceId: payment!.invoiceId },
         });
 
-        if (invoice && invoice.status !== 'paga') {
-          await prisma.invoice.update({
-            where: { id: payment.invoiceId },
-            data: { status: 'paga' },
+        const allConfirmed = allPayments.every(
+          (p) => p.status === 'confirmado' || p.id === payment!.id
+        );
+
+        if (allConfirmed) {
+          const invoice = await tx.invoice.findUnique({
+            where: { id: payment!.invoiceId },
           });
 
-          await prisma.auditLog.create({
-            data: {
-              entity: 'invoice',
-              entityId: payment.invoiceId,
-              action: 'updated',
-              oldValue: { status: invoice.status },
-              newValue: { status: 'paga' },
-              createdBy: 'system_webhook_mp',
-            },
-          });
+          if (invoice && invoice.status !== 'paga') {
+            await tx.invoice.update({
+              where: { id: payment!.invoiceId },
+              data: { status: 'paga' },
+            });
+
+            await tx.auditLog.create({
+              data: {
+                entity: 'invoice',
+                entityId: payment!.invoiceId,
+                action: 'updated',
+                oldValue: { status: invoice.status },
+                newValue: { status: 'paga' },
+                createdBy: 'system_webhook_mp',
+              },
+            });
+          }
         }
       }
-    }
 
-    // 9. Criar transação financeira (idempotente - verificar se já existe)
-    const existingTransaction = await prisma.financialTransaction.findFirst({
-      where: {
-        paymentId: payment.id,
-        type: 'PAYMENT_RECEIVED',
-      },
-    });
-
-    if (!existingTransaction) {
-      await prisma.financialTransaction.create({
-        data: {
+      // 9. Criar transação financeira (idempotente - verificar se já existe)
+      const existingTransaction = await tx.financialTransaction.findFirst({
+        where: {
+          paymentId: payment!.id,
           type: 'PAYMENT_RECEIVED',
-          paymentId: payment.id,
-          invoiceId: payment.invoiceId,
-          credit: (mpPayment as any).transaction_amount || 0,
-          description: `Pagamento recebido via ${(mpPayment as any).payment_method_id}`,
-          transactionDate: new Date(),
         },
       });
-    }
+
+      if (!existingTransaction) {
+        await tx.financialTransaction.create({
+          data: {
+            type: 'PAYMENT_RECEIVED',
+            paymentId: payment!.id,
+            invoiceId: payment!.invoiceId,
+            credit: (mpPayment as any).transaction_amount || 0,
+            description: `Pagamento recebido via ${(mpPayment as any).payment_method_id}`,
+            transactionDate: new Date(),
+          },
+        });
+      }
+    });
 
     console.log(`[WEBHOOK MP] Pagamento ${payment.id} processado: ${internalStatus}`);
 

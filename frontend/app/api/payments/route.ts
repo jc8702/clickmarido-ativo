@@ -72,6 +72,17 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 });
     }
 
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0 || !isFinite(numericAmount)) {
+      return NextResponse.json({ error: 'Valor do pagamento deve ser um número positivo válido' }, { status: 400 });
+    }
+
+    // Validar existência do customer
+    const customerExists = await prisma.customer.findUnique({ where: { id: customerId } });
+    if (!customerExists) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
+    }
+
     // Normalizar status: 'aprovado' do front vira 'confirmado' no banco
     const normalizedStatus = status === 'aprovado' ? 'confirmado' : (status || 'pendente');
 
@@ -79,7 +90,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       data: {
         quotationId: quotationId || null,
         customerId,
-        amount: Number(amount),
+        amount: numericAmount,
         method: method || 'pix',
         status: normalizedStatus,
         description: description || '',

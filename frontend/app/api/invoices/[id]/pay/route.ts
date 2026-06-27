@@ -43,6 +43,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Fatura já está paga' }, { status: 400 });
     }
 
+    if (invoice.status === 'cancelada') {
+      return NextResponse.json({ error: 'Não é possível registrar pagamento de fatura cancelada' }, { status: 400 });
+    }
+
     const payDate = new Date(paidAt);
 
     // Executar alterações transacionais

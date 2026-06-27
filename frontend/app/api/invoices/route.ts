@@ -97,35 +97,37 @@ export async function POST(request: NextRequest) {
     const taxAmount = subtotal * (issRate / 100);
     const totalAmount = subtotal + taxAmount;
 
-    // Gerar número da invoice sequencial
-    const lastInvoice = await prisma.invoice.findFirst({
-      orderBy: { invoiceNumber: 'desc' },
-    });
-    const invoiceNumber = lastInvoice
-      ? (parseInt(lastInvoice.invoiceNumber) + 1).toString().padStart(3, '0')
-      : '001';
+    // Gerar número da invoice sequencial dentro de uma transaction para evitar race condition
+    const invoice = await prisma.$transaction(async (tx) => {
+      const lastInvoice = await tx.invoice.findFirst({
+        orderBy: { invoiceNumber: 'desc' },
+        select: { invoiceNumber: true },
+      });
+      const invoiceNumber = lastInvoice
+        ? (parseInt(lastInvoice.invoiceNumber) + 1).toString().padStart(3, '0')
+        : '001';
 
-    // Criar invoice
-    const invoice = await prisma.invoice.create({
-      data: {
-        quotationId,
-        customerId: quotation.customerId,
-        invoiceNumber,
-        seriesNumber: '1',
-        dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        subtotal,
-        taxAmount,
-        totalAmount,
-        taxRegime,
-        issRate,
-        description: description || `Invoice #${invoiceNumber}`,
-        notes: notes || '',
-        status: 'rascunho',
-      },
-      include: {
-        customer: { select: { id: true, name: true, email: true } },
-        quotation: { select: { id: true, total: true } },
-      },
+      return tx.invoice.create({
+        data: {
+          quotationId,
+          customerId: quotation.customerId,
+          invoiceNumber,
+          seriesNumber: '1',
+          dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          subtotal,
+          taxAmount,
+          totalAmount,
+          taxRegime,
+          issRate,
+          description: description || `Invoice #${invoiceNumber}`,
+          notes: notes || '',
+          status: 'rascunho',
+        },
+        include: {
+          customer: { select: { id: true, name: true, email: true } },
+          quotation: { select: { id: true, total: true } },
+        },
+      });
     });
 
     return NextResponse.json(invoice, { status: 201 });

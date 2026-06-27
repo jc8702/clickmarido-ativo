@@ -38,7 +38,14 @@ async function handleGeneratePix(
       return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
     }
 
-    const pixKey = process.env.PIX_KEY || '47997896229';
+    const pixKey = process.env.PIX_KEY;
+    if (!pixKey) {
+      console.error('[PIX] PIX_KEY não configurada. Configure a variável de ambiente PIX_KEY.');
+      return NextResponse.json(
+        { error: 'Chave PIX não configurada. Configure PIX_KEY no ambiente.' },
+        { status: 500 }
+      );
+    }
     const customerName = quotation.customer?.name || 'Cliente';
 
     const pixPayload = generatePixPayload({

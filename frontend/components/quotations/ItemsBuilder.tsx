@@ -121,12 +121,17 @@ export function ItemsBuilder() {
   const total = subtotalWithMargin - discountAmount;
 
   const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
+    const isPeca = type === 'PECA';
+    const costPrice = isPeca ? product.price : 0;
+    const markup = 1;
+    const unitPrice = isPeca ? Math.round(costPrice * markup * 100) / 100 : product.price;
+
     append({
       name: product.name,
       quantity: quantity,
-      unit_price: product.price,
-      cost_price: 0,
-      markup: 1,
+      unit_price: unitPrice,
+      cost_price: costPrice,
+      markup: markup,
       sku: product.sku,
       product_id: product.id,
       type: type,

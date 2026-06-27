@@ -38,30 +38,52 @@ export default function ReportsPage() {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ReportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Inicializar datas padrão (mês corrente)
-  const now = new Date();
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  // Inicializar datas padrão (mês corrente) — dentro do componente para atualizar corretamente
+  const getDefaultDates = () => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    return { firstDay, lastDay };
+  };
 
-  const [startDate, setStartDate] = useState(firstDay);
-  const [endDate, setEndDate] = useState(lastDay);
+  const defaults = getDefaultDates();
+  const [startDate, setStartDate] = useState(defaults.firstDay);
+  const [endDate, setEndDate] = useState(defaults.lastDay);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const token = getToken();
+      if (!token) {
+        setError('Sessão expirada. Faça login novamente.');
+        return;
+      }
       const response = await fetch(`/api/reports?startDate=${startDate}&endDate=${endDate}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setData(result.data);
-        }
+
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching reports:', error);
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => null);
+        throw new Error(errData?.error || 'Erro ao carregar relatórios');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        setData(result.data);
+      } else {
+        throw new Error('Dados inválidos recebidos do servidor');
+      }
+    } catch (err: any) {
+      console.error('Error fetching reports:', err);
+      setError(err.message || 'Erro ao carregar relatórios');
     } finally {
       setLoading(false);
     }
@@ -104,33 +126,53 @@ export default function ReportsPage() {
 
   if (loading && !data) {
     return (
-      <div className="p-8 bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 min-h-screen">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <h1 className="text-3xl font-bold">Relatórios Financeiros</h1>
-          <div className="h-96 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md rounded-2xl animate-pulse"></div>
-        </div>
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Relatórios Financeiros</h1>
+          <div className="h-96 bg-white dark:bg-neutral-800 rounded-2xl animate-pulse"></div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">Relatórios Financeiros</h1>
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-red-200 dark:border-red-900 p-8 text-center">
+            <p className="text-red-600 dark:text-red-400 font-semibold text-sm mb-3">{error}</p>
+            <button onClick={fetchReports} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-sm font-semibold rounded-xl transition-all">
+              Tentar Novamente
+            </button>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 min-h-screen print:bg-white print:text-black">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 print:bg-white print:text-black">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 print:hidden">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">Relatórios Financeiros</h1>
+            <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">Relatórios Financeiros</h1>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Análise de fluxos de caixa, produtividade de técnicos, custos de peças e lucratividade.</p>
           </div>
           <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex items-center space-x-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-1.5 shadow-sm">
+            <div className="flex items-center space-x-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-3 py-1.5 shadow-sm">
+              <label htmlFor="report-start-date" className="sr-only">Data inicial</label>
               <input
+                id="report-start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="bg-transparent text-sm focus:outline-none dark:text-neutral-100"
               />
-              <span className="text-neutral-400 text-sm">até</span>
+              <span className="text-neutral-400 text-sm" aria-hidden="true">até</span>
+              <label htmlFor="report-end-date" className="sr-only">Data final</label>
               <input
+                id="report-end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -156,32 +198,32 @@ export default function ReportsPage() {
           <>
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs font-semibold text-neutral-400">Faturamento Bruto</div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">{formatCurrency(data.totals.inflow)}</div>
-              </div>
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs font-semibold text-neutral-400">Despesas Totais</div>
-                <div className="text-2xl font-bold text-red-500 dark:text-red-400 mt-2">{formatCurrency(data.totals.outflow)}</div>
-              </div>
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs font-semibold text-neutral-400">Lucro Líquido</div>
-                <div className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-2">{formatCurrency(data.totals.netProfit)}</div>
-              </div>
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs font-semibold text-neutral-400">Margem Geral</div>
-                <div className="text-2xl font-bold text-orange-500 mt-2">{data.totals.profitMarginPercent}%</div>
-              </div>
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm">
-                <div className="text-xs font-semibold text-neutral-400">Custos de Materiais</div>
-                <div className="text-2xl font-bold text-neutral-600 dark:text-neutral-400 mt-2">{formatCurrency(data.totals.materialsCost)}</div>
-              </div>
+              <dl className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-sm">
+                <dt className="text-xs font-semibold text-neutral-400">Faturamento Bruto</dt>
+                <dd className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">{formatCurrency(data.totals.inflow)}</dd>
+              </dl>
+              <dl className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-sm">
+                <dt className="text-xs font-semibold text-neutral-400">Despesas Totais</dt>
+                <dd className="text-2xl font-bold text-red-500 dark:text-red-400 mt-2">{formatCurrency(data.totals.outflow)}</dd>
+              </dl>
+              <dl className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-sm">
+                <dt className="text-xs font-semibold text-neutral-400">Lucro Líquido</dt>
+                <dd className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-2">{formatCurrency(data.totals.netProfit)}</dd>
+              </dl>
+              <dl className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-sm">
+                <dt className="text-xs font-semibold text-neutral-400">Margem Geral</dt>
+                <dd className="text-2xl font-bold text-orange-500 mt-2">{data.totals.profitMarginPercent}%</dd>
+              </dl>
+              <dl className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-5 shadow-sm">
+                <dt className="text-xs font-semibold text-neutral-400">Custos de Materiais</dt>
+                <dd className="text-2xl font-bold text-neutral-600 dark:text-neutral-400 mt-2">{formatCurrency(data.totals.materialsCost)}</dd>
+              </dl>
             </div>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Cash Flow Evolution */}
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-100">Fluxo de Caixa Diário</h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -209,7 +251,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Technician Performance Chart */}
-              <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm">
+              <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-100">Desempenho e Comissão de Técnicos</h3>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -228,10 +270,10 @@ export default function ReportsPage() {
             </div>
 
             {/* OS Margins Table */}
-            <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-100">Rentabilidade e Margens por Ordem de Serviço</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left" aria-label="Rentabilidade por Ordem de Serviço">
                   <thead>
                     <tr className="border-b border-neutral-200 dark:border-neutral-800 text-neutral-500">
                       <th className="py-3 px-4">Número OS</th>
@@ -269,7 +311,7 @@ export default function ReportsPage() {
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

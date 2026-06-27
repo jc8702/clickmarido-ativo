@@ -35,8 +35,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Despesa não encontrada' }, { status: 404 });
     }
 
-    if (existingExpense.status === 'paga') {
-      return NextResponse.json({ error: 'Despesa já está paga' }, { status: 400 });
+    if (existingExpense.status !== 'pendente') {
+      return NextResponse.json({ error: 'Só é possível marcar como paga despesas com status pendente' }, { status: 400 });
     }
 
     const payDate = new Date();

@@ -32,21 +32,20 @@ async function handleApprove(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    const payment = await prisma.payment.findUnique({
-      where: { id },
-    });
-
-    if (!payment) {
-      return NextResponse.json({ error: 'Pagamento não encontrado' }, { status: 404 });
-    }
-
-    if (payment.status === 'confirmado') {
-      return NextResponse.json({ error: 'Pagamento já está confirmado/pago' }, { status: 400 });
-    }
-
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
+      // Verificar e atualizar status dentro da transaction para evitar race condition
+      const payment = await tx.payment.findUnique({ where: { id } });
+
+      if (!payment) {
+        throw new Error('Pagamento não encontrado');
+      }
+
+      if (payment.status === 'confirmado') {
+        throw new Error('Pagamento já está confirmado/pago');
+      }
+
       const updatedPayment = await tx.payment.update({
         where: { id },
         data: {
@@ -63,11 +62,23 @@ async function handleApprove(
         });
       }
 
+      // P0-1: Só marcar invoice como paga se total dos pagamentos >= total da invoice
       if (payment.invoiceId) {
-        await tx.invoice.update({
-          where: { id: payment.invoiceId },
-          data: { status: 'paga' },
-        });
+        const invoice = await tx.invoice.findUnique({ where: { id: payment.invoiceId } });
+        if (invoice && invoice.status !== 'paga') {
+          const totalPaid = await tx.payment.aggregate({
+            where: { invoiceId: payment.invoiceId, status: 'confirmado' },
+            _sum: { amount: true },
+          });
+          const paidAmount = Number(totalPaid._sum.amount || 0) + Number(payment.amount);
+
+          if (paidAmount >= Number(invoice.totalAmount)) {
+            await tx.invoice.update({
+              where: { id: payment.invoiceId },
+              data: { status: 'paga' },
+            });
+          }
+        }
       }
 
       await tx.financialTransaction.create({
@@ -101,10 +112,15 @@ async function handleApprove(
 
   } catch (error: any) {
     console.error('POST /api/payments/[id]/approve error:', error);
-    return NextResponse.json(
-      { error: 'Erro ao aprovar pagamento' },
-      { status: 500 }
-    );
+    const message = error.message === 'Pagamento não encontrado'
+      ? error.message
+      : error.message === 'Pagamento já está confirmado/pago'
+        ? error.message
+        : 'Erro ao aprovar pagamento';
+    const status = error.message === 'Pagamento não encontrado' ? 404
+      : error.message === 'Pagamento já está confirmado/pago' ? 400
+        : 500;
+    return NextResponse.json({ error: message }, { status });
   } finally {
   }
 }
