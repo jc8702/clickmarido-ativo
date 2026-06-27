@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 
-export function useProducts(page = 1, search = '', type = '') {
+export function useProducts(page = 1, search = '', type = '', family = '') {
   const [data, setData] = useState<{
     data: any[];
     meta: { total: number; page: number; limit: number; totalPages?: number };
@@ -12,6 +12,7 @@ export function useProducts(page = 1, search = '', type = '') {
   const prevPageRef = useRef(page);
   const prevSearchRef = useRef(search);
   const prevTypeRef = useRef(type);
+  const prevFamilyRef = useRef(family);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -22,6 +23,7 @@ export function useProducts(page = 1, search = '', type = '') {
       const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (search) params.set('search', search);
       if (type) params.set('type', type);
+      if (family) params.set('family', family);
 
       const response = await fetch(`/api/products?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -35,16 +37,17 @@ export function useProducts(page = 1, search = '', type = '') {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search, type, getToken]);
+  }, [page, search, type, family, getToken]);
 
   useEffect(() => {
-    if (prevPageRef.current !== page || prevSearchRef.current !== search || prevTypeRef.current !== type) {
+    if (prevPageRef.current !== page || prevSearchRef.current !== search || prevTypeRef.current !== type || prevFamilyRef.current !== family) {
       prevPageRef.current = page;
       prevSearchRef.current = search;
       prevTypeRef.current = type;
+      prevFamilyRef.current = family;
       fetchProducts();
     }
-  }, [page, search, type, fetchProducts]);
+  }, [page, search, type, family, fetchProducts]);
 
   useEffect(() => {
     fetchProducts();

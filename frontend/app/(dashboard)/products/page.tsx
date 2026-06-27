@@ -13,6 +13,7 @@ import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { TableShimmer } from '@/components/Shimmer';
 import { ProductDetailsDrawer } from '@/components/products/ProductDetailsDrawer';
 import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+import { getAllFamilyCodes } from '@/lib/sku';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -22,12 +23,13 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [familyFilter, setFamilyFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedProductForDrawer, setSelectedProductForDrawer] = useState<any>(null);
 
-  const { data, isLoading, mutate } = useProducts(1, debouncedSearch, typeFilter);
+  const { data, isLoading, mutate } = useProducts(1, debouncedSearch, typeFilter, familyFilter);
   const { mutateAsync: createProduct, isPending: isCreating } = useCreateProduct();
 
   useEffect(() => {
@@ -124,6 +126,16 @@ export default function ProductsPage() {
             <option value="">Todos os tipos</option>
             <option value="SERVICO">Serviços</option>
             <option value="PECA">Peças</option>
+          </select>
+          <select
+            value={familyFilter}
+            onChange={(e) => setFamilyFilter(e.target.value)}
+            className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+          >
+            <option value="">Todas as famílias</option>
+            {getAllFamilyCodes().map(fam => (
+              <option key={fam.code} value={fam.code}>{fam.name}</option>
+            ))}
           </select>
         </div>
 
