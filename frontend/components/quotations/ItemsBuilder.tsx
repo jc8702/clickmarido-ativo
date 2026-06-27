@@ -181,7 +181,7 @@ export function ItemsBuilder() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => { setValue('payment_method', 'PIX'); setValue('installments', 1); }}
+              onClick={() => setValue('payment_method', 'PIX')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 paymentMethod === 'PIX'
                   ? 'bg-green-600 text-white shadow-md'
@@ -192,7 +192,7 @@ export function ItemsBuilder() {
             </button>
             <button
               type="button"
-              onClick={() => { setValue('payment_method', 'DINHEIRO'); setValue('installments', 1); }}
+              onClick={() => setValue('payment_method', 'DINHEIRO')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 paymentMethod === 'DINHEIRO'
                   ? 'bg-green-600 text-white shadow-md'
@@ -203,7 +203,7 @@ export function ItemsBuilder() {
             </button>
             <button
               type="button"
-              onClick={() => { setValue('payment_method', 'CARTAO_CREDITO'); setValue('installments', installments || 1); }}
+              onClick={() => setValue('payment_method', 'CARTAO_CREDITO')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 paymentMethod === 'CARTAO_CREDITO'
                   ? 'bg-purple-600 text-white shadow-md'
