@@ -402,22 +402,60 @@ export default function PrintQuotationPage() {
 
               {/* Resumo Financeiro */}
               <div className="flex justify-end mb-8">
-                <div className="w-[320px] space-y-2 bg-[#f9fafb] p-4 rounded-2xl border border-[#f3f4f6] text-xs">
-                  <div className="flex justify-between text-[#6b7280] font-medium">
-                    <span>Subtotal Estimado:</span>
-                    <span>R$ {Number(subtotalAmount || 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[#6b7280] font-medium">
-                    <span>Descontos:</span>
-                    <span>R$ {Number(discountAmount || 0).toFixed(2)}</span>
-                  </div>
+                <div className="w-[380px] space-y-2 bg-[#f9fafb] p-5 rounded-2xl border border-[#f3f4f6] text-xs">
                   <div className="flex justify-between text-[#9ca3af] text-[10px] font-medium">
                     <span>Impostos Estimados (Lei 12.741/12):</span>
                     <span>R$ {Number(totalTax || 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-2 text-[#1f2937] font-title">
-                    <span>Total Estimado:</span>
+                  <div className="flex justify-between text-[#6b7280] font-medium">
+                    <span>Descontos:</span>
+                    <span>- R$ {Number(discountAmount || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-3 text-[#1f2937] font-title">
+                    <span>Subtotal / Valor a Vista:</span>
                     <span className="text-[#9333ea] text-sm">R$ {Number(totalAmount || 0).toFixed(2)}</span>
+                  </div>
+
+                  {/* Tabela de Parcelamento */}
+                  <div className="mt-4 pt-3 border-t border-[#e5e7eb]">
+                    <h4 className="text-[10px] font-bold text-[#6b7280] uppercase tracking-wider mb-2 font-title">
+                      Simulação Parcelamento - Cartão de Crédito
+                    </h4>
+                    <table className="w-full text-[10px]">
+                      <thead>
+                        <tr className="text-[#9ca3af] font-medium">
+                          <th className="text-left py-1">Parcelas</th>
+                          <th className="text-center py-1">Taxa</th>
+                          <th className="text-right py-1">Valor Parcela</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { n: 1, fee: 3.09 },
+                          { n: 2, fee: 9.64 },
+                          { n: 3, fee: 11.23 },
+                          { n: 4, fee: 11.36 },
+                          { n: 5, fee: 14.31 },
+                          { n: 6, fee: 14.32 },
+                          { n: 7, fee: 16.72 },
+                          { n: 8, fee: 16.73 },
+                          { n: 9, fee: 19.69 },
+                          { n: 10, fee: 20.65 },
+                        ].map(({ n, fee }) => {
+                          const totalWithFee = totalAmount * (1 + fee / 100);
+                          const installmentValue = totalWithFee / n;
+                          return (
+                            <tr key={n} className="border-t border-[#f3f4f6]">
+                              <td className="py-1 font-semibold text-[#374151]">{n}x</td>
+                              <td className="py-1 text-center text-[#9ca3af]">{fee}%</td>
+                              <td className="py-1 text-right font-medium text-[#1f2937]">
+                                R$ {installmentValue.toFixed(2)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
