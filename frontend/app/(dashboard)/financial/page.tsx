@@ -105,8 +105,11 @@ export default function FinancialDashboard() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    const refreshInterval = setInterval(fetchFinancialData, 30000);
+
     return () => {
       clearTimeout(debounceTimer);
+      clearInterval(refreshInterval);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

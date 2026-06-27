@@ -84,16 +84,30 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
-    if (!category || !description || amount === undefined) {
+    const missingFields: string[] = [];
+    if (!category) missingFields.push('categoria');
+    if (!description) missingFields.push('descrição');
+    if (amount === undefined || amount === '') missingFields.push('valor');
+
+    if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: 'Campos obrigatórios: category, description, amount' },
+        { error: `Campos obrigatórios faltando: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
 
     const numericAmount = Number(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0 || !isFinite(numericAmount)) {
-      return NextResponse.json({ error: 'Valor da despesa deve ser um número positivo válido' }, { status: 400 });
+    if (isNaN(numericAmount)) {
+      return NextResponse.json({ error: 'O valor deve ser um número válido' }, { status: 400 });
+    }
+    if (numericAmount <= 0) {
+      return NextResponse.json({ error: 'O valor deve ser maior que zero' }, { status: 400 });
+    }
+    if (!isFinite(numericAmount)) {
+      return NextResponse.json({ error: 'O valor não pode ser infinito' }, { status: 400 });
+    }
+    if (numericAmount > 999999999.99) {
+      return NextResponse.json({ error: 'O valor excede o limite permitido' }, { status: 400 });
     }
 
     const expense = await prisma.expense.create({

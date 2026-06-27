@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import api from '../../../lib/api';
-import { Card, CardContent } from '@/components/Card';
+import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
-import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
 import { EXPENSE_CATEGORIES, COST_CENTERS, getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
 import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+import { formatCurrency } from '@/lib/format';
 
 interface Expense {
   id: string;
@@ -39,8 +39,6 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function ExpensesPage() {
-  const { user, logout } = useAuth();
-  const authUser = user as { name?: string; email: string; role: string } | null;
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -235,10 +233,6 @@ export default function ExpensesPage() {
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  };
-
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -257,7 +251,7 @@ export default function ExpensesPage() {
         ) : error ? (
           <Card>
             <div className="text-center py-12 space-y-3">
-              <p className="text-red-600 dark:text-red-400 font-semibold text-sm">{error}</p>
+              <p className="text-red-600 dark:text-red-400 font-semibold text-sm" role="alert">{error}</p>
               <Button onClick={() => fetchExpenses(1)} variant="outline" size="sm">Tentar Novamente</Button>
             </div>
           </Card>
@@ -344,14 +338,15 @@ export default function ExpensesPage() {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nova Despesa">
         <form onSubmit={handleCreateExpense} className="space-y-4">
           {createError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {createError}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}
+              <label htmlFor="exp-category" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
+              <select id="exp-category" value={category} onChange={(e) => setCategory(e.target.value)}
+                aria-label="Categoria da despesa"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {EXPENSE_CATEGORIES.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -359,8 +354,9 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
-              <select value={costCenter} onChange={(e) => setCostCenter(e.target.value)}
+              <label htmlFor="exp-costCenter" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
+              <select id="exp-costCenter" value={costCenter} onChange={(e) => setCostCenter(e.target.value)}
+                aria-label="Centro de custo"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {COST_CENTERS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -369,41 +365,44 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
-            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} required
+            <label htmlFor="exp-description" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
+            <input id="exp-description" type="text" value={description} onChange={(e) => setDescription(e.target.value)} required
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
               placeholder="Ex: Compra de conexões PVC" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
-              <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required
+              <label htmlFor="exp-amount" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
+              <input id="exp-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
                 placeholder="0,00" />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
-              <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)}
+              <label htmlFor="exp-expenseDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
+              <input id="exp-expenseDate" type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)}
+                autoComplete="off"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
-              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+              <label htmlFor="exp-dueDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
+              <input id="exp-dueDate" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+                autoComplete="off"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
-              <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)}
+              <label htmlFor="exp-vendorName" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
+              <input id="exp-vendorName" type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)}
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
                 placeholder="Nome do fornecedor" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
-              <select value={documentType} onChange={(e) => setDocumentType(e.target.value)}
+              <label htmlFor="exp-documentType" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
+              <select id="exp-documentType" value={documentType} onChange={(e) => setDocumentType(e.target.value)}
+                aria-label="Tipo de documento"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 <option value="">Nenhum</option>
                 <option value="NOTA_FISCAL">Nota Fiscal</option>
@@ -412,15 +411,15 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
-              <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)}
+              <label htmlFor="exp-documentNumber" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
+              <input id="exp-documentNumber" type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)}
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
                 placeholder="Ex: NF-12345" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
+            <label htmlFor="exp-notes" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
+            <textarea id="exp-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
           </div>
           <div className="flex justify-end gap-2">
@@ -434,14 +433,15 @@ export default function ExpensesPage() {
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Editar Despesa">
         <form onSubmit={handleUpdateExpense} className="space-y-4">
           {editError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {editError}
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
-              <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
+              <label htmlFor="edit-category" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
+              <select id="edit-category" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
+                aria-label="Categoria da despesa"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {EXPENSE_CATEGORIES.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -449,8 +449,9 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
-              <select value={editCostCenter} onChange={(e) => setEditCostCenter(e.target.value)}
+              <label htmlFor="edit-costCenter" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
+              <select id="edit-costCenter" value={editCostCenter} onChange={(e) => setEditCostCenter(e.target.value)}
+                aria-label="Centro de custo"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {COST_CENTERS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -459,38 +460,41 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
-            <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} required
+            <label htmlFor="edit-description" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
+            <input id="edit-description" type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} required
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
-              <input type="number" step="0.01" min="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} required
+              <label htmlFor="edit-amount" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
+              <input id="edit-amount" type="number" step="0.01" min="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} required
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
-              <input type="date" value={editExpenseDate} onChange={(e) => setEditExpenseDate(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
-              <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
-              <input type="text" value={editVendorName} onChange={(e) => setEditVendorName(e.target.value)}
+              <label htmlFor="edit-expenseDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
+              <input id="edit-expenseDate" type="date" value={editExpenseDate} onChange={(e) => setEditExpenseDate(e.target.value)}
+                autoComplete="off"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
-              <select value={editDocumentType} onChange={(e) => setEditDocumentType(e.target.value)}
+              <label htmlFor="edit-dueDate" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
+              <input id="edit-dueDate" type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                autoComplete="off"
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label htmlFor="edit-vendorName" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
+              <input id="edit-vendorName" type="text" value={editVendorName} onChange={(e) => setEditVendorName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="edit-documentType" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
+              <select id="edit-documentType" value={editDocumentType} onChange={(e) => setEditDocumentType(e.target.value)}
+                aria-label="Tipo de documento"
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 <option value="">Nenhum</option>
                 <option value="NOTA_FISCAL">Nota Fiscal</option>
@@ -499,14 +503,14 @@ export default function ExpensesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
-              <input type="text" value={editDocumentNumber} onChange={(e) => setEditDocumentNumber(e.target.value)}
+              <label htmlFor="edit-documentNumber" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
+              <input id="edit-documentNumber" type="text" value={editDocumentNumber} onChange={(e) => setEditDocumentNumber(e.target.value)}
                 className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
-            <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
+            <label htmlFor="edit-notes" className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
+            <textarea id="edit-notes" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
               className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
           </div>
           <div className="flex justify-end gap-2">
@@ -520,16 +524,21 @@ export default function ExpensesPage() {
       <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Excluir Despesa">
         <div className="space-y-4">
           {deleteError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {deleteError}
             </div>
           )}
           <p className="text-sm text-neutral-700 dark:text-neutral-300">
-            Tem certeza que deseja excluir a despesa <strong>"{selectedExpense?.description}"</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
+            Tem certeza que deseja excluir a despesa <strong>&ldquo;{selectedExpense?.description}&rdquo;</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
           </p>
-          <p className="text-xs text-neutral-500">
-            Esta ação é irreversível. Se a despesa possui transações financeiras vinculadas, a exclusão será bloqueada.
-          </p>
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+              Esta ação é irreversível.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              Se a despesa possui transações financeiras vinculadas (foi marcada como paga), a exclusão será bloqueada. Nesse caso, cancele a despesa ao invés de excluí-la.
+            </p>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Voltar</Button>
             <Button variant="danger" onClick={handleDeleteExpense} isLoading={deleteLoading}>
@@ -543,16 +552,23 @@ export default function ExpensesPage() {
       <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Marcar como Paga">
         <div className="space-y-4">
           {payError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800" role="alert">
               {payError}
             </div>
           )}
           <p className="text-sm text-neutral-700 dark:text-neutral-300">
-            Confirma o pagamento da despesa <strong>"{selectedExpense?.description}"</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
+            Confirma o pagamento da despesa <strong>&ldquo;{selectedExpense?.description}&rdquo;</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
           </p>
-          <p className="text-xs text-neutral-500">
-            O pagamento será registrado e uma transação financeira de saída será criada automaticamente.
-          </p>
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-xs text-blue-700 dark:text-blue-400 font-semibold">
+              O que acontecerá ao confirmar:
+            </p>
+            <ul className="text-xs text-blue-600 dark:text-blue-500 mt-1 space-y-1 list-disc list-inside">
+              <li>Status da despesa mudará para &ldquo;Paga&rdquo;</li>
+              <li>Uma transação financeira de saída será registrada</li>
+              <li>O saldo do dashboard será atualizado</li>
+            </ul>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setIsPayOpen(false)}>Cancelar</Button>
             <Button onClick={handleMarkPaid} isLoading={payLoading}>

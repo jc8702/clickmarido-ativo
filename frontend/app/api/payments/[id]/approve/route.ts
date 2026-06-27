@@ -46,6 +46,11 @@ async function handleApprove(
         throw new Error('Pagamento já está confirmado/pago');
       }
 
+      // Validar transição de status: só permite pendente → confirmado
+      if (payment.status !== 'pendente') {
+        throw new Error(`Transição de "${payment.status}" para "confirmado" não é permitida`);
+      }
+
       const updatedPayment = await tx.payment.update({
         where: { id },
         data: {
@@ -81,17 +86,24 @@ async function handleApprove(
         }
       }
 
-      await tx.financialTransaction.create({
-        data: {
-          type: 'PAYMENT_RECEIVED',
-          paymentId: payment.id,
-          invoiceId: payment.invoiceId || null,
-          credit: payment.amount,
-          debit: 0,
-          description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (${payment.method.toUpperCase()})`,
-          transactionDate: now,
-        },
+      // Prevenir duplicidade: verificar se já existe transação financeira para este pagamento
+      const existingTransaction = await tx.financialTransaction.findFirst({
+        where: { paymentId: payment.id },
       });
+
+      if (!existingTransaction) {
+        await tx.financialTransaction.create({
+          data: {
+            type: 'PAYMENT_RECEIVED',
+            paymentId: payment.id,
+            invoiceId: payment.invoiceId || null,
+            credit: payment.amount,
+            debit: 0,
+            description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (${payment.method.toUpperCase()})`,
+            transactionDate: now,
+          },
+        });
+      }
 
       await tx.auditLog.create({
         data: {

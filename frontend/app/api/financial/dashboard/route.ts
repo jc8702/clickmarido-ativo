@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       allPaidExpenses,
       pendingExpensesSum,
       overdueExpenses,
+      pendingFutureExpenses,
       expensesByCategory,
       expensesByCostCenter
     ] = await Promise.all([
@@ -146,6 +147,15 @@ export async function GET(request: NextRequest) {
         select: { amount: true, dueDate: true },
       }),
 
+      // Despesas pendentes com vencimento futuro (para forecast)
+      prisma.expense.findMany({
+        where: {
+          status: 'pendente',
+          dueDate: { gte: now },
+        },
+        select: { amount: true, dueDate: true },
+      }),
+
       // Agrupamento por categoria de despesas
       prisma.expense.groupBy({
         by: ['category'],
@@ -194,14 +204,15 @@ export async function GET(request: NextRequest) {
       .filter(inv => inv.dueDate <= now90)
       .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
 
-    // Despesas previstas: despesas pendentes que vencerão no período (apenas as que têm dueDate)
-    const forecast30Payable = overdueExpenses
+    // Despesas previstas: despesas pendentes (vencidas + futuras) que vencerão no período
+    const allPendingExpenses = [...overdueExpenses, ...pendingFutureExpenses];
+    const forecast30Payable = allPendingExpenses
       .filter(exp => exp.dueDate && exp.dueDate <= now30)
       .reduce((sum, exp) => sum + Number(exp.amount), 0);
-    const forecast60Payable = overdueExpenses
+    const forecast60Payable = allPendingExpenses
       .filter(exp => exp.dueDate && exp.dueDate <= now60)
       .reduce((sum, exp) => sum + Number(exp.amount), 0);
-    const forecast90Payable = overdueExpenses
+    const forecast90Payable = allPendingExpenses
       .filter(exp => exp.dueDate && exp.dueDate <= now90)
       .reduce((sum, exp) => sum + Number(exp.amount), 0);
 

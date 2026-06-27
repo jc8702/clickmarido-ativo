@@ -42,7 +42,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('GET /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao buscar despesa' }, { status: 500 });
-  } finally {
   }
 }
 
@@ -83,13 +82,25 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (status && status !== existingExpense.status) {
       if (status === 'paga') {
         return NextResponse.json(
-          { error: 'Para marcar como paga, use o endpoint /mark-paid' },
+          { error: 'Para marcar como paga, use o botão "Pagar" na listagem' },
           { status: 400 }
         );
       }
       if (status !== 'cancelada') {
         return NextResponse.json(
-          { error: 'Transição de status não permitida' },
+          { error: `Transição de "${existingExpense.status}" para "${status}" não é permitida` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Validar se despesa paga pode ser editada
+    if (existingExpense.status === 'paga') {
+      const allowedFields = ['notes', 'documentNumber'];
+      const attemptedFields = Object.keys(body).filter(k => !allowedFields.includes(k) && body[k] !== undefined);
+      if (attemptedFields.length > 0) {
+        return NextResponse.json(
+          { error: `Despesa paga só permite alteração de observações e número do documento` },
           { status: 400 }
         );
       }
@@ -101,8 +112,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (description) updateData.description = description;
     if (amount !== undefined) {
       const numericAmount = Number(amount);
-      if (isNaN(numericAmount) || numericAmount <= 0 || !isFinite(numericAmount)) {
-        return NextResponse.json({ error: 'Valor deve ser um número positivo válido' }, { status: 400 });
+      if (isNaN(numericAmount)) {
+        return NextResponse.json({ error: 'O valor deve ser um número válido' }, { status: 400 });
+      }
+      if (numericAmount <= 0) {
+        return NextResponse.json({ error: 'O valor deve ser maior que zero' }, { status: 400 });
+      }
+      if (!isFinite(numericAmount)) {
+        return NextResponse.json({ error: 'O valor não pode ser infinito' }, { status: 400 });
       }
       updateData.amount = numericAmount;
     }
@@ -128,7 +145,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('PUT /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao atualizar despesa' }, { status: 500 });
-  } finally {
   }
 }
 
@@ -155,7 +171,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (linkedTransactions.length > 0) {
       return NextResponse.json(
-        { error: 'Despesa possui transações financeiras vinculadas. Cancele ao invés de excluir.' },
+        { error: 'Despesa possui transações financeiras vinculadas. Cancele a despesa ao invés de excluí-la.' },
         { status: 400 }
       );
     }
@@ -172,6 +188,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error('DELETE /api/expenses/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao excluir despesa' }, { status: 500 });
-  } finally {
   }
 }
