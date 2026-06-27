@@ -144,20 +144,20 @@ export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Vínculo Orçamento (ID)</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Vínculo Orçamento (ID) - Opcional</label>
           <input 
             {...register('quotationId')} 
-            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs" 
-            placeholder="CUID do Orçamento" 
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm" 
+            placeholder="Deixe em branco se não houver"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Vínculo Ordem de Serviço (ID)</label>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Vínculo Ordem de Serviço (ID) - Opcional</label>
           <input 
             {...register('serviceOrderId')} 
-            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-xs" 
-            placeholder="CUID da Ordem de Serviço" 
+            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm" 
+            placeholder="Deixe em branco se não houver"
           />
         </div>
 

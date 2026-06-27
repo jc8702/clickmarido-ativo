@@ -56,7 +56,7 @@ async function main() {
 
     const purchaseOrder = await prisma.purchaseOrder.create({
       data: {
-        number: 'TEST-1234',
+        number: 'TEST-' + Date.now(),
         vendorId: payload.vendorId,
         quotationId: finalQuotationId,
         serviceOrderId: finalServiceOrderId,
