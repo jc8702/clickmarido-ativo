@@ -1,10 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import dynamic from 'next/dynamic';
-import 'react-quill/dist/quill.snow.css';
-
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import React, { useState, useEffect } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -48,8 +44,30 @@ const formats = [
 ];
 
 export function RichTextEditor({ value, onChange, placeholder, className = '' }: RichTextEditorProps) {
+  const [ReactQuill, setReactQuill] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    import('react-quill').then((mod) => {
+      setReactQuill(() => mod.default);
+      setMounted(true);
+    });
+  }, []);
+
+  if (!mounted || !ReactQuill) {
+    return (
+      <div className={`w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 min-h-[120px] ${className}`}>
+        <p className="text-neutral-400 text-sm">Carregando editor...</p>
+      </div>
+    );
+  }
+
   return (
     <div className={`rich-text-editor ${className}`}>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css"
+      />
       <ReactQuill
         theme="snow"
         value={value}
@@ -57,41 +75,7 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         modules={modules}
         formats={formats}
         placeholder={placeholder || 'Digite suas observações...'}
-        className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
       />
-      <style jsx>{`
-        .rich-text-editor :global(.ql-toolbar) {
-          border-color: rgb(209 213 219);
-          border-radius: 0.5rem 0.5rem 0 0;
-          background-color: rgb(249 250 251);
-        }
-        .rich-text-editor :global(.dark .ql-toolbar) {
-          border-color: rgb(75 85 99);
-          background-color: rgb(55 65 81);
-        }
-        .rich-text-editor :global(.ql-container) {
-          border-color: rgb(209 213 219);
-          border-radius: 0 0 0.5rem 0.5rem;
-          font-size: 0.875rem;
-          min-height: 120px;
-        }
-        .rich-text-editor :global(.dark .ql-container) {
-          border-color: rgb(75 85 99);
-        }
-        .rich-text-editor :global(.ql-editor) {
-          min-height: 120px;
-          color: rgb(17 24 39);
-        }
-        .rich-text-editor :global(.dark .ql-editor) {
-          color: rgb(243 244 246);
-        }
-        .rich-text-editor :global(.ql-editor.ql-blank::before) {
-          color: rgb(156 163 175);
-        }
-        .rich-text-editor :global(.dark .ql-editor.ql-blank::before) {
-          color: rgb(156 163 175);
-        }
-      `}</style>
     </div>
   );
 }
