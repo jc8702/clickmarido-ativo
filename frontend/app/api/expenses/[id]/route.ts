@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 function validateToken(request: NextRequest) {
@@ -78,6 +77,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!existingExpense) {
       return NextResponse.json({ error: 'Despesa não encontrada' }, { status: 404 });
+    }
+
+    // Bloquear mudança direta de status para 'paga' — usar endpoint mark-paid
+    if (status && status !== existingExpense.status) {
+      if (status === 'paga') {
+        return NextResponse.json(
+          { error: 'Para marcar como paga, use o endpoint /mark-paid' },
+          { status: 400 }
+        );
+      }
+      if (status !== 'cancelada') {
+        return NextResponse.json(
+          { error: 'Transição de status não permitida' },
+          { status: 400 }
+        );
+      }
     }
 
     const updateData: any = {};
@@ -193,6 +208,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (!existingExpense) {
       return NextResponse.json({ error: 'Despesa não encontrada' }, { status: 404 });
+    }
+
+    // Verificar se há transações financeiras vinculadas
+    const linkedTransactions = await prisma.financialTransaction.findMany({
+      where: { expenseId: id },
+    });
+
+    if (linkedTransactions.length > 0) {
+      return NextResponse.json(
+        { error: 'Despesa possui transações financeiras vinculadas. Cancele ao invés de excluir.' },
+        { status: 400 }
+      );
     }
 
     await prisma.expense.delete({

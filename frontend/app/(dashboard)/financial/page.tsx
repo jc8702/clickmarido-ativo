@@ -13,15 +13,19 @@ export default function FinancialDashboard() {
   const authUser = user as { name?: string; email: string; role: string } | null;
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchFinancialData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.get('/financial/dashboard');
       setData(res.data);
       setLastUpdated(new Date().toLocaleTimeString('pt-BR'));
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao carregar dados financeiros.';
+      setError(msg);
       console.error('Erro ao carregar dados financeiros:', err);
     } finally {
       setLoading(false);
@@ -69,7 +73,7 @@ export default function FinancialDashboard() {
                 Atualizado às {lastUpdated}
               </span>
             )}
-            <Button onClick={fetchFinancialData} variant="outline" size="sm">
+            <Button onClick={fetchFinancialData} variant="outline" size="sm" disabled={loading}>
               Recarregar Dados
             </Button>
           </div>
@@ -81,9 +85,18 @@ export default function FinancialDashboard() {
             <CardShimmer />
             <CardShimmer />
           </div>
+        ) : error ? (
+          <Card>
+            <div className="text-center py-12 space-y-3">
+              <p className="text-red-600 dark:text-red-400 font-semibold text-sm">{error}</p>
+              <Button onClick={fetchFinancialData} variant="outline" size="sm">
+                Tentar Novamente
+              </Button>
+            </div>
+          </Card>
         ) : !data ? (
           <Card>
-            <div className="text-center py-12 text-neutral-500">Erro ao carregar dados.</div>
+            <div className="text-center py-12 text-neutral-500">Nenhum dado financeiro disponível.</div>
           </Card>
         ) : (
           <div className="space-y-8">
@@ -94,10 +107,10 @@ export default function FinancialDashboard() {
                   <CardTitle className="text-xs uppercase tracking-wider text-neutral-400">Saldo Consolidado</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                  <div className={`text-3xl font-black ${(data.balance?.current || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {formatCurrency(data.balance?.current || 0)}
                   </div>
-                  <p className="text-xs text-neutral-500">Receitas menos despesas efetuadas</p>
+                  <p className="text-xs text-neutral-500">Pagamentos confirmados menos despesas pagas</p>
                 </CardContent>
               </Card>
 
@@ -109,7 +122,7 @@ export default function FinancialDashboard() {
                   <div className="text-3xl font-black text-primary-600 dark:text-primary-400">
                     {formatCurrency(data.balance?.forecast30 || 0)}
                   </div>
-                  <p className="text-xs text-neutral-500">Fluxo projetado com base em faturas pendentes</p>
+                  <p className="text-xs text-neutral-500">Fluxo projetado com base em faturas emitidas</p>
                 </CardContent>
               </Card>
 

@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       recentExpenses,
       allPaidExpenses,
       pendingExpensesSum,
+      overdueExpenses,
       expensesByCategory,
       expensesByCostCenter
     ] = await Promise.all([
@@ -58,19 +59,19 @@ export async function GET(request: NextRequest) {
         _count: true,
       }),
 
-      // Invoices pendentes (a receber)
+      // Invoices pendentes (a receber) — apenas emitidas, rascunho não é cobrança
       prisma.invoice.findMany({
         where: {
-          status: { in: ['rascunho', 'emitida'] },
+          status: 'emitida',
           dueDate: { gte: now },
         },
         select: { totalAmount: true, dueDate: true },
       }),
 
-      // Invoices vencidas
+      // Invoices vencidas — apenas emitidas
       prisma.invoice.findMany({
         where: {
-          status: { in: ['rascunho', 'emitida'] },
+          status: 'emitida',
           dueDate: { lt: now },
         },
         select: { totalAmount: true, dueDate: true },
@@ -136,6 +137,15 @@ export async function GET(request: NextRequest) {
         _sum: { amount: true }
       }),
 
+      // Despesas vencidas (dueDate < hoje e ainda não pagas)
+      prisma.expense.findMany({
+        where: {
+          status: 'pendente',
+          dueDate: { lt: now },
+        },
+        select: { amount: true, dueDate: true },
+      }),
+
       // Agrupamento por categoria de despesas
       prisma.expense.groupBy({
         by: ['category'],
@@ -155,6 +165,7 @@ export async function GET(request: NextRequest) {
     const totalReceivable = pendingInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
     const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
     const totalPayable = Number(pendingExpensesSum._sum.amount || 0);
+    const totalPayableOverdue = overdueExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
     // Calcular saldo atual (real consolidado)
     const currentBalance = Number(paidInvoices._sum.amount || 0) - Number(allPaidExpenses._sum.amount || 0);
@@ -181,8 +192,8 @@ export async function GET(request: NextRequest) {
         total: totalReceivable,
       },
       payable: {
-        overdue: 0,
-        pending: totalPayable,
+        overdue: totalPayableOverdue,
+        pending: totalPayable - totalPayableOverdue,
         total: totalPayable,
       },
       counts: {

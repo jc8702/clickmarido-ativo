@@ -8,6 +8,8 @@ import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
+import { EXPENSE_CATEGORIES, COST_CENTERS, getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Expense {
   id: string;
@@ -17,6 +19,10 @@ interface Expense {
   amount: number;
   status: 'pendente' | 'paga' | 'cancelada';
   expenseDate: string;
+  dueDate?: string;
+  vendorName?: string;
+  documentType?: string;
+  documentNumber?: string;
   notes?: string;
 }
 
@@ -32,25 +38,31 @@ const statusLabels: Record<string, string> = {
   cancelada: 'Cancelada',
 };
 
-import { EXPENSE_CATEGORIES, COST_CENTERS, getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
-import { useEscapeToClose } from '@/hooks/useEscapeToClose';
-
 export default function ExpensesPage() {
   const { user, logout } = useAuth();
   const authUser = user as { name?: string; email: string; role: string } | null;
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Form states
+  // Create modal
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [category, setCategory] = useState('MATERIAL');
   const [costCenter, setCostCenter] = useState('OPERACIONAL');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [vendorName, setVendorName] = useState('');
+  const [documentType, setDocumentType] = useState('');
+  const [documentNumber, setDocumentNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  // Edit states
+  // Edit modal
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editCategory, setEditCategory] = useState('');
@@ -58,30 +70,67 @@ export default function ExpensesPage() {
   const [editDescription, setEditDescription] = useState('');
   const [editAmount, setEditAmount] = useState('');
   const [editExpenseDate, setEditExpenseDate] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editVendorName, setEditVendorName] = useState('');
+  const [editDocumentType, setEditDocumentType] = useState('');
+  const [editDocumentNumber, setEditDocumentNumber] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
 
-  // Integrar ESC no fechamento
+  // Delete confirmation
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  // Mark paid
+  const [isPayOpen, setIsPayOpen] = useState(false);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState('');
+
   useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
   useEscapeToClose(isEditOpen, () => setIsEditOpen(false));
+  useEscapeToClose(isDeleteOpen, () => setIsDeleteOpen(false));
+  useEscapeToClose(isPayOpen, () => setIsPayOpen(false));
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (p = page) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await api.get('/expenses');
+      const res = await api.get('/expenses', { params: { page: p, limit: 20 } });
       setExpenses(res.data.data);
-    } catch (err) {
-      console.error('Erro ao listar despesas:', err);
+      setTotalPages(res.data.meta?.totalPages || 1);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao carregar despesas.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchExpenses();
+    fetchExpenses(1);
+    setPage(1);
   }, []);
+
+  const resetCreateForm = () => {
+    setCategory('MATERIAL');
+    setCostCenter('OPERACIONAL');
+    setDescription('');
+    setAmount('');
+    setExpenseDate('');
+    setDueDate('');
+    setVendorName('');
+    setDocumentType('');
+    setDocumentNumber('');
+    setNotes('');
+    setCreateError('');
+  };
 
   const handleCreateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateLoading(true);
+    setCreateError('');
     try {
       await api.post('/expenses', {
         category,
@@ -89,34 +138,45 @@ export default function ExpensesPage() {
         description,
         amount: Number(amount),
         expenseDate: expenseDate || undefined,
+        dueDate: dueDate || undefined,
+        vendorName: vendorName || undefined,
+        documentType: documentType || undefined,
+        documentNumber: documentNumber || undefined,
         notes,
       });
       setIsCreateOpen(false);
-      setDescription('');
-      setAmount('');
-      setExpenseDate('');
-      setNotes('');
-      setCostCenter('OPERACIONAL');
-      fetchExpenses();
-    } catch (err) {
-      alert('Erro ao registrar despesa.');
+      resetCreateForm();
+      fetchExpenses(1);
+      setPage(1);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao registrar despesa.';
+      setCreateError(msg);
+    } finally {
+      setCreateLoading(false);
     }
   };
 
-  const handleEditClick = (exp: Expense) => {
+  const openEditModal = (exp: Expense) => {
     setSelectedExpense(exp);
     setEditCategory(exp.category);
     setEditCostCenter(exp.costCenter || 'OPERACIONAL');
     setEditDescription(exp.description);
     setEditAmount(String(exp.amount));
     setEditExpenseDate(exp.expenseDate ? exp.expenseDate.split('T')[0] : '');
+    setEditDueDate(exp.dueDate ? exp.dueDate.split('T')[0] : '');
+    setEditVendorName(exp.vendorName || '');
+    setEditDocumentType(exp.documentType || '');
+    setEditDocumentNumber(exp.documentNumber || '');
     setEditNotes(exp.notes || '');
+    setEditError('');
     setIsEditOpen(true);
   };
 
   const handleUpdateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedExpense) return;
+    setEditLoading(true);
+    setEditError('');
     try {
       await api.put(`/expenses/${selectedExpense.id}`, {
         category: editCategory,
@@ -124,34 +184,54 @@ export default function ExpensesPage() {
         description: editDescription,
         amount: Number(editAmount),
         expenseDate: editExpenseDate || undefined,
+        dueDate: editDueDate || undefined,
+        vendorName: editVendorName || undefined,
+        documentType: editDocumentType || undefined,
+        documentNumber: editDocumentNumber || undefined,
         notes: editNotes,
       });
       setIsEditOpen(false);
       setSelectedExpense(null);
       fetchExpenses();
-    } catch (err) {
-      alert('Erro ao atualizar despesa.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao atualizar despesa.';
+      setEditError(msg);
+    } finally {
+      setEditLoading(false);
     }
   };
 
-  const handleDeleteExpense = async (id: string) => {
-    if (!confirm('Deseja realmente excluir esta despesa definitivamente?')) return;
+  const handleDeleteExpense = async () => {
+    if (!selectedExpense) return;
+    setDeleteLoading(true);
+    setDeleteError('');
     try {
-      await api.delete(`/expenses/${id}`);
+      await api.delete(`/expenses/${selectedExpense.id}`);
+      setIsDeleteOpen(false);
+      setSelectedExpense(null);
       fetchExpenses();
-    } catch (err) {
-      alert('Erro ao excluir despesa.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao excluir despesa.';
+      setDeleteError(msg);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
-  const handleMarkPaid = async (id: string) => {
+  const handleMarkPaid = async () => {
+    if (!selectedExpense) return;
+    setPayLoading(true);
+    setPayError('');
     try {
-      await api.post(`/expenses/${id}/mark-paid`, {
-        paidAt: new Date().toISOString(),
-      });
+      await api.post(`/expenses/${selectedExpense.id}/mark-paid`);
+      setIsPayOpen(false);
+      setSelectedExpense(null);
       fetchExpenses();
-    } catch (err) {
-      alert('Erro ao marcar despesa como paga.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Erro ao marcar despesa como paga.';
+      setPayError(msg);
+    } finally {
+      setPayLoading(false);
     }
   };
 
@@ -161,114 +241,127 @@ export default function ExpensesPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      <main className="max-w-7xl mx-auto px-6 py-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Controle de Despesas</h1>
+            <h1 className="text-3xl sm:text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Controle de Despesas</h1>
             <p className="text-neutral-600 dark:text-neutral-400">Controle de gastos operacionais e pagamentos a fornecedores</p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)} className="shadow-md hover:shadow-lg transition-all duration-300">
+          <Button onClick={() => { resetCreateForm(); setIsCreateOpen(true); }} className="shadow-md hover:shadow-lg transition-all duration-300">
             + Nova Despesa
           </Button>
         </div>
 
         {loading ? (
           <div className="text-center py-12 text-neutral-600 dark:text-neutral-400">Carregando...</div>
+        ) : error ? (
+          <Card>
+            <div className="text-center py-12 space-y-3">
+              <p className="text-red-600 dark:text-red-400 font-semibold text-sm">{error}</p>
+              <Button onClick={() => fetchExpenses(1)} variant="outline" size="sm">Tentar Novamente</Button>
+            </div>
+          </Card>
         ) : expenses.length === 0 ? (
           <Card>
             <div className="text-center py-12 text-neutral-500 dark:text-neutral-400">Nenhuma despesa registrada</div>
           </Card>
         ) : (
-          <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden bg-white dark:bg-neutral-800">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeader>Data</TableHeader>
-                  <TableHeader>Descrição</TableHeader>
-                  <TableHeader>Categoria</TableHeader>
-                  <TableHeader>Centro de Custo</TableHeader>
-                  <TableHeader>Valor</TableHeader>
-                  <TableHeader>Status</TableHeader>
-                  <TableHeader>Ações</TableHeader>
-                </TableRow>
-              </TableHead>
-              <tbody>
-                {expenses.map((exp) => (
-                  <TableRow key={exp.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
-                    <TableCell className="text-neutral-600 dark:text-neutral-400 text-sm">
-                      {new Date(exp.expenseDate).toLocaleDateString('pt-BR')}
-                    </TableCell>
-                    <TableCell className="font-semibold text-neutral-855 dark:text-neutral-100">
-                      {exp.description}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
-                        {getCategoryLabel(exp.category)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
-                        {getCostCenterLabel(exp.costCenter || '')}
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-bold text-neutral-850 dark:text-neutral-200">
-                      {formatCurrency(exp.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusBadgeVariant[exp.status] || 'neutral'} size="sm">
-                        {statusLabels[exp.status] || exp.status.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                        {exp.status === 'pendente' && (
-                          <Button variant="outline" size="xs" onClick={() => handleMarkPaid(exp.id)}>
-                            Marcar Paga
-                          </Button>
-                        )}
-                        <Button variant="outline" size="xs" onClick={() => handleEditClick(exp)}>
-                          Editar
-                        </Button>
-                        <Button variant="danger" size="xs" onClick={() => handleDeleteExpense(exp.id)}>
-                          Excluir
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </tbody>
-            </Table>
-          </Card>
+          <>
+            <Card shadow="lg" className="border border-neutral-100 dark:border-neutral-700 overflow-hidden bg-white dark:bg-neutral-800">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeader>Data</TableHeader>
+                      <TableHeader className="hidden sm:table-cell">Descrição</TableHeader>
+                      <TableHeader className="hidden md:table-cell">Categoria</TableHeader>
+                      <TableHeader>Valor</TableHeader>
+                      <TableHeader>Status</TableHeader>
+                      <TableHeader>Ações</TableHeader>
+                    </TableRow>
+                  </TableHead>
+                  <tbody>
+                    {expenses.map((exp) => (
+                      <TableRow key={exp.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer">
+                        <TableCell className="text-neutral-600 dark:text-neutral-400 text-sm whitespace-nowrap">
+                          {new Date(exp.expenseDate).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell font-semibold text-neutral-800 dark:text-neutral-100">
+                          {exp.description}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
+                            {getCategoryLabel(exp.category)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-bold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
+                          {formatCurrency(exp.amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusBadgeVariant[exp.status] || 'neutral'} size="sm">
+                            {statusLabels[exp.status] || exp.status.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 sm:gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                            {exp.status === 'pendente' && (
+                              <Button variant="outline" size="xs" onClick={() => { setSelectedExpense(exp); setIsPayOpen(true); setPayError(''); }}>
+                                Pagar
+                              </Button>
+                            )}
+                            <Button variant="outline" size="xs" onClick={() => openEditModal(exp)}>
+                              Editar
+                            </Button>
+                            <Button variant="danger" size="xs" onClick={() => { setSelectedExpense(exp); setIsDeleteOpen(true); setDeleteError(''); }}>
+                              Excluir
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Card>
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4 px-1">
+                <span className="text-xs text-neutral-500">Página {page} de {totalPages}</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => { setPage(page - 1); fetchExpenses(page - 1); }}>
+                    Anterior
+                  </Button>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => { setPage(page + 1); fetchExpenses(page + 1); }}>
+                    Próxima
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
 
       {/* Modal Criar Despesa */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Nova Despesa">
         <form onSubmit={handleCreateExpense} className="space-y-4">
+          {createError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+              {createError}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-                Categoria
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              >
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {EXPENSE_CATEGORIES.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-                Centro de Custo
-              </label>
-              <select
-                value={costCenter}
-                onChange={(e) => setCostCenter(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              >
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
+              <select value={costCenter} onChange={(e) => setCostCenter(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {COST_CENTERS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -276,61 +369,63 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Descrição
-            </label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              placeholder="Ex: Compra de conexões PVC"
-            />
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
+            <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} required
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
+              placeholder="Ex: Compra de conexões PVC" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
+              <input type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
+                placeholder="0,00" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
+              <input type="date" value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
+              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
+              <input type="text" value={vendorName} onChange={(e) => setVendorName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
+                placeholder="Nome do fornecedor" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
+              <select value={documentType} onChange={(e) => setDocumentType(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
+                <option value="">Nenhum</option>
+                <option value="NOTA_FISCAL">Nota Fiscal</option>
+                <option value="RECIBO">Recibo</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
+              <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm"
+                placeholder="Ex: NF-12345" />
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Valor (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              placeholder="0,00"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Data da Despesa
-            </label>
-            <input
-              type="date"
-              value={expenseDate}
-              onChange={(e) => setExpenseDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Observações
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              rows={3}
-            />
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Registrar Despesa
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancelar</Button>
+            <Button type="submit" isLoading={createLoading}>Registrar Despesa</Button>
           </div>
         </form>
       </Modal>
@@ -338,30 +433,25 @@ export default function ExpensesPage() {
       {/* Modal Editar Despesa */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Editar Despesa">
         <form onSubmit={handleUpdateExpense} className="space-y-4">
+          {editError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+              {editError}
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-                Categoria
-              </label>
-              <select
-                value={editCategory}
-                onChange={(e) => setEditCategory(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              >
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Categoria *</label>
+              <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {EXPENSE_CATEGORIES.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-                Centro de Custo
-              </label>
-              <select
-                value={editCostCenter}
-                onChange={(e) => setEditCostCenter(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              >
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Centro de Custo</label>
+              <select value={editCostCenter} onChange={(e) => setEditCostCenter(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
                 {COST_CENTERS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -369,61 +459,107 @@ export default function ExpensesPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Descrição
-            </label>
-            <input
-              type="text"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              required
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-            />
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Descrição *</label>
+            <input type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} required
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Valor (R$) *</label>
+              <input type="number" step="0.01" min="0.01" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} required
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data da Despesa</label>
+              <input type="date" value={editExpenseDate} onChange={(e) => setEditExpenseDate(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Data de Vencimento</label>
+              <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Fornecedor</label>
+              <input type="text" value={editVendorName} onChange={(e) => setEditVendorName(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Tipo de Documento</label>
+              <select value={editDocumentType} onChange={(e) => setEditDocumentType(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm">
+                <option value="">Nenhum</option>
+                <option value="NOTA_FISCAL">Nota Fiscal</option>
+                <option value="RECIBO">Recibo</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Número do Documento</label>
+              <input type="text" value={editDocumentNumber} onChange={(e) => setEditDocumentNumber(e.target.value)}
+                className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Valor (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={editAmount}
-              onChange={(e) => setEditAmount(e.target.value)}
-              required
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Data da Despesa
-            </label>
-            <input
-              type="date"
-              value={editExpenseDate}
-              onChange={(e) => setEditExpenseDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">
-              Observações
-            </label>
-            <textarea
-              value={editNotes}
-              onChange={(e) => setEditNotes(e.target.value)}
-              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white"
-              rows={3}
-            />
+            <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500 mb-1">Observações</label>
+            <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3}
+              className="w-full px-4 py-2 border rounded-xl dark:bg-neutral-800 dark:border-neutral-700 dark:text-white text-sm" />
           </div>
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Atualizar Despesa
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+            <Button type="submit" isLoading={editLoading}>Atualizar Despesa</Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Confirmar Exclusão */}
+      <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} title="Excluir Despesa">
+        <div className="space-y-4">
+          {deleteError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+              {deleteError}
+            </div>
+          )}
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Tem certeza que deseja excluir a despesa <strong>"{selectedExpense?.description}"</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
+          </p>
+          <p className="text-xs text-neutral-500">
+            Esta ação é irreversível. Se a despesa possui transações financeiras vinculadas, a exclusão será bloqueada.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Voltar</Button>
+            <Button variant="danger" onClick={handleDeleteExpense} isLoading={deleteLoading}>
+              Sim, Excluir Despesa
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Confirmar Pagamento */}
+      <Modal isOpen={isPayOpen} onClose={() => setIsPayOpen(false)} title="Marcar como Paga">
+        <div className="space-y-4">
+          {payError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold border border-red-200 dark:border-red-800">
+              {payError}
+            </div>
+          )}
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Confirma o pagamento da despesa <strong>"{selectedExpense?.description}"</strong> no valor de <strong>{selectedExpense ? formatCurrency(selectedExpense.amount) : ''}</strong>?
+          </p>
+          <p className="text-xs text-neutral-500">
+            O pagamento será registrado e uma transação financeira de saída será criada automaticamente.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setIsPayOpen(false)}>Cancelar</Button>
+            <Button onClick={handleMarkPaid} isLoading={payLoading}>
+              Sim, Confirmar Pagamento
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
