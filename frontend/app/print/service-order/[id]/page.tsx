@@ -80,6 +80,14 @@ export default function PrintServiceOrderPage() {
         .font-title {
           font-family: 'Outfit', sans-serif;
         }
+        .rich-text-content ul {
+          list-style-type: disc !important;
+          padding-left: 1.5rem !important;
+        }
+        .rich-text-content ol {
+          list-style-type: decimal !important;
+          padding-left: 1.5rem !important;
+        }
       `}} />
 
       {/* Script da CDN para geração de PDF */}
@@ -177,9 +185,10 @@ export default function PrintServiceOrderPage() {
           {os.notes && (
             <div className="mb-8">
               <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider font-title mb-2">Instruções / Descrição do Problema</h3>
-              <div className="bg-neutral-50/30 p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-neutral-700 leading-relaxed font-medium italic">
-                "{os.notes}"
-              </div>
+              <div 
+                className="bg-neutral-50/30 p-4 rounded-2xl border-l-4 border-purple-500 text-xs text-neutral-700 leading-relaxed font-medium italic rich-text-content"
+                dangerouslySetInnerHTML={{ __html: os.notes }}
+              />
             </div>
           )}
 
