@@ -1,13 +1,37 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Melhorias no PDF da Proposta e correções críticas no fluxo de criação/edição e catálogo de orçamentos concluídas e validadas em produção.
-- **Objetivo Central:** Migrar o Módulo WhatsApp para a nova arquitetura sem perder funcionalidades antigas como geração de orçamento integrado e seleção de contatos.
-- **Última Atualização:** 26/06/2026 - 17:15
+- **Status Atual:** Auditoria e simplificação do Módulo Financeiro concluídas (Solo Operation). Descolamento de DRE vs Livro Caixa resolvido e deploy realizado.
+- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo".
+- **Última Atualização:** 27/06/2026 - 16:05
 
 ## Histórico de Alterações
 
-### 26/06/2026 - 17:15
+### 27/06/2026 - 19:10
+- **Auditoria Funcional, UX e Deploy Final (Fase 5 e Fase 6):**
+  - **Revisão de UX e Acessibilidade:** O layout de Relatórios e do Dashboard foi polido para garantir leitura rápida. Remoção completa de gráficos inúteis para a operação individual ("Performance de Técnicos").
+  - **Correção da Fonte de Verdade:** Todos os dados agregados no dashboard e relatório agora consultam diretamente o Livro Caixa (`financial_transactions`), eliminando os riscos apontados na Fase 2 de divergências em orçamentos, faturamentos e despesas manuais.
+  - **Sincronização de Banco (Prisma):** Executado `prisma db push` garantindo que a infraestrutura esteja preparada para os lançamentos.
+  - **Validação de Build (Deploy):** Executado `npm run build` confirmando ausência de erros estáticos (`.toFixed` seguros e compatibilidade do TypeScript OK).
+  
+#### Relatório Final de Auditoria (Fase 6)
+- **Achado 1 [P0]: Divergência de Fonte de Dados Financeiros**
+  - *Evidência:* Relatórios somavam "Pagamentos" e "Despesas" diretamente das entidades filhas, enquanto o Dashboard e Contas somavam do Livro Caixa (FinancialTransaction).
+  - *Impacto:* Valores mostrados diferiam caso houvesse despesa sem nota ou lançamento avulso.
+  - *Correção Realizada:* Rota `/api/reports/route.ts` reescrita para consumir exclusivamente de `FinancialTransaction`.
+  - *Validação:* Dados consolidados estritamente no nível da transação real.
+- **Achado 2 [P1]: Poluição Visual por Métricas de Equipe (Comissão/Técnicos)**
+  - *Evidência:* O sistema projetava descontos irreais no "Lucro Líquido" assumindo comissões de técnico de 40%, o que não reflete a operação de um homem só.
+  - *Impacto:* A rentabilidade real da empresa e do esforço era ofuscada.
+  - *Correção Realizada:* Variáveis de comissão foram removidas de `api/reports/route.ts` e do `reports/page.tsx`. Gráficos de performance técnica removidos do `/api/dashboard/route.ts`.
+  - *Validação:* Interface focada apenas nas Entradas, Saídas, Margem Limpa e Custos de Materiais.
+
+### 27/06/2026 - 16:05
+- **Auditoria e Ajuste do Módulo Financeiro (Solo Mode):**
+  - Integração da DRE com o Livro Caixa (`FinancialTransaction`), resolvendo a divergência crítica (P0) entre saldos do Dashboard e relatórios mensais.
+  - Remoção de todos os blocos visuais e lógicas fantasmas de "Comissão" e "Produtividade de Técnicos" no `reports/route.ts` e `reports/page.tsx` para adequação à operação individual (Solo).
+  - Adição da coluna "Categoria" na exportação CSV do relatório, resgatando dados do Livro Caixa + Despesas para conciliação contábil externa.
+  - Ajustes pontuais de UI (eliminação de gráficos obsoletos e ajuste da grade principal).
 - **Correção da Quebra na Criação/Edição de Orçamentos e Catálogo de Itens:**
   - Corrigido o erro fatal que quebrava as páginas `/quotations/new` e `/quotations/[id]` ao buscar itens do catálogo de produtos e ao adicionar itens manuais.
   - Blindados os componentes `ItemsBuilder.tsx`, `ProductPicker.tsx` e `QuotationItemsTable.tsx` contra problemas de tipo com campos `Decimal` retornados como strings do banco de dados (convertidos adequadamente com `Number(...)` antes de operações de cálculo e `.toFixed(2)`).
