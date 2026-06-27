@@ -12,6 +12,7 @@ interface RichTextEditorProps {
 export function RichTextEditor({ value, onChange, placeholder, className = '' }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInitializedRef = useRef(false);
+  const savedSelectionRef = useRef<Range | null>(null);
 
   // Set initial content only once on mount
   useEffect(() => {
@@ -29,25 +30,65 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
     }
   }, [onChange]);
 
+  // Save the current selection inside the editor
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && editorRef.current) {
+      const range = sel.getRangeAt(0);
+      // Only save if the selection is inside our editor
+      if (editorRef.current.contains(range.commonAncestorContainer)) {
+        savedSelectionRef.current = range.cloneRange();
+      }
+    }
+  }, []);
+
+  // Restore the saved selection
+  const restoreSelection = useCallback(() => {
+    if (savedSelectionRef.current) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(savedSelectionRef.current);
+      }
+    } else {
+      // Fallback: focus the editor and place cursor at the end
+      editorRef.current?.focus();
+    }
+  }, []);
+
   const execCommand = useCallback((command: string, val?: string) => {
+    restoreSelection();
     document.execCommand(command, false, val);
-    editorRef.current?.focus();
     handleChange();
-  }, [handleChange]);
+  }, [restoreSelection, handleChange]);
 
   const insertEmoji = useCallback((emoji: string) => {
+    restoreSelection();
     document.execCommand('insertText', false, emoji);
-    editorRef.current?.focus();
     handleChange();
-  }, [handleChange]);
+  }, [restoreSelection, handleChange]);
+
+  // Prevent toolbar buttons from stealing focus from the editor
+  // But allow <select> elements to open their dropdown normally
+  const handleToolbarMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isSelect = target.tagName === 'SELECT' || target.closest('select');
+    if (!isSelect) {
+      e.preventDefault();
+    }
+    saveSelection();
+  }, [saveSelection]);
 
   const emojis = ['👍', '✅', '⚠️', '❌', '📞', '🔧', '⚡', '🏠', '💰', '📋'];
 
   return (
     <div className={`rich-text-editor ${className}`}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 bg-neutral-100 dark:bg-neutral-600 border border-neutral-300 dark:border-neutral-500 border-b-0 rounded-t-lg">
-        {/* Bold, Italic, Underline */}
+      <div
+        className="flex flex-wrap items-center gap-1 p-2 bg-neutral-100 dark:bg-neutral-600 border border-neutral-300 dark:border-neutral-500 border-b-0 rounded-t-lg"
+        onMouseDown={handleToolbarMouseDown}
+      >
+        {/* Bold, Italic, Underline, Strikethrough */}
         <button type="button" onClick={() => execCommand('bold')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm font-bold" title="Negrito">B</button>
         <button type="button" onClick={() => execCommand('italic')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm italic" title="Itálico">I</button>
         <button type="button" onClick={() => execCommand('underline')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm underline" title="Sublinhado">U</button>
@@ -56,7 +97,14 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
         
         {/* Font Size */}
-        <select onChange={(e) => execCommand('fontSize', e.target.value)} className="px-1 py-0.5 text-xs border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-500" title="Tamanho">
+        <select
+          onChange={(e) => {
+            saveSelection();
+            execCommand('fontSize', e.target.value);
+          }}
+          className="px-1 py-0.5 text-xs border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-500"
+          title="Tamanho"
+        >
           <option value="2">Normal</option>
           <option value="1">Pequeno</option>
           <option value="3">Médio</option>
@@ -81,6 +129,7 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
 
         {/* Link */}
         <button type="button" onClick={() => {
+          restoreSelection();
           const url = prompt('URL do link:');
           if (url) execCommand('createLink', url);
         }} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Inserir Link">🔗</button>
@@ -123,6 +172,9 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         }
         .rich-text-editor [contenteditable] ul {
           list-style-type: disc;
+        }
+        .rich-text-editor [contenteditable] li {
+          margin-bottom: 0.25rem;
         }
       `}</style>
     </div>

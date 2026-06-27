@@ -134,13 +134,25 @@ export default function EditClientPage() {
     try {
       const token = getToken();
 
+      // Coerce all numeric values to ensure proper types (defensive)
+      const safeItems = (data.items || []).map((item: any) => ({
+        name: String(item.name || ''),
+        quantity: Number(item.quantity) || 1,
+        unit_price: Number(item.unit_price) || 0,
+        cost_price: Number(item.cost_price) || 0,
+        markup: Number(item.markup) || 1,
+        sku: String(item.sku || ''),
+        product_id: String(item.product_id || ''),
+        type: String(item.type || 'SERVICO'),
+      }));
+      const marginPercentage = Number(data.margin_percentage) || 0;
+      const discountPercentage = Number(data.discount_percentage) || 0;
+
       // Recalculate total from items with Folga de Venda and Desconto percentual
-      const subtotal = data.items.reduce(
+      const subtotal = safeItems.reduce(
         (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
         0
       );
-      const marginPercentage = data.margin_percentage || 0;
-      const discountPercentage = data.discount_percentage || 0;
       
       // Folga de Venda: percentual adicionado ao subtotal
       const marginAmount = subtotal * (marginPercentage / 100);
@@ -160,25 +172,16 @@ export default function EditClientPage() {
         },
         body: JSON.stringify({
           customer_id: data.customer_id,
-          items: data.items.map((item: any) => ({
-            name: item.name,
-            quantity: Number(item.quantity) || 1,
-            unit_price: Number(item.unit_price) || 0,
-            cost_price: Number(item.cost_price) || 0,
-            markup: Number(item.markup) || 1,
-            sku: item.sku || '',
-            product_id: item.product_id || '',
-            type: item.type || 'SERVICO',
-          })),
-          total,
+          items: safeItems,
+          total: Number(total) || 0,
           valid_until: data.valid_until,
           notes: data.notes || '',
           payment_methods: data.payment_methods || '',
           execution_deadline: data.execution_deadline || '',
           payment_method: data.payment_method || 'PIX',
-          installments: data.installments || 1,
-          margin_percentage: data.margin_percentage || 0,
-          discount_percentage: data.discount_percentage || 0,
+          installments: Number(data.installments) || 1,
+          margin_percentage: marginPercentage,
+          discount_percentage: discountPercentage,
         }),
       });
       if (!res.ok) {
@@ -235,6 +238,9 @@ export default function EditClientPage() {
           </div>
 
           <ItemsBuilder />
+
+          {/* Campo oculto para installments - necessário para o Zod schema */}
+          <input type="hidden" {...methods.register('installments', { valueAsNumber: true })} />
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Prazo de Execução</label>
