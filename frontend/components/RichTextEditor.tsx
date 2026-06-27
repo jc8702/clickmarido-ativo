@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useCallback, useEffect } from 'react';
+import { Bold, Italic, Underline, Strikethrough, ListOrdered, List, AlignLeft, AlignCenter, AlignRight, AlignJustify, Link as LinkIcon } from 'lucide-react';
 
 interface RichTextEditorProps {
   value: string;
@@ -89,10 +90,10 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         onMouseDown={handleToolbarMouseDown}
       >
         {/* Bold, Italic, Underline, Strikethrough */}
-        <button type="button" onClick={() => execCommand('bold')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm font-bold" title="Negrito">B</button>
-        <button type="button" onClick={() => execCommand('italic')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm italic" title="Itálico">I</button>
-        <button type="button" onClick={() => execCommand('underline')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm underline" title="Sublinhado">U</button>
-        <button type="button" onClick={() => execCommand('strikeThrough')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm line-through" title="Tachado">S</button>
+        <button type="button" onClick={() => execCommand('bold')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm font-bold" title="Negrito"><Bold size={16} /></button>
+        <button type="button" onClick={() => execCommand('italic')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm italic" title="Itálico"><Italic size={16} /></button>
+        <button type="button" onClick={() => execCommand('underline')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm underline" title="Sublinhado"><Underline size={16} /></button>
+        <button type="button" onClick={() => execCommand('strikeThrough')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-sm line-through" title="Tachado"><Strikethrough size={16} /></button>
         
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
         
@@ -115,15 +116,16 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
 
         {/* Lists */}
-        <button type="button" onClick={() => execCommand('insertOrderedList')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Lista Numerada">1.</button>
-        <button type="button" onClick={() => execCommand('insertUnorderedList')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Lista com Marcadores">•</button>
+        <button type="button" onClick={() => execCommand('insertOrderedList')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Lista Numerada"><ListOrdered size={16} /></button>
+        <button type="button" onClick={() => execCommand('insertUnorderedList')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Lista com Marcadores"><List size={16} /></button>
 
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
 
         {/* Alignment */}
-        <button type="button" onClick={() => execCommand('justifyLeft')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Alinhar Esquerda">⫷</button>
-        <button type="button" onClick={() => execCommand('justifyCenter')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Centralizar">≡</button>
-        <button type="button" onClick={() => execCommand('justifyRight')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Alinhar Direita">⫸</button>
+        <button type="button" onClick={() => execCommand('justifyLeft')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Alinhar Esquerda"><AlignLeft size={16} /></button>
+        <button type="button" onClick={() => execCommand('justifyCenter')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Centralizar"><AlignCenter size={16} /></button>
+        <button type="button" onClick={() => execCommand('justifyRight')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Alinhar Direita"><AlignRight size={16} /></button>
+        <button type="button" onClick={() => execCommand('justifyFull')} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Justificar"><AlignJustify size={16} /></button>
 
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
 
@@ -132,7 +134,7 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
           restoreSelection();
           const url = prompt('URL do link:');
           if (url) execCommand('createLink', url);
-        }} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Inserir Link">🔗</button>
+        }} className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-500 rounded text-xs" title="Inserir Link"><LinkIcon size={16} /></button>
 
         <div className="w-px h-5 bg-neutral-300 dark:bg-neutral-500 mx-1"></div>
 
@@ -168,10 +170,10 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
           padding-left: 0.5rem;
         }
         .rich-text-editor [contenteditable] ol {
-          list-style-type: decimal;
+          list-style-type: decimal !important;
         }
         .rich-text-editor [contenteditable] ul {
-          list-style-type: disc;
+          list-style-type: disc !important;
         }
         .rich-text-editor [contenteditable] li {
           margin-bottom: 0.25rem;
