@@ -10,6 +10,7 @@ import { Modal } from '@/components/Modal';
 import { EXPENSE_CATEGORIES, COST_CENTERS, getCategoryLabel, getCostCenterLabel } from '@/lib/finance-options';
 import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 import { formatCurrency } from '@/lib/format';
+import { ChevronDown, ChevronUp, Package } from 'lucide-react';
 
 interface Expense {
   id: string;
@@ -24,6 +25,21 @@ interface Expense {
   documentType?: string;
   documentNumber?: string;
   notes?: string;
+  purchaseOrders?: {
+    id: string;
+    number: string;
+    items: {
+      id: string;
+      description: string;
+      quantity: string | number;
+      unitPrice: string | number;
+      subtotal: string | number;
+      product?: {
+        sku: string;
+        name: string;
+      }
+    }[]
+  }[];
 }
 
 const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
@@ -59,6 +75,17 @@ export default function ExpensesPage() {
   const [notes, setNotes] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
+
+  // Expandable rows
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Edit modal
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
@@ -266,6 +293,7 @@ export default function ExpensesPage() {
                 <Table>
                   <TableHead>
                     <TableRow>
+                      <TableHeader className="w-10"></TableHeader>
                       <TableHeader>Data</TableHeader>
                       <TableHeader className="hidden sm:table-cell">Descrição</TableHeader>
                       <TableHeader className="hidden md:table-cell">Categoria</TableHeader>
@@ -275,44 +303,128 @@ export default function ExpensesPage() {
                     </TableRow>
                   </TableHead>
                   <tbody>
-                    {expenses.map((exp) => (
-                      <TableRow key={exp.id} className="group hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors cursor-pointer">
-                        <TableCell className="text-neutral-600 dark:text-neutral-400 text-sm whitespace-nowrap">
-                          {new Date(exp.expenseDate).toLocaleDateString('pt-BR')}
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell font-semibold text-neutral-800 dark:text-neutral-100">
-                          {exp.description}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
-                            {getCategoryLabel(exp.category)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="font-bold text-neutral-800 dark:text-neutral-200 whitespace-nowrap">
-                          {formatCurrency(exp.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusBadgeVariant[exp.status] || 'neutral'} size="sm">
-                            {statusLabels[exp.status] || exp.status.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 sm:gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                            {exp.status === 'pendente' && (
-                              <Button variant="outline" size="xs" onClick={() => { setSelectedExpense(exp); setIsPayOpen(true); setPayError(''); }}>
-                                Pagar
-                              </Button>
-                            )}
-                            <Button variant="outline" size="xs" onClick={() => openEditModal(exp)}>
-                              Editar
-                            </Button>
-                            <Button variant="danger" size="xs" onClick={() => { setSelectedExpense(exp); setIsDeleteOpen(true); setDeleteError(''); }}>
-                              Excluir
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {expenses.map((exp) => {
+                      const hasItems = exp.purchaseOrders && exp.purchaseOrders.length > 0 && exp.purchaseOrders.some(po => po.items.length > 0);
+                      const isExpanded = expandedRows.has(exp.id);
+
+                      return (
+                        <React.Fragment key={exp.id}>
+                          <TableRow className={`group transition-colors ${hasItems ? 'cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700/50' : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'}`}>
+                            <TableCell className="w-10">
+                              {hasItems && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleRow(exp.id);
+                                  }}
+                                  className="p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                </button>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-neutral-600 dark:text-neutral-400 text-sm whitespace-nowrap" onClick={() => hasItems && toggleRow(exp.id)}>
+                              {new Date(exp.expenseDate).toLocaleDateString('pt-BR')}
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell font-semibold text-neutral-800 dark:text-neutral-100" onClick={() => hasItems && toggleRow(exp.id)}>
+                              <div className="flex flex-col">
+                                <span>{exp.description}</span>
+                                {hasItems && (
+                                  <span className="text-xs text-neutral-500 font-normal mt-0.5 flex items-center gap-1">
+                                    <Package size={12} /> {exp.purchaseOrders?.reduce((acc, po) => acc + po.items.length, 0)} item(s)
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell" onClick={() => hasItems && toggleRow(exp.id)}>
+                              <span className="text-xs uppercase font-bold tracking-wider text-neutral-500">
+                                {getCategoryLabel(exp.category)}
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-bold text-neutral-800 dark:text-neutral-200 whitespace-nowrap" onClick={() => hasItems && toggleRow(exp.id)}>
+                              {formatCurrency(exp.amount)}
+                            </TableCell>
+                            <TableCell onClick={() => hasItems && toggleRow(exp.id)}>
+                              <Badge variant={statusBadgeVariant[exp.status] || 'neutral'} size="sm">
+                                {statusLabels[exp.status] || exp.status.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex gap-1 sm:gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                {exp.status === 'pendente' && (
+                                  <Button variant="outline" size="xs" onClick={(e) => { e.stopPropagation(); setSelectedExpense(exp); setIsPayOpen(true); setPayError(''); }}>
+                                    Pagar
+                                  </Button>
+                                )}
+                                <Button variant="outline" size="xs" onClick={(e) => { e.stopPropagation(); openEditModal(exp); }}>
+                                  Editar
+                                </Button>
+                                <Button variant="danger" size="xs" onClick={(e) => { e.stopPropagation(); setSelectedExpense(exp); setIsDeleteOpen(true); setDeleteError(''); }}>
+                                  Excluir
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+
+                          {/* Expanded content */}
+                          {isExpanded && hasItems && (
+                            <TableRow className="bg-neutral-50/50 dark:bg-neutral-800/50 border-b border-neutral-100 dark:border-neutral-700/50">
+                              <TableCell colSpan={7} className="p-0">
+                                <div className="px-6 py-4">
+                                  <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden">
+                                    <div className="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700">
+                                      <h4 className="text-xs font-bold text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">Itens Associados (Ordens de Compra)</h4>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-sm text-left">
+                                        <thead className="bg-neutral-50 dark:bg-neutral-800/80 text-xs text-neutral-500 dark:text-neutral-400">
+                                          <tr>
+                                            <th className="px-4 py-2 font-semibold">SKU / Produto</th>
+                                            <th className="px-4 py-2 font-semibold text-right">Qtd</th>
+                                            <th className="px-4 py-2 font-semibold text-right">Valor Un.</th>
+                                            <th className="px-4 py-2 font-semibold text-right">Subtotal</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700/50">
+                                          {exp.purchaseOrders?.map(po => 
+                                            po.items.map(item => (
+                                              <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/30">
+                                                <td className="px-4 py-2 text-neutral-800 dark:text-neutral-200">
+                                                  <div className="flex flex-col">
+                                                    {item.product?.sku && (
+                                                      <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400 font-bold bg-blue-50 dark:bg-blue-900/30 inline-block px-1.5 py-0.5 rounded w-fit mb-0.5">
+                                                        {item.product.sku}
+                                                      </span>
+                                                    )}
+                                                    <span className="font-medium text-sm">{item.product?.name || item.description}</span>
+                                                    {item.product?.name && item.description && item.description !== item.product?.name && (
+                                                      <span className="text-xs text-neutral-500 truncate max-w-[300px]">{item.description}</span>
+                                                    )}
+                                                  </div>
+                                                </td>
+                                                <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                                                  {item.quantity}
+                                                </td>
+                                                <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                                                  {formatCurrency(Number(item.unitPrice))}
+                                                </td>
+                                                <td className="px-4 py-2 text-right font-medium text-neutral-800 dark:text-neutral-200">
+                                                  {formatCurrency(Number(item.subtotal))}
+                                                </td>
+                                              </tr>
+                                            ))
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>

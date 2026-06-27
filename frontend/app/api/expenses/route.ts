@@ -44,6 +44,15 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           vendor: { select: { id: true, name: true } },
+          purchaseOrders: {
+            include: {
+              items: {
+                include: {
+                  product: { select: { sku: true, name: true } }
+                }
+              }
+            }
+          }
         },
         skip,
         take: limit,

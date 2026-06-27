@@ -7,6 +7,18 @@
 
 ## Histórico de Alterações
 
+### 27/06/2026 - 21:05
+- **Correção na Criação de Ordens de Compra (`/purchases/new`):**
+  - Resolvido o erro fatal que impedia a criação de Ordens de Compra através do formulário.
+  - A API (`POST /api/purchase-orders/route.ts`) foi ajustada para aceitar tanto o ID único (`cuid`) quanto a numeração amigável do orçamento (`number`) ao realizar os vínculos de Orçamento e Ordem de Serviço, realizando a conversão automaticamente no backend.
+  - Adicionado retorno claro de erro quando o vínculo (Orçamento/OS) não for encontrado.
+
+### 27/06/2026 - 19:56
+- **Estratificação Visual do Módulo de Despesas:**
+  - Atualização da API de Despesas (`/api/expenses`) para retornar os detalhes dos itens das Ordens de Compra (`purchaseOrders`) vinculadas, juntamente com os detalhes do produto e SKU.
+  - Implementação de funcionalidade de "Expansão de Linha" (Expandable Row) na tabela principal de Despesas (`expenses/page.tsx`).
+  - Criação de uma subtabela renderizada condicionalmente para mostrar os itens que compõem a despesa: SKU destacado, nome/descrição, quantidade, valor unitário e subtotal, permitindo uma análise rápida sem poluir a visão global.
+
 ### 27/06/2026 - 19:10
 - **Auditoria Funcional, UX e Deploy Final (Fase 5 e Fase 6):**
   - **Revisão de UX e Acessibilidade:** O layout de Relatórios e do Dashboard foi polido para garantir leitura rápida. Remoção completa de gráficos inúteis para a operação individual ("Performance de Técnicos").

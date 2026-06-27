@@ -168,6 +168,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fornecedor bloqueado não pode receber nova ordem de compra' }, { status: 400 });
     }
 
+    // Resolver quotationId (pode ser ID ou number)
+    let finalQuotationId = null;
+    if (quotationId) {
+      const quotation = await prisma.quotation.findFirst({
+        where: { OR: [{ id: quotationId }, { number: quotationId }] }
+      });
+      if (!quotation) {
+        return NextResponse.json({ error: 'Orçamento vinculado não encontrado' }, { status: 400 });
+      }
+      finalQuotationId = quotation.id;
+    }
+
+    // Resolver serviceOrderId (pode ser ID ou number)
+    let finalServiceOrderId = null;
+    if (serviceOrderId) {
+      const serviceOrder = await prisma.serviceOrder.findFirst({
+        where: { OR: [{ id: serviceOrderId }, { number: serviceOrderId }] }
+      });
+      if (!serviceOrder) {
+        return NextResponse.json({ error: 'Ordem de Serviço vinculada não encontrada' }, { status: 400 });
+      }
+      finalServiceOrderId = serviceOrder.id;
+    }
+
     // Calcular totais
     let subtotal = 0;
     const itemsData = items.map((item: any) => {
@@ -200,8 +224,8 @@ export async function POST(request: NextRequest) {
       data: {
         number: orderNumber,
         vendorId,
-        quotationId: quotationId || null,
-        serviceOrderId: serviceOrderId || null,
+        quotationId: finalQuotationId,
+        serviceOrderId: finalServiceOrderId,
         status: 'rascunho',
         expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
         paymentTerms: paymentTerms || '',
