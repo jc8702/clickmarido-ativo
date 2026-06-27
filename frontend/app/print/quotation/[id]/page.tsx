@@ -286,7 +286,7 @@ export default function PrintQuotationPage() {
                     <div className="space-y-1.5 pt-1">
                       <p className="text-xl font-extrabold text-neutral-800 font-title tracking-tight">Click Marido Reparos Residenciais</p>
                       <p className="text-[11px] text-neutral-500 font-medium">CNPJ: 62.756.795/0001-10</p>
-                      <p className="text-[11px] text-neutral-500 font-medium">Rua Mônaco, N.81 - Fortaleza Alta - CEP 89058-044 - Blumenau/SC</p>
+                      <p className="text-[11px] text-neutral-500 font-medium whitespace-nowrap">Rua Mônaco, N.81 - Fortaleza Alta - CEP 89058-044 - Blumenau/SC</p>
                       <p className="text-[11px] text-neutral-500 font-medium flex items-center gap-1.5">
                         <svg className="w-3.5 h-3.5 text-green-600 inline" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-1.564-.783-2.67-1.428-3.69-2.934-.207-.306.208-.282.64-.135.15-.15.347-.404.518-.606.173-.199.231-.347.33-.578.1-.23.05-.433-.025-.582-.075-.15-.67-1.616-.918-2.214-.242-.58-.487-.502-.67-.512-.172-.01-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
@@ -323,7 +323,7 @@ export default function PrintQuotationPage() {
                     <p className="flex items-center gap-1.5"><span className="font-semibold text-neutral-400">Prazo de Execução:</span> <span className="text-neutral-700 font-semibold">{quote.executionDeadline || 'Conforme agendamento'}</span></p>
                     <p className="flex items-center gap-1.5">
                       <span className="font-semibold text-neutral-400 whitespace-nowrap">Formas de Pagamento Aceito:</span> 
-                      <span className="ml-1.5 text-neutral-700 font-semibold">
+                      <span className="ml-1.5 text-neutral-700 font-semibold whitespace-nowrap">
                         {quote.paymentMethods || 'PIX / Dinheiro / Cartão de Crédito'}
                       </span>
                     </p>
