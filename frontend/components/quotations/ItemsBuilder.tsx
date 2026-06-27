@@ -77,6 +77,7 @@ export function ItemsBuilder() {
 
   const subtotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
   const totalWithoutFee = subtotal - discount;
+  const marginAmount = subtotal * (marginPercentage / 100);
 
   const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
     append({

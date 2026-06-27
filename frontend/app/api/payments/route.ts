@@ -34,7 +34,13 @@ export async function GET(request: NextRequest): Promise<Response> {
     const [payments, total] = await Promise.all([
       prisma.payment.findMany({
         where,
-        include: { customer: true, quotation: true },
+        include: {
+          customer: true,
+          quotation: {
+            include: { serviceOrder: true },
+          },
+          invoice: true,
+        },
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
