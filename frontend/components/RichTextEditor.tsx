@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -11,24 +11,35 @@ interface RichTextEditorProps {
 
 export function RichTextEditor({ value, onChange, placeholder, className = '' }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
+  const isInitializedRef = useRef(false);
 
-  const execCommand = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-    handleChange();
-  };
+  // Set initial content only once on mount
+  useEffect(() => {
+    if (editorRef.current && !isInitializedRef.current) {
+      if (value) {
+        editorRef.current.innerHTML = value;
+      }
+      isInitializedRef.current = true;
+    }
+  }, []);
 
-  const handleChange = () => {
+  const handleChange = useCallback(() => {
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
-  };
+  }, [onChange]);
 
-  const insertEmoji = (emoji: string) => {
+  const execCommand = useCallback((command: string, val?: string) => {
+    document.execCommand(command, false, val);
+    editorRef.current?.focus();
+    handleChange();
+  }, [handleChange]);
+
+  const insertEmoji = useCallback((emoji: string) => {
     document.execCommand('insertText', false, emoji);
     editorRef.current?.focus();
     handleChange();
-  };
+  }, [handleChange]);
 
   const emojis = ['👍', '✅', '⚠️', '❌', '📞', '🔧', '⚡', '🏠', '💰', '📋'];
 
@@ -91,7 +102,6 @@ export function RichTextEditor({ value, onChange, placeholder, className = '' }:
         suppressContentEditableWarning
         onInput={handleChange}
         onBlur={handleChange}
-        dangerouslySetInnerHTML={{ __html: value }}
         className="w-full min-h-[120px] p-3 border border-neutral-300 dark:border-neutral-500 border-t-0 rounded-b-lg bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-auto"
         data-placeholder={placeholder || 'Digite suas observações...'}
         style={{ whiteSpace: 'pre-wrap' }}

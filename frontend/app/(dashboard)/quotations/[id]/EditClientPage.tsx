@@ -65,10 +65,10 @@ export default function EditClientPage() {
 
         const mappedItems = dbItems.map((item: any) => ({
           name: item.product?.name || item.name || item.description || '',
-          quantity: item.quantity || 1,
-          unit_price: item.unitPrice || item.unit_price || item.price || 0,
-          cost_price: item.costPrice || item.cost_price || 0,
-          markup: item.markup || 1,
+          quantity: Number(item.quantity) || 1,
+          unit_price: Number(item.unitPrice || item.unit_price || item.price) || 0,
+          cost_price: Number(item.costPrice || item.cost_price) || 0,
+          markup: Number(item.markup) || 1,
           sku: item.product?.sku || item.sku || '',
           product_id: item.productId || item.product_id || '',
           type: item.product?.type || item.type || 'SERVICO',
