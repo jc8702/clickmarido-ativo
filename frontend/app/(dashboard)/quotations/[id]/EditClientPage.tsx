@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { quotationSchema, QuotationFormValues } from '../../../../lib/validations/quotation.schema';
 import { CustomerPicker } from '../../../../components/quotations/CustomerPicker';
 import { ItemsBuilder } from '../../../../components/quotations/ItemsBuilder';
-import { RichTextEditor } from '../../../../components/RichTextEditor';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function EditClientPage() {
@@ -259,16 +258,11 @@ export default function EditClientPage() {
 
           <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Observações / Escopo da Proposta</label>
-            <Controller
-              control={methods.control}
-              name="notes"
-              render={({ field }) => (
-                <RichTextEditor
-                  value={field.value || ''}
-                  onChange={field.onChange}
-                  placeholder="Descreva aqui observações, prazos especiais, termos da garantia ou detalhes do escopo..."
-                />
-              )}
+            <textarea
+              rows={4}
+              {...methods.register('notes')}
+              placeholder="Descreva aqui observações, prazos especiais, termos da garantia ou detalhes do escopo..."
+              className="w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
             />
           </div>
 
