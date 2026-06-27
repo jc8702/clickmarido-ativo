@@ -16,19 +16,6 @@ interface SelectedProduct {
   category: string;
 }
 
-const CREDIT_CARD_FEES: Record<number, number> = {
-  1: 3.09,
-  2: 9.64,
-  3: 11.23,
-  4: 11.36,
-  5: 14.31,
-  6: 14.32,
-  7: 16.72,
-  8: 16.73,
-  9: 19.69,
-  10: 20.65,
-};
-
 export function ItemsBuilder() {
   const { register, control, watch, setValue } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -39,7 +26,6 @@ export function ItemsBuilder() {
   const items = watch('items') || [];
   const discount = watch('discount') || 0;
   const paymentMethod = watch('payment_method') || 'PIX';
-  const installments = watch('installments') || 1;
   const marginPercentage = watch('margin_percentage') || 0;
   const [showPicker, setShowPicker] = useState(false);
   const [aiLoading, setAiLoading] = useState<Record<number, boolean>>({});
@@ -91,12 +77,6 @@ export function ItemsBuilder() {
 
   const subtotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
   const totalWithoutFee = subtotal - discount;
-  const creditFeePercent = paymentMethod === 'CARTAO_CREDITO' ? (CREDIT_CARD_FEES[installments] || 0) / 100 : 0;
-  const creditFeeAmount = subtotal * creditFeePercent;
-  const totalWithFee = totalWithoutFee + creditFeeAmount;
-  const marginAmount = totalWithFee * (marginPercentage / 100);
-  const totalFinal = totalWithFee + marginAmount;
-  const installmentValue = installments > 0 ? totalFinal / installments : totalFinal;
 
   const handleProductSelect = (product: SelectedProduct, quantity: number, type: 'SERVICO' | 'PECA') => {
     append({
@@ -109,15 +89,6 @@ export function ItemsBuilder() {
       category: product.category,
     });
     setShowPicker(false);
-  };
-
-  const getPaymentLabel = () => {
-    switch (paymentMethod) {
-      case 'PIX': return 'PIX';
-      case 'DINHEIRO': return 'Dinheiro';
-      case 'CARTAO_CREDITO': return `Cartão de Crédito ${installments}x`;
-      default: return 'PIX';
-    }
   };
 
   return (
@@ -242,32 +213,6 @@ export function ItemsBuilder() {
               Cartão de Crédito
             </button>
           </div>
-
-          {/* Parcelas */}
-          {paymentMethod === 'CARTAO_CREDITO' && (
-            <div className="mt-3">
-              <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Número de Parcelas</label>
-              <div className="flex flex-wrap gap-2">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setValue('installments', num)}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
-                      installments === num
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 border border-neutral-300 dark:border-neutral-600 hover:border-purple-400'
-                    }`}
-                  >
-                    {num}x ({CREDIT_CARD_FEES[num]}%)
-                  </button>
-                ))}
-              </div>
-              <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1">
-                Taxa de administracao: {CREDIT_CARD_FEES[installments]}% - R$ {creditFeeAmount.toFixed(2)}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Margem de Negociação */}
@@ -302,32 +247,9 @@ export function ItemsBuilder() {
           <p className="text-neutral-600 dark:text-neutral-400">
             Subtotal: <span className="font-semibold">R$ {Number(subtotal || 0).toFixed(2)}</span>
           </p>
-          
-          {paymentMethod === 'CARTAO_CREDITO' && (
-            <>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Total a Vista (sem taxa): <span className="font-semibold text-green-600 dark:text-green-400">R$ {Number(totalWithoutFee || 0).toFixed(2)}</span>
-              </p>
-              <p className="text-neutral-600 dark:text-neutral-400">
-                Total Parcelado ({installments}x): <span className="font-semibold text-purple-600 dark:text-purple-400">R$ {Number(totalFinal || 0).toFixed(2)}</span>
-              </p>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                Valor da Parcela: <span className="font-semibold">R$ {Number(installmentValue || 0).toFixed(2)}</span>
-              </p>
-            </>
-          )}
-          
-          {paymentMethod !== 'CARTAO_CREDITO' && (
-            <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
-              Total: R$ {Number(totalFinal || 0).toFixed(2)}
-            </p>
-          )}
-
-          {paymentMethod === 'CARTAO_CREDITO' && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 border-t border-primary-200 dark:border-primary-700 pt-2">
-              Forma de Pagamento: <span className="font-semibold">{getPaymentLabel()}</span>
-            </p>
-          )}
+          <p className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            Total a Vista: R$ {Number(totalWithoutFee || 0).toFixed(2)}
+          </p>
         </div>
       </div>
 

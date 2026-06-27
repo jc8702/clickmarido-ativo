@@ -184,6 +184,17 @@ export default function EditClientPage() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Formas de Pagamento Aceito</label>
+            <input
+              type="text"
+              {...methods.register('payment_methods')}
+              defaultValue="PIX / Dinheiro / Cartão de Crédito"
+              placeholder="Ex: PIX, Dinheiro, Cartão de Crédito"
+              className="w-full p-2.5 border rounded bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Observações / Escopo da Proposta</label>
             <textarea 
               rows={4} 
