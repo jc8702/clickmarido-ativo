@@ -103,6 +103,8 @@ model QuotationItem {
   productId   String
   quantity    Decimal   @default(1) @db.Decimal(10, 2)
   unitPrice   Decimal   @default(0) @db.Decimal(10, 2)
+  costPrice   Decimal   @default(0) @db.Decimal(10, 2)
+  markup      Decimal   @default(1) @db.Decimal(5, 2)
   subtotal    Decimal   @default(0) @db.Decimal(10, 2)
   notes       String    @default("")
   createdAt   DateTime  @default(now())

@@ -18,7 +18,7 @@ export default function NewQuotationPage() {
     resolver: zodResolver(quotationSchema) as any,
     defaultValues: {
       customer_id: '',
-      items: [{ name: '', quantity: 1, unit_price: 0 }],
+      items: [{ name: '', quantity: 1, unit_price: 0, cost_price: 0, markup: 1 }],
       discount_percentage: 0,
       valid_until: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
       notes: '',

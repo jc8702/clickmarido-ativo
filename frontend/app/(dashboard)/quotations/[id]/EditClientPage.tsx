@@ -66,6 +66,8 @@ export default function EditClientPage() {
           name: item.product?.name || item.name || item.description || '',
           quantity: item.quantity || 1,
           unit_price: item.unitPrice || item.unit_price || item.price || 0,
+          cost_price: item.costPrice || item.cost_price || 0,
+          markup: item.markup || 1,
           sku: item.product?.sku || item.sku || '',
           product_id: item.productId || item.product_id || '',
           type: item.product?.type || item.type || 'SERVICO',
@@ -73,7 +75,7 @@ export default function EditClientPage() {
 
         methods.reset({
           customer_id: data.customerId,
-          items: mappedItems.length > 0 ? mappedItems : [{ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' as const }],
+          items: mappedItems.length > 0 ? mappedItems : [{ name: '', quantity: 1, unit_price: 0, cost_price: 0, markup: 1, type: 'SERVICO' as const }],
           discount_percentage: data.discountPercentage || 0,
           valid_until: data.validUntil
             ? new Date(data.validUntil).toISOString().split('T')[0]
@@ -128,6 +130,8 @@ export default function EditClientPage() {
             name: item.name,
             quantity: item.quantity,
             unit_price: item.unit_price,
+            cost_price: item.cost_price || 0,
+            markup: item.markup || 1,
             sku: item.sku || '',
             product_id: item.product_id || '',
             type: item.type || 'SERVICO',

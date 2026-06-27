@@ -5,6 +5,8 @@ export const quotationItemSchema = z.object({
   name: z.string().min(1, 'Nome do item é obrigatório'),
   quantity: z.number().min(1, 'Mínimo 1'),
   unit_price: z.number().min(0, 'Não pode ser negativo'),
+  cost_price: z.number().min(0).optional().default(0),
+  markup: z.number().min(0).optional().default(1),
   sku: z.string().optional(),
   product_id: z.string().optional(),
   type: z.enum(['SERVICO', 'PECA']).default('SERVICO'),

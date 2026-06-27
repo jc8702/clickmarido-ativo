@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { ProductPicker } from './ProductPicker';
 import toast from 'react-hot-toast';
@@ -29,6 +29,20 @@ export function ItemsBuilder() {
   const marginPercentage = watch('margin_percentage') || 0;
   const [showPicker, setShowPicker] = useState(false);
   const [aiLoading, setAiLoading] = useState<Record<number, boolean>>({});
+
+  // Auto-calculate unit_price from cost_price and markup for PECA items
+  useEffect(() => {
+    items.forEach((item: any, index: number) => {
+      if (item.type === 'PECA' && item.cost_price > 0 && item.markup > 0) {
+        const calculatedPrice = Number(item.cost_price) * Number(item.markup);
+        const currentPrice = Number(item.unit_price || 0);
+        // Only update if the calculated price is different (avoid infinite loops)
+        if (Math.abs(calculatedPrice - currentPrice) > 0.01) {
+          setValue(`items.${index}.unit_price`, Math.round(calculatedPrice * 100) / 100);
+        }
+      }
+    });
+  }, [items, setValue]);
 
   const triggerAiEstimation = async (index: number) => {
     const itemName = watch(`items.${index}.name`);
@@ -92,6 +106,8 @@ export function ItemsBuilder() {
       name: product.name,
       quantity: quantity,
       unit_price: product.price,
+      cost_price: 0,
+      markup: 1,
       sku: product.sku,
       product_id: product.id,
       type: type,
@@ -145,6 +161,30 @@ export function ItemsBuilder() {
             <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">Qtd *</label>
             <input type="number" {...register(`items.${index}.quantity`, { valueAsNumber: true })} className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" />
           </div>
+          {items[index]?.type === 'PECA' && (
+            <div className="w-24">
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">Custo (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                {...register(`items.${index}.cost_price`, { valueAsNumber: true })}
+                className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+              />
+            </div>
+          )}
+          {items[index]?.type === 'PECA' && (
+            <div className="w-20">
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">MK</label>
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                {...register(`items.${index}.markup`, { valueAsNumber: true })}
+                className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+              />
+            </div>
+          )}
           <div className="w-28">
             <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center justify-between">
               <span>Preço Un. *</span>
@@ -177,7 +217,7 @@ export function ItemsBuilder() {
 
       <button
         type="button"
-        onClick={() => append({ name: '', quantity: 1, unit_price: 0, type: 'SERVICO' })}
+        onClick={() => append({ name: '', quantity: 1, unit_price: 0, cost_price: 0, markup: 1, type: 'SERVICO' })}
         className="text-sm px-4 py-2 bg-neutral-200 dark:bg-neutral-600 text-neutral-800 dark:text-neutral-200 rounded hover:bg-neutral-300 dark:hover:bg-neutral-500 font-medium"
       >
         + Adicionar Item Manual

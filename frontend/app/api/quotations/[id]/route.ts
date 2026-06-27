@@ -165,6 +165,8 @@ export async function PUT(
               productId: product.id,
               quantity: itemQuantity,
               unitPrice: itemPrice,
+              costPrice: item.cost_price || 0,
+              markup: item.markup || 1,
               subtotal: itemQuantity * itemPrice,
             },
           });

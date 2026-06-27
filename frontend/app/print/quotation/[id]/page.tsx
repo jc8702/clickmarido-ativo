@@ -192,18 +192,7 @@ export default function PrintQuotationPage() {
 
   const items = getQuotationItems(quote.items);
 
-  // Calcular impostos e totais corretos
-  const totalTax = items.reduce((sum: number, item: any) => {
-    const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
-    const itemQty = Number(item.quantity || 1);
-    const sub = itemPrice * itemQty;
-    const isService = (item.product?.type || item.type || 'SERVICO') === 'SERVICO';
-    const taxRate = isService ? 0.05 : 0.12; // 5% ISS para serviço, 12% para peça
-    return sum + (sub * taxRate);
-  }, 0);
-
   const discountPercentage = Number(quote.discountPercentage || 0);
-  const marginPercentage = Number(quote.marginPercentage || 0);
   const totalAmount = Number(quote.total || 0);
   
   // Recalcular subtotal a partir dos itens
@@ -214,10 +203,8 @@ export default function PrintQuotationPage() {
     return sum + (itemPrice * itemQty);
   }, 0);
   
-  // Recalcular folga e desconto
-  const marginAmount = subtotal * (marginPercentage / 100);
-  const subtotalWithMargin = subtotal + marginAmount;
-  const discountAmount = subtotalWithMargin * (discountPercentage / 100);
+  // Recalcular desconto
+  const discountAmount = subtotal * (discountPercentage / 100);
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen py-8 print:py-0 print:bg-white transition-colors duration-200">
@@ -380,10 +367,9 @@ export default function PrintQuotationPage() {
                       <tr className="bg-[#6b21a8] text-[#ffffff] font-bold font-title text-[10px]">
                         <th className="p-3 pl-4 w-[15%]">SKU</th>
                         <th className="p-3 w-[25%]">Item</th>
-                        <th className="p-3 w-[25%]">Descrição</th>
+                        <th className="p-3 w-[30%]">Descrição</th>
                         <th className="p-3 text-center w-[8%]">Qtd</th>
                         <th className="p-3 text-right w-[12%]">Unitário</th>
-                        <th className="p-3 text-right w-[10%]">Impostos (Est.)</th>
                         <th className="p-3 text-right pr-4 w-[15%]">Subtotal</th>
                       </tr>
                     </thead>
@@ -395,10 +381,6 @@ export default function PrintQuotationPage() {
                         const itemPrice = Number(item.unitPrice || item.unit_price || item.price || 0);
                         const itemQty = Number(item.quantity || 1);
                         const sub = itemPrice * itemQty;
-                        
-                        const isService = (item.product?.type || item.type || 'SERVICO') === 'SERVICO';
-                        const taxRate = isService ? 0.05 : 0.12; // 5% ISS para serviço, 12% para peça
-                        const taxAmount = sub * taxRate;
 
                         return (
                           <tr key={`quote-item-${idx}`} className="bg-[#ffffff] text-[11px]">
@@ -407,9 +389,6 @@ export default function PrintQuotationPage() {
                             <td className="p-3 text-neutral-500 font-medium whitespace-pre-wrap">{itemDesc}</td>
                             <td className="p-3 text-center text-[#4b5563] font-medium">{itemQty}</td>
                             <td className="p-3 text-right text-[#4b5563] font-medium">R$ {itemPrice.toFixed(2)}</td>
-                            <td className="p-3 text-right text-neutral-500 font-medium">
-                              R$ {taxAmount.toFixed(2)} <span className="text-[9px] text-neutral-400 block">({(taxRate * 100)}%)</span>
-                            </td>
                             <td className="p-3 text-right pr-4 font-bold text-[#1f2937]">R$ {sub.toFixed(2)}</td>
                           </tr>
                         );
@@ -422,18 +401,12 @@ export default function PrintQuotationPage() {
               {/* Resumo Financeiro */}
               <div className="flex justify-end mb-8">
                 <div className="w-[380px] space-y-2 bg-[#f9fafb] p-5 rounded-2xl border border-[#f3f4f6] text-xs">
-                  <div className="flex justify-between text-[#9ca3af] text-[10px] font-medium">
-                    <span>Impostos Estimados (Lei 12.741/12):</span>
-                    <span>R$ {Number(totalTax || 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[#6b7280] font-medium">
-                    <span>Folga de Venda ({marginPercentage}%):</span>
-                    <span>+ R$ {Number(marginAmount || 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[#6b7280] font-medium">
-                    <span>Desconto ({discountPercentage}%):</span>
-                    <span>- R$ {Number(discountAmount || 0).toFixed(2)}</span>
-                  </div>
+                  {discountPercentage > 0 && (
+                    <div className="flex justify-between text-[#6b7280] font-medium">
+                      <span>Desconto ({discountPercentage}%):</span>
+                      <span>- R$ {Number(discountAmount || 0).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm font-black border-t border-[#e5e7eb] pt-3 text-[#1f2937] font-title">
                     <span>Subtotal / Valor a Vista:</span>
                     <span className="text-[#9333ea] text-sm">R$ {Number(totalAmount || 0).toFixed(2)}</span>
