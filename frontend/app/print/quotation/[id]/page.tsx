@@ -273,34 +273,26 @@ export default function PrintQuotationPage() {
         >
           {/* Marca d'água no fundo com a logo */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.035] z-0">
-            <img src="/logo.jpg" className="w-[85%] max-w-[550px] object-contain" alt="Click Marido Marca d'água" />
+            <img src="/logo.jpg" className="w-[90%] max-w-[620px] object-contain" alt="Click Marido Marca d'água" />
           </div>
 
           <div className="relative z-10 flex flex-col justify-between h-full w-full">
             <div>
               {/* Header do Documento */}
               <div className="flex justify-between items-start border-b border-neutral-100 pb-6 mb-8">
-                <div className="flex items-center gap-4">
-                  <img src="/logo.jpg" className="h-24 w-auto object-contain" alt="Click Marido Logo" />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-black font-title tracking-tight text-[#0f172a]">CLICK MARIDO</span>
-                    </div>
-                    <p className="text-[11px] text-neutral-500 font-medium max-w-[280px]">
-                      Soluções residenciais rápidas, profissionais e com garantia legal assegurada.
+                <div className="flex items-center gap-6">
+                  <img src="/logo.jpg" className="h-48 w-auto object-contain" alt="Click Marido Logo" />
+                  <div className="space-y-2">
+                    <p className="text-xl font-extrabold text-neutral-800 font-title tracking-tight">Click Marido Reparos Residenciais</p>
+                    <p className="text-[11px] text-neutral-500 font-medium">CNPJ: 62.756.795/0001-10</p>
+                    <p className="text-[11px] text-neutral-500 font-medium">Rua Mônaco, N.81 - Fortaleza Alta - CEP 89058-044 - Blumenau/SC</p>
+                    <p className="text-[11px] text-neutral-500 font-medium flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-green-600 inline" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-1.564-.783-2.67-1.428-3.69-2.934-.207-.306.208-.282.64-.135.15-.15.347-.404.518-.606.173-.199.231-.347.33-.578.1-.23.05-.433-.025-.582-.075-.15-.67-1.616-.918-2.214-.242-.58-.487-.502-.67-.512-.172-.01-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.12 1.517 5.86L.231 23.769l6.05-1.587A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.984c-1.802 0-3.513-.464-5.02-1.346l-.36-.213-3.731.98.995-3.639-.234-.373A9.948 9.948 0 012.016 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/>
+                      </svg>
+                      (47) 99784-6229 - José Carlos
                     </p>
-                    <div className="text-[9px] text-neutral-500 font-medium leading-relaxed pt-1">
-                      <p className="font-bold text-neutral-600">Click Marido Reparos Residenciais</p>
-                      <p>CNPJ: 62.756.795/0001-10</p>
-                      <p>Rua Mônaco, N.81 - Fortaleza Alta - CEP 89058-404 - Blumenau/SC</p>
-                      <p className="flex items-center gap-1">
-                        <svg className="w-3 h-3 text-green-600 inline" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-1.564-.783-2.67-1.428-3.69-2.934-.207-.306.208-.282.64-.135.15-.15.347-.404.518-.606.173-.199.231-.347.33-.578.1-.23.05-.433-.025-.582-.075-.15-.67-1.616-.918-2.214-.242-.58-.487-.502-.67-.512-.172-.01-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-                          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.12 1.517 5.86L.231 23.769l6.05-1.587A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.984c-1.802 0-3.513-.464-5.02-1.346l-.36-.213-3.731.98.995-3.639-.234-.373A9.948 9.948 0 012.016 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/>
-                        </svg>
-                        (47) 99784-6229 - José Carlos
-                      </p>
-                    </div>
                   </div>
                 </div>
                 <div className="text-right space-y-1">

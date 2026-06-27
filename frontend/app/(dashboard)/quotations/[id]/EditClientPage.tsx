@@ -73,19 +73,30 @@ export default function EditClientPage() {
           type: item.product?.type || item.type || 'SERVICO',
         }));
 
+        const rawPaymentMethod = String(data.paymentMethod || 'PIX').toUpperCase().replace(/\s+/g, '_');
+        const validPaymentMethods: Record<string, string> = {
+          'PIX': 'PIX',
+          'DINHEIRO': 'DINHEIRO',
+          'CARTAO_CREDITO': 'CARTAO_CREDITO',
+          'CARTÃO DE CRÉDITO': 'CARTAO_CREDITO',
+          'CARTAO DE CREDITO': 'CARTAO_CREDITO',
+          'CARTÃO_DE_CRÉDITO': 'CARTAO_CREDITO',
+        };
+        const normalizedPaymentMethod = validPaymentMethods[rawPaymentMethod] || 'PIX';
+
         methods.reset({
           customer_id: data.customerId,
           items: mappedItems.length > 0 ? mappedItems : [{ name: '', quantity: 1, unit_price: 0, cost_price: 0, markup: 1, type: 'SERVICO' as const }],
-          discount_percentage: data.discountPercentage || 0,
+          discount_percentage: Number(data.discountPercentage) || 0,
           valid_until: data.validUntil
             ? new Date(data.validUntil).toISOString().split('T')[0]
             : new Date(new Date().setDate(new Date().getDate() + 15)).toISOString().split('T')[0],
-          notes: data.notes || '',
+          notes: typeof data.notes === 'string' && data.notes.startsWith('{') ? (() => { try { const p = JSON.parse(data.notes); return p.notes || data.notes; } catch { return data.notes; } })() : (data.notes || ''),
           payment_methods: data.paymentMethods || '',
           execution_deadline: data.executionDeadline || '',
-          payment_method: data.paymentMethod || 'PIX',
-          installments: data.installments || 1,
-          margin_percentage: data.marginPercentage || 0,
+          payment_method: normalizedPaymentMethod as 'PIX' | 'DINHEIRO' | 'CARTAO_CREDITO',
+          installments: Number(data.installments) || 1,
+          margin_percentage: Number(data.marginPercentage) || 0,
         });
       } catch (e) {
         setError('Erro ao carregar orçamento');
@@ -98,6 +109,7 @@ export default function EditClientPage() {
 
   const onSubmit = async (data: QuotationFormValues) => {
     setSaving(true);
+    setError('');
     try {
       const token = getToken();
 
@@ -126,6 +138,7 @@ export default function EditClientPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          customer_id: data.customer_id,
           items: data.items.map((item: any) => ({
             name: item.name,
             quantity: Number(item.quantity) || 1,
@@ -137,6 +150,7 @@ export default function EditClientPage() {
             type: item.type || 'SERVICO',
           })),
           total,
+          valid_until: data.valid_until,
           notes: data.notes || '',
           payment_methods: data.payment_methods || '',
           execution_deadline: data.execution_deadline || '',
@@ -146,10 +160,13 @@ export default function EditClientPage() {
           discount_percentage: data.discount_percentage || 0,
         }),
       });
-      if (!res.ok) throw new Error('Erro ao salvar');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Erro ao salvar');
+      }
       router.push('/quotations');
-    } catch (e) {
-      alert('Erro ao salvar orçamento');
+    } catch (e: any) {
+      setError(e.message || 'Erro ao salvar orçamento');
     } finally {
       setSaving(false);
     }
@@ -179,7 +196,15 @@ export default function EditClientPage() {
       </div>
 
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
+        <form onSubmit={methods.handleSubmit(onSubmit, (formErrors) => {
+          const messages = Object.values(formErrors).map(e => e?.message).filter(Boolean);
+          setError(messages.length > 0 ? messages.join('. ') : 'Verifique os campos obrigatórios.');
+        })} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
+          {error && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 rounded text-sm">
+              {error}
+            </div>
+          )}
           <CustomerPicker />
 
           <div>

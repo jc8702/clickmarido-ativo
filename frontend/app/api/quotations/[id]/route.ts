@@ -86,6 +86,8 @@ export async function PUT(
     if (body.installments !== undefined) updateData.installments = body.installments;
     if (body.margin_percentage !== undefined) updateData.marginPercentage = body.margin_percentage;
     if (body.discount_percentage !== undefined) updateData.discountPercentage = body.discount_percentage;
+    if (body.valid_until !== undefined) updateData.validUntil = body.valid_until ? new Date(body.valid_until) : null;
+    if (body.customer_id !== undefined) updateData.customerId = body.customer_id;
 
     const quotation = await prisma.quotation.update({
       where: { id },
