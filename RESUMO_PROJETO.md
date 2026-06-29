@@ -1,11 +1,18 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Módulo de Pré-vendas (CRM MVP) inicializado com Kanban, APIs e Inteligência Comercial básica criadas.
+- **Status Atual:** Módulos de Pré-vendas e Insights Comerciais padronizados visualmente e enriquecidos analiticamente com consumo de APIs reais.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Mapeamento do funil de vendas.
-- **Última Atualização:** 29/06/2026 - 12:37
+- **Última Atualização:** 29/06/2026 - 13:00
 
 ## Histórico de Alterações
+
+### 29/06/2026 - 13:00
+- **Padronização, Polimento e Enriquecimento Completo de Pré-Vendas e Insights:**
+  - **API Real de CRM (`/api/leads/insights/route.ts`):** Rota adicionada para calcular e expor estatísticas comerciais reais do banco (Win Rate, SLA, volumes de funil, motivos de perda, receita prevista e riscos operacionais).
+  - **Kanban de Pré-Vendas Refinado (`pre-vendas/page.tsx`):** Redesenhado utilizando os componentes `Card` e `Badge` oficiais. Inclusão de indicadores laterais de temperatura, badges semânticos de canal e alertas de SLA por card, além de total integração com o modo escuro.
+  - **Cockpit Comercial de Insights (`insights/page.tsx`):** Transformado em painel gerencial rico com gráficos Recharts responsivos de funil, origens e descarte, dotados de contraste dinâmico para modo escuro. Seção de ações críticas para leads parados/violação de SLA e bloco conselheiro incluídos.
+  - **Validação de Build:** Build estático de produção executado com sucesso com zero erros estáticos.
 
 ### 29/06/2026 - 12:37
 - **Entrega e Ativação Completa do Módulo de Pré-Vendas e CRM:**
