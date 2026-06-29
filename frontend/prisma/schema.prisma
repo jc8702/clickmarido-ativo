@@ -8,88 +8,90 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String   @db.VarChar(255)
-  email        String   @unique @db.VarChar(255)
-  passwordHash String   @db.VarChar(255)
-  role         String   @default("admin") @db.VarChar(20)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         @db.VarChar(255)
+  email         String         @unique @db.VarChar(255)
+  passwordHash  String         @db.VarChar(255)
+  role          String         @default("admin") @db.VarChar(20)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   uploadedMedia Media[]
   notifications Notification[]
+  leads         Lead[]
+  leadEvents    LeadEvent[]
 
   @@map("users")
 }
 
 model Technician {
-  id         String   @id @default(cuid())
-  name       String   @db.VarChar(255)
-  email      String   @default("") @db.VarChar(255)
-  phone      String   @default("") @db.VarChar(20)
-  specialty  String   @default("") @db.VarChar(100)
-  active     Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String         @id @default(cuid())
+  name          String         @db.VarChar(255)
+  email         String         @default("") @db.VarChar(255)
+  phone         String         @default("") @db.VarChar(20)
+  specialty     String         @default("") @db.VarChar(100)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   serviceOrders ServiceOrder[]
-  appointments   Appointment[]
-  reviews        Review[]
+  appointments  Appointment[]
+  reviews       Review[]
 
   @@map("technicians")
 }
 
 model Customer {
-  id         String      @id @default(cuid())
-  name       String      @db.VarChar(255)
-  email      String?     @unique @db.VarChar(255)
-  phone      String      @db.VarChar(20)
-  addresses  Json        @default("[]")
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  quotations Quotation[]
-  warranties Warranty[]
-  payments   Payment[]
+  id            String         @id @default(cuid())
+  name          String         @db.VarChar(255)
+  email         String?        @unique @db.VarChar(255)
+  phone         String         @db.VarChar(20)
+  addresses     Json           @default("[]")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  quotations    Quotation[]
+  warranties    Warranty[]
+  payments      Payment[]
   serviceOrders ServiceOrder[]
-  invoices   Invoice[]
-  appointments Appointment[]
-  reviews    Review[]
-  nps        NPS[]
+  invoices      Invoice[]
+  appointments  Appointment[]
+  reviews       Review[]
+  nps           NPS[]
 
   // Financeiro
-  creditLimit       Decimal?  @default(0) @db.Decimal(10, 2)
-  taxDocNumber      String?   // CPF/CNPJ
+  creditLimit  Decimal? @default(0) @db.Decimal(10, 2)
+  taxDocNumber String? // CPF/CNPJ
 
   @@map("customers")
 }
 
 model Quotation {
-  id           String             @id @default(cuid())
-  number       String?            @unique @db.VarChar(30)
-  customerId   String
-  items        QuotationItem[]
-  total        Decimal            @default(0) @db.Decimal(10, 2)
-  status       String             @default("rascunho")
-  temperature  String             @default("MORNO") // QUENTE, MORNO, FRIO
-  notes        String             @default("")
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  customer     Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  warranties   Warranty[]
-  payments     Payment[]
-  serviceOrder ServiceOrder?
-  invoice      Invoice?
+  id             String          @id @default(cuid())
+  number         String?         @unique @db.VarChar(30)
+  customerId     String
+  items          QuotationItem[]
+  total          Decimal         @default(0) @db.Decimal(10, 2)
+  status         String          @default("rascunho")
+  temperature    String          @default("MORNO") // QUENTE, MORNO, FRIO
+  notes          String          @default("")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  warranties     Warranty[]
+  payments       Payment[]
+  serviceOrder   ServiceOrder?
+  invoice        Invoice?
   purchaseOrders PurchaseOrder[]
 
   // Financeiro
-  paymentTerms String?   @default("A_VISTA")  // A_VISTA, 30_DIAS, 60_DIAS
-  paymentMethods String? @default("")  // Ex: "PIX, Cartão de Crédito, Boleto"
-  executionDeadline String? @default("")  // Ex: "5 dias úteis", "Conforme agendamento"
+  paymentTerms      String? @default("A_VISTA") // A_VISTA, 30_DIAS, 60_DIAS
+  paymentMethods    String? @default("") // Ex: "PIX, Cartão de Crédito, Boleto"
+  executionDeadline String? @default("") // Ex: "5 dias úteis", "Conforme agendamento"
 
   // Pagamento e Margem
-  paymentMethod String?  @default("PIX")  // PIX, DINHEIRO, CARTAO_CREDITO
-  installments  Int?     @default(1)      // 1-10 parcelas
-  marginPercentage Decimal? @default(0) @db.Decimal(5, 2)  // 0-100%
-  discountPercentage Decimal? @default(0) @db.Decimal(5, 2)  // 0-100% Desconto
+  paymentMethod      String?  @default("PIX") // PIX, DINHEIRO, CARTAO_CREDITO
+  installments       Int?     @default(1) // 1-10 parcelas
+  marginPercentage   Decimal? @default(0) @db.Decimal(5, 2) // 0-100%
+  discountPercentage Decimal? @default(0) @db.Decimal(5, 2) // 0-100% Desconto
 
   // Automação
   expiryNotificationSent Boolean @default(false)
@@ -129,7 +131,7 @@ model Warranty {
   quotation           Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
 
   // Automação
-  reminderSent        Boolean   @default(false)
+  reminderSent Boolean @default(false)
 
   @@index([quotationId])
   @@index([customerId])
@@ -137,29 +139,29 @@ model Warranty {
 }
 
 model Product {
-  id              String            @id @default(cuid())
-  name            String            @db.VarChar(255)
-  sku             String            @unique @db.VarChar(50)
-  type            String            @db.VarChar(20) // "SERVICO" ou "PECA"
-  description     String            @default("")
-  price           Decimal           @default(0) @db.Decimal(10, 2)
-  unit            String            @default("un") @db.VarChar(10) // un, m², h, kg, etc
-  category        String            @default("") @db.VarChar(100)
-  active          Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  quotationItems  QuotationItem[]
+  id                 String              @id @default(cuid())
+  name               String              @db.VarChar(255)
+  sku                String              @unique @db.VarChar(50)
+  type               String              @db.VarChar(20) // "SERVICO" ou "PECA"
+  description        String              @default("")
+  price              Decimal             @default(0) @db.Decimal(10, 2)
+  unit               String              @default("un") @db.VarChar(10) // un, m², h, kg, etc
+  category           String              @default("") @db.VarChar(100)
+  active             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  quotationItems     QuotationItem[]
   purchaseOrderItems PurchaseOrderItem[]
-  productUsages   ProductUsage[]
+  productUsages      ProductUsage[]
 
   // Fornecedor padrão associado ao SKU
-  vendorId        String?
-  vendor          Vendor?           @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  vendorId String?
+  vendor   Vendor? @relation(fields: [vendorId], references: [id], onDelete: SetNull)
 
-  quantity        Int               @default(0)   // Apenas se type == 'PECA'
-  minStock        Int               @default(0)   // Alerta se quantity <= minStock
-  estimatedTime   Int?              @default(60)  // Em minutos, padrão 1h
-  imageUrl        String?           @db.Text
+  quantity      Int     @default(0) // Apenas se type == 'PECA'
+  minStock      Int     @default(0) // Alerta se quantity <= minStock
+  estimatedTime Int?    @default(60) // Em minutos, padrão 1h
+  imageUrl      String? @db.Text
 
   @@index([sku])
   @@index([type])
@@ -169,23 +171,23 @@ model Product {
 }
 
 model ServiceOrder {
-  id             String            @id @default(cuid())
-  number         String            @unique @db.VarChar(20)
-  quotationId    String            @unique
+  id             String              @id @default(cuid())
+  number         String              @unique @db.VarChar(20)
+  quotationId    String              @unique
   customerId     String
   technicianId   String?
   scheduledTime  DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
-  status         String            @default("agendada") @db.VarChar(20)
-  address        String            @default("") @db.VarChar(500)
-  notes          String            @default("")
-  finalTotal     Decimal           @default(0) @db.Decimal(10, 2)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  quotation      Quotation         @relation(fields: [quotationId], references: [id])
-  customer       Customer          @relation(fields: [customerId], references: [id])
-  technician     Technician?       @relation(fields: [technicianId], references: [id])
+  status         String              @default("agendada") @db.VarChar(20)
+  address        String              @default("") @db.VarChar(500)
+  notes          String              @default("")
+  finalTotal     Decimal             @default(0) @db.Decimal(10, 2)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  quotation      Quotation           @relation(fields: [quotationId], references: [id])
+  customer       Customer            @relation(fields: [customerId], references: [id])
+  technician     Technician?         @relation(fields: [technicianId], references: [id])
   photos         ServiceOrderPhoto[]
   purchaseOrders PurchaseOrder[]
   appointments   Appointment[]
@@ -207,54 +209,54 @@ model ServiceOrder {
 }
 
 model Payment {
-  id                String    @id @default(cuid())
-  quotationId       String?
-  customerId        String
-  amount            Decimal   @default(0) @db.Decimal(10, 2)
-  method            String    @default("pix") @db.VarChar(20)
-  status            String    @default("pendente") @db.VarChar(20)
-  pixCode           String    @default("") @db.Text
-  description       String    @default("")
-  paidAt            DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  invoiceId         String?
-  invoice           Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
-  quotation         Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
-  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid())
+  quotationId String?
+  customerId  String
+  amount      Decimal    @default(0) @db.Decimal(10, 2)
+  method      String     @default("pix") @db.VarChar(20)
+  status      String     @default("pendente") @db.VarChar(20)
+  pixCode     String     @default("") @db.Text
+  description String     @default("")
+  paidAt      DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  invoiceId   String?
+  invoice     Invoice?   @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  quotation   Quotation? @relation(fields: [quotationId], references: [id], onDelete: SetNull)
+  customer    Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   // Mercado Pago
-  mpPaymentId       String?   @unique
-  mpStatus          String?
-  mpPaymentMethodId String?
+  mpPaymentId         String? @unique
+  mpStatus            String?
+  mpPaymentMethodId   String?
   mpExternalReference String?
 
   // Dados PIX expandidos
-  pixQrCode         String?   @db.Text
-  pixExpiration     DateTime?
+  pixQrCode     String?   @db.Text
+  pixExpiration DateTime?
 
   // Dados Boleto
-  boletoNumber      String?
-  boletoBarcode     String?
-  boletoUrl         String?   @db.Text
+  boletoNumber  String?
+  boletoBarcode String?
+  boletoUrl     String? @db.Text
 
   // Dados Cartão
-  cardBrand         String?
-  cardLast4         String?
-  installments      Int?
+  cardBrand    String?
+  cardLast4    String?
+  installments Int?
 
   // Nota Fiscal
-  nfeUrl            String?   @db.Text
-  nfeNumber         String?
+  nfeUrl    String? @db.Text
+  nfeNumber String?
 
   // Controle
-  confirmedAt       DateTime?
-  dueDateAt         DateTime?
+  confirmedAt DateTime?
+  dueDateAt   DateTime?
 
   // Automação
-  remindersSent     Int       @default(0)
-  lastReminderAt    DateTime?
-  notificationLog   Json?
+  remindersSent   Int       @default(0)
+  lastReminderAt  DateTime?
+  notificationLog Json?
 
   @@index([quotationId])
   @@index([customerId])
@@ -266,54 +268,54 @@ model Payment {
 }
 
 model ServiceOrderPhoto {
-  id             String        @id @default(cuid())
+  id             String       @id @default(cuid())
   serviceOrderId String
-  url            String        @db.Text
-  fileName       String        @default("") @db.VarChar(255)
-  type           String        @default("geral") @db.VarChar(20)
-  createdAt      DateTime      @default(now())
-  serviceOrder   ServiceOrder  @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  url            String       @db.Text
+  fileName       String       @default("") @db.VarChar(255)
+  type           String       @default("geral") @db.VarChar(20)
+  createdAt      DateTime     @default(now())
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
 
   @@index([serviceOrderId])
   @@map("service_order_photos")
 }
 
 model Invoice {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Referência
-  quotationId       String    @unique
-  customerId        String
+  quotationId String @unique
+  customerId  String
 
   // Dados da nota
-  invoiceNumber     String    @unique
-  seriesNumber      String?   @default("1")
-  issueDate         DateTime  @default(now())
-  dueDate           DateTime
+  invoiceNumber String   @unique
+  seriesNumber  String?  @default("1")
+  issueDate     DateTime @default(now())
+  dueDate       DateTime
 
   // Valores
-  subtotal          Decimal   @default(0) @db.Decimal(10, 2)
-  taxAmount         Decimal   @default(0) @db.Decimal(10, 2)
-  totalAmount       Decimal   @default(0) @db.Decimal(10, 2)
-  discountAmount    Decimal?  @default(0) @db.Decimal(10, 2)
+  subtotal       Decimal  @default(0) @db.Decimal(10, 2)
+  taxAmount      Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount    Decimal  @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal? @default(0) @db.Decimal(10, 2)
 
   // Status
-  status            String    @default("rascunho")
-  nfeUrl            String?   @db.Text
+  status String  @default("rascunho")
+  nfeUrl String? @db.Text
 
   // Fiscal
-  taxRegime         String    @default("SIMPLES")
-  issRate           Decimal?  @db.Decimal(5, 2)
+  taxRegime String   @default("SIMPLES")
+  issRate   Decimal? @db.Decimal(5, 2)
 
   // Metadados
-  description       String?   @default("")
-  notes             String?   @default("")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  description String?  @default("")
+  notes       String?  @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  quotation         Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
-  customer          Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  payments          Payment[]
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments  Payment[]
 
   @@unique([invoiceNumber, seriesNumber])
   @@index([quotationId])
@@ -324,44 +326,44 @@ model Invoice {
 }
 
 model Expense {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Categoria
-  category          String    // MATERIAL, SERVICO, TRANSPORTE, ALUGUEL, UTILITIES, FERRAMENTAS, OUTROS
-  costCenter        String?   @default("")
+  category   String // MATERIAL, SERVICO, TRANSPORTE, ALUGUEL, UTILITIES, FERRAMENTAS, OUTROS
+  costCenter String? @default("")
 
   // Dados
-  description       String    @db.VarChar(255)
-  amount            Decimal   @default(0) @db.Decimal(10, 2)
+  description String  @db.VarChar(255)
+  amount      Decimal @default(0) @db.Decimal(10, 2)
 
   // Fornecedor (opcional)
-  vendorId          String?
-  vendorName        String?   @default("")
+  vendorId   String?
+  vendorName String? @default("")
 
   // Datas
-  expenseDate       DateTime  @default(now())
-  dueDate           DateTime?
-  paidAt            DateTime?
+  expenseDate DateTime  @default(now())
+  dueDate     DateTime?
+  paidAt      DateTime?
 
   // Status
-  status            String    @default("pendente")
+  status String @default("pendente")
 
   // Documento
-  documentType      String?   // NOTA_FISCAL, RECIBO, OUTRO
-  documentNumber    String?
+  documentType   String? // NOTA_FISCAL, RECIBO, OUTRO
+  documentNumber String?
 
   // Vinculação com OS (CRÍTICO - integra com ServiceOrder)
-  serviceOrderId    String?   // FK para ServiceOrder
+  serviceOrderId String? // FK para ServiceOrder
 
   // Metadados
-  notes             String?   @default("")
-  attachmentUrl     String?   @db.Text
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  notes         String?  @default("")
+  attachmentUrl String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  vendor            Vendor?   @relation(fields: [vendorId], references: [id], onDelete: SetNull)
-  serviceOrder      ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
-  purchaseOrders    PurchaseOrder[]
+  vendor         Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  serviceOrder   ServiceOrder?   @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  purchaseOrders PurchaseOrder[]
 
   @@index([category])
   @@index([costCenter])
@@ -374,41 +376,41 @@ model Expense {
 }
 
 model Vendor {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Dados
-  name              String    @db.VarChar(255)
-  tradeName         String?   @default("")
-  email             String?   @db.VarChar(255)
-  phone             String?   @db.VarChar(20)
-  whatsapp          String?   @db.VarChar(20)
+  name      String  @db.VarChar(255)
+  tradeName String? @default("")
+  email     String? @db.VarChar(255)
+  phone     String? @db.VarChar(20)
+  whatsapp  String? @db.VarChar(20)
 
   // Fiscal
-  cnpjCpf           String?   @unique
-  stateRegistration String?   @default("")
+  cnpjCpf               String? @unique
+  stateRegistration     String? @default("")
   municipalRegistration String? @default("")
 
   // Endereço
-  address           String?   @default("")
-  contactName       String?   @default("")
+  address     String? @default("")
+  contactName String? @default("")
 
   // Classificação e Controle
-  category          String    @default("OUTROS") // MATERIAL, SERVICO, TRANSPORTE, EQUIPAMENTO, FERRAMENTAS, TERCEIRIZADO, OUTROS
-  classification    String    @default("B") // A, B, C, D
-  paymentTerms      String?   @default("")
+  category            String  @default("OUTROS") // MATERIAL, SERVICO, TRANSPORTE, EQUIPAMENTO, FERRAMENTAS, TERCEIRIZADO, OUTROS
+  classification      String  @default("B") // A, B, C, D
+  paymentTerms        String? @default("")
   averageDeliveryDays Int?    @default(0)
-  isActive          Boolean   @default(true)
-  isBlocked         Boolean   @default(false)
+  isActive            Boolean @default(true)
+  isBlocked           Boolean @default(false)
 
   // Relacionamento
-  expenses          Expense[]
-  purchaseOrders    PurchaseOrder[]
-  products          Product[]
+  expenses       Expense[]
+  purchaseOrders PurchaseOrder[]
+  products       Product[]
 
   // Metadados
-  notes             String?   @default("")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  notes     String?  @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([cnpjCpf])
   @@index([isActive])
@@ -503,33 +505,33 @@ model PurchaseOrderEvent {
 }
 
 model FinancialTransaction {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Tipo
-  type              String    // INVOICE_ISSUED, PAYMENT_RECEIVED, EXPENSE_RECORDED, ADJUSTMENT, TRANSFER
+  type String // INVOICE_ISSUED, PAYMENT_RECEIVED, EXPENSE_RECORDED, ADJUSTMENT, TRANSFER
 
   // Referências
-  invoiceId         String?
-  paymentId         String?
-  expenseId         String?
+  invoiceId String?
+  paymentId String?
+  expenseId String?
 
   // Valores
-  debit             Decimal?  @default(0) @db.Decimal(10, 2)
-  credit            Decimal?  @default(0) @db.Decimal(10, 2)
-  balance           Decimal?  @default(0) @db.Decimal(10, 2)
+  debit   Decimal? @default(0) @db.Decimal(10, 2)
+  credit  Decimal? @default(0) @db.Decimal(10, 2)
+  balance Decimal? @default(0) @db.Decimal(10, 2)
 
   // Descrição
-  description       String    @db.VarChar(500)
-  notes             String?   @default("")
+  description String  @db.VarChar(500)
+  notes       String? @default("")
 
   // Data
-  transactionDate   DateTime  @default(now())
+  transactionDate DateTime @default(now())
 
   // Auditoria
-  userId            String?
-  userEmail         String?
+  userId    String?
+  userEmail String?
 
-  createdAt         DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([type])
   @@index([transactionDate])
@@ -540,24 +542,24 @@ model FinancialTransaction {
 }
 
 model AccountBalance {
-  id                String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // Data do saldo
-  balanceDate       DateTime
+  balanceDate DateTime
 
   // Saldos
-  opening           Decimal   @default(0) @db.Decimal(10, 2)
-  inflow            Decimal   @default(0) @db.Decimal(10, 2)
-  outflow           Decimal   @default(0) @db.Decimal(10, 2)
-  closing           Decimal   @default(0) @db.Decimal(10, 2)
+  opening Decimal @default(0) @db.Decimal(10, 2)
+  inflow  Decimal @default(0) @db.Decimal(10, 2)
+  outflow Decimal @default(0) @db.Decimal(10, 2)
+  closing Decimal @default(0) @db.Decimal(10, 2)
 
   // Previsão
-  forecast30        Decimal?  @default(0) @db.Decimal(10, 2)
-  forecast60        Decimal?  @default(0) @db.Decimal(10, 2)
-  forecast90        Decimal?  @default(0) @db.Decimal(10, 2)
+  forecast30 Decimal? @default(0) @db.Decimal(10, 2)
+  forecast60 Decimal? @default(0) @db.Decimal(10, 2)
+  forecast90 Decimal? @default(0) @db.Decimal(10, 2)
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([balanceDate])
   @@index([balanceDate])
@@ -566,9 +568,9 @@ model AccountBalance {
 
 model AuditLog {
   id        String   @id @default(cuid())
-  entity    String   @db.VarChar(50)    // 'quotation', 'payment', 'service_order'
+  entity    String   @db.VarChar(50) // 'quotation', 'payment', 'service_order'
   entityId  String   @db.VarChar(100)
-  action    String   @db.VarChar(100)   // 'created', 'updated', 'automation_triggered'
+  action    String   @db.VarChar(100) // 'created', 'updated', 'automation_triggered'
   oldValue  Json?
   newValue  Json?
   createdAt DateTime @default(now())
@@ -585,29 +587,29 @@ model AuditLog {
 // ============================================
 
 model Appointment {
-  id             String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Campos
-  date           DateTime
-  duration       Int      // minutos
-  status         String   @default("agendada") @db.VarChar(20) // agendada, confirmada, em_andamento, concluida, cancelada, nao_compareceu
-  notes          String?  @db.Text
-  location       String   @db.VarChar(500)
-  
+  date     DateTime
+  duration Int // minutos
+  status   String   @default("agendada") @db.VarChar(20) // agendada, confirmada, em_andamento, concluida, cancelada, nao_compareceu
+  notes    String?  @db.Text
+  location String   @db.VarChar(500)
+
   // Relações
   serviceOrderId String
   technicianId   String
   customerId     String
-  
+
   // Audit
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
-  technician     Technician   @relation(fields: [technicianId], references: [id])
-  customer       Customer     @relation(fields: [customerId], references: [id])
-  
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  technician   Technician   @relation(fields: [technicianId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+
   @@unique([technicianId, date]) // Evita duplas
   @@index([serviceOrderId])
   @@index([technicianId])
@@ -618,31 +620,31 @@ model Appointment {
 }
 
 model Media {
-  id             String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Arquivo
-  fileUrl        String   @db.Text
-  fileName       String   @db.VarChar(255)
-  fileSize       Int      // bytes
-  mimeType       String   @db.VarChar(50) // image/jpeg, image/png
-  
+  fileUrl  String @db.Text
+  fileName String @db.VarChar(255)
+  fileSize Int // bytes
+  mimeType String @db.VarChar(50) // image/jpeg, image/png
+
   // Tipo
-  type           String   @default("geral") @db.VarChar(20) // antes, depois, progresso, problema, solucao
-  caption        String?  @db.VarChar(500)
-  geoLocation    String?  @db.VarChar(100) // latitude,longitude
-  
+  type        String  @default("geral") @db.VarChar(20) // antes, depois, progresso, problema, solucao
+  caption     String? @db.VarChar(500)
+  geoLocation String? @db.VarChar(100) // latitude,longitude
+
   // Relações
-  serviceOrderId String
+  serviceOrderId   String
   uploadedByUserId String
-  
+
   // Audit
-  uploadedAt     DateTime @default(now())
-  deletedAt      DateTime?
-  
+  uploadedAt DateTime  @default(now())
+  deletedAt  DateTime?
+
   // Relations
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
-  uploadedBy     User         @relation(fields: [uploadedByUserId], references: [id])
-  
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation(fields: [uploadedByUserId], references: [id])
+
   @@index([serviceOrderId])
   @@index([uploadedByUserId])
   @@index([type])
@@ -650,35 +652,35 @@ model Media {
 }
 
 model Notification {
-  id               String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Usuário
-  userId           String
-  
+  userId String
+
   // Conteúdo
-  type             String   @db.VarChar(50) // os_criada, os_atualizada, os_concluida, agendamento_criado, lembrete_agendamento, pagamento_recebido, pagamento_atrasado, garantia_expirando, nova_avaliacao, estoque_baixo
-  title            String   @db.VarChar(255)
-  message          String   @db.Text
-  
+  type    String @db.VarChar(50) // os_criada, os_atualizada, os_concluida, agendamento_criado, lembrete_agendamento, pagamento_recebido, pagamento_atrasado, garantia_expirando, nova_avaliacao, estoque_baixo
+  title   String @db.VarChar(255)
+  message String @db.Text
+
   // Referência
-  relatedEntityId  String?  @db.VarChar(100)
+  relatedEntityId   String? @db.VarChar(100)
   relatedEntityType String? @db.VarChar(50) // service_order, payment, warranty, appointment
-  
+
   // Status
-  isRead           Boolean  @default(false)
-  readAt           DateTime?
-  
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
   // Canais
-  sentViaEmail     Boolean  @default(false)
-  sentViaSMS       Boolean  @default(false)
-  sentViaPush      Boolean  @default(false)
-  
+  sentViaEmail Boolean @default(false)
+  sentViaSMS   Boolean @default(false)
+  sentViaPush  Boolean @default(false)
+
   // Audit
-  createdAt        DateTime @default(now())
-  
+  createdAt DateTime @default(now())
+
   // Relations
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId, isRead])
   @@index([type])
   @@index([createdAt])
@@ -686,26 +688,26 @@ model Notification {
 }
 
 model Review {
-  id             String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Relações
   serviceOrderId String
   customerId     String
   technicianId   String
-  
+
   // Conteúdo
-  rating         Int      // 1-5
-  comment        String?  @db.Text
-  photos         Json?    // Array de URLs de fotos
-  
+  rating  Int // 1-5
+  comment String? @db.Text
+  photos  Json? // Array de URLs de fotos
+
   // Audit
-  createdAt      DateTime @default(now())
-  
+  createdAt DateTime @default(now())
+
   // Relations
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
-  customer       Customer     @relation(fields: [customerId], references: [id])
-  technician     Technician   @relation(fields: [technicianId], references: [id])
-  
+  serviceOrder ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  technician   Technician   @relation(fields: [technicianId], references: [id])
+
   @@unique([serviceOrderId]) // Uma review por OS
   @@index([customerId])
   @@index([technicianId])
@@ -714,21 +716,21 @@ model Review {
 }
 
 model NPS {
-  id        String   @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Usuário
-  clientId  String
-  
+  clientId String
+
   // Score
-  score     Int      // 0-10
-  feedback  String?  @db.Text
-  
+  score    Int // 0-10
+  feedback String? @db.Text
+
   // Audit
   createdAt DateTime @default(now())
-  
+
   // Relations
-  customer  Customer @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  
+  customer Customer @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
   @@index([clientId])
   @@index([score])
   @@map("nps_surveys")
@@ -742,7 +744,7 @@ model MessageLog {
   error     String?  @db.Text
   variables Json
   createdAt DateTime @default(now())
-  
+
   @@map("message_logs")
 }
 
@@ -775,17 +777,17 @@ model ProductUsage {
 }
 
 model CompanySettings {
-  id                String   @id @default(cuid())
-  companyName       String   @default("Click Marido") @db.VarChar(255)
-  cnpj              String?  @db.VarChar(20)
-  phone             String?  @db.VarChar(20)
-  email             String?  @db.VarChar(255)
-  address           String?  @db.VarChar(500)
-  defaultHourlyRate Decimal  @default(80.0) @db.Decimal(10, 2)
-  defaultWarranty   String   @default("90 dias nos termos do art. 26, II do CDC.") @db.Text
-  defaultCommissionRate Decimal @default(40.0) @db.Decimal(10, 2)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  companyName           String   @default("Click Marido") @db.VarChar(255)
+  cnpj                  String?  @db.VarChar(20)
+  phone                 String?  @db.VarChar(20)
+  email                 String?  @db.VarChar(255)
+  address               String?  @db.VarChar(500)
+  defaultHourlyRate     Decimal  @default(80.0) @db.Decimal(10, 2)
+  defaultWarranty       String   @default("90 dias nos termos do art. 26, II do CDC.") @db.Text
+  defaultCommissionRate Decimal  @default(40.0) @db.Decimal(10, 2)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@map("company_settings")
 }
@@ -817,9 +819,9 @@ model WhatsAppArchived {
 }
 
 model WhatsAppLabel {
-  id     String  @id @default(cuid())
-  name   String  @db.VarChar(50)
-  color  String  @default("#00a884") @db.VarChar(20)
+  id     String @id @default(cuid())
+  name   String @db.VarChar(50)
+  color  String @default("#00a884") @db.VarChar(20)
   userId String
 
   conversations WhatsAppConversationLabel[]
@@ -830,14 +832,160 @@ model WhatsAppLabel {
 }
 
 model WhatsAppConversationLabel {
-  id       String @id @default(cuid())
-  phone    String @db.VarChar(20)
-  labelId  String
-  label    WhatsAppLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
-  userId   String
+  id      String        @id @default(cuid())
+  phone   String        @db.VarChar(20)
+  labelId String
+  label   WhatsAppLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  userId  String
 
   @@unique([phone, labelId, userId])
   @@index([labelId])
   @@index([userId])
   @@map("whatsapp_conversation_labels")
+}
+
+enum LeadStatus {
+  FRIO
+  MORNO
+  QUENTE
+  PRONTO_ORCAMENTO
+}
+
+enum LeadFunnelStage {
+  NOVO_LEAD
+  SEM_CONTATO
+  EM_CONTATO
+  CONTATO_REALIZADO
+  LEAD_QUALIFICADO
+  LEAD_NAO_QUALIFICADO
+  REUNIAO_AGENDADA
+  COMPARECEU
+  PROPOSTA_SOLICITADA
+  PROPOSTA_ENVIADA
+  EM_NEGOCIACAO
+  GANHO
+  PERDIDO
+  SEM_RESPOSTA
+  REATIVADO
+}
+
+enum LeadEventType {
+  LEAD_CREATED
+  LEAD_UPDATED
+  LEAD_ORIGIN_ASSIGNED
+  LEAD_OWNER_ASSIGNED
+  LEAD_CONTACTED
+  LEAD_QUALIFIED
+  LEAD_DISQUALIFIED
+  APPOINTMENT_SCHEDULED
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_MISSED
+  PROPOSAL_REQUESTED
+  PROPOSAL_SENT
+  PROPOSAL_VIEWED
+  FOLLOWUP_LOGGED
+  STAGE_CHANGED
+  DEAL_WON
+  DEAL_LOST
+  LOST_REASON_DEFINED
+  SLA_BREACHED
+  LEAD_REACTIVATED
+}
+
+enum AppointmentStatus {
+  AGENDADO
+  REAGENDADO
+  CONFIRMADO
+  FALTOU
+  REALIZADO
+}
+
+model LeadSource {
+  id          String   @id @default(cuid())
+  channel     String   @db.VarChar(50) // WhatsApp, Instagram, Google Ads, Indicação, etc
+  campaign    String?  @db.VarChar(100)
+  subcampaign String?  @db.VarChar(100)
+  keyword     String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  leads       Lead[]
+
+  @@map("lead_sources")
+}
+
+model Lead {
+  id                String             @id @default(cuid())
+  name              String             @db.VarChar(255)
+  email             String?            @db.VarChar(255)
+  phone             String?            @db.VarChar(20)
+  sourceId          String?
+  source            LeadSource?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  responsavelId     String?
+  responsavel       User?              @relation(fields: [responsavelId], references: [id], onDelete: SetNull)
+  customerId        String?            @db.VarChar(255)
+  quotationId       String?            @db.VarChar(255)
+  status            LeadStatus         @default(FRIO)
+  funnelStage       LeadFunnelStage    @default(NOVO_LEAD)
+  score             Int                @default(0)
+  lossReason        String?            @db.VarChar(100)
+  lossNotes         String?            @db.Text
+  firstResponseTime DateTime?
+  slaBreachCount    Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  events            LeadEvent[]
+  appointments      LeadAppointment[]
+  alerts            OperationalAlert[]
+
+  @@index([sourceId])
+  @@index([responsavelId])
+  @@index([funnelStage])
+  @@map("leads")
+}
+
+model LeadEvent {
+  id        String        @id @default(cuid())
+  leadId    String
+  lead      Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      LeadEventType
+  oldValue  String?       @db.Text
+  newValue  String?       @db.Text
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  notes     String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([leadId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("lead_events")
+}
+
+model LeadAppointment {
+  id          String            @id @default(cuid())
+  leadId      String
+  lead        Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  scheduledAt DateTime
+  status      AppointmentStatus @default(AGENDADO)
+  notes       String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([leadId])
+  @@map("lead_appointments")
+}
+
+model OperationalAlert {
+  id         String    @id @default(cuid())
+  leadId     String
+  lead       Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type       String    @db.VarChar(50)
+  message    String    @db.Text
+  resolved   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([leadId])
+  @@map("operational_alerts")
 }

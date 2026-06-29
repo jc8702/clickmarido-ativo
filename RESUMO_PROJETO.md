@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Auditoria e simplificação do Módulo Financeiro concluídas (Solo Operation). Descolamento de DRE vs Livro Caixa resolvido e deploy realizado.
-- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo".
-- **Última Atualização:** 27/06/2026 - 16:05
+- **Status Atual:** Módulo de Pré-vendas (CRM MVP) inicializado com Kanban, APIs e Inteligência Comercial básica criadas.
+- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Mapeamento do funil de vendas.
+- **Última Atualização:** 29/06/2026 - 12:37
 
 ## Histórico de Alterações
+
+### 29/06/2026 - 12:37
+- **Entrega e Ativação Completa do Módulo de Pré-Vendas e CRM:**
+  - **Sincronização de Banco (`schema.prisma`):** Modelos finais (`Lead`, `LeadSource`, `LeadEvent`, `LeadAppointment`, `OperationalAlert`) integrados e sincronizados com o banco local via `prisma db push`.
+  - **Interface Kanban e BI:** Pipeline operacional de 15 colunas (`pre-vendas/page.tsx`) e dashboard de insights (`insights/page.tsx`) com componentes e imports corrigidos.
+  - **Acesso na UI (`layout.tsx`):** Links para "Pré-Vendas" e "Insights" adicionados na barra lateral do painel de controle.
+  - **Validação de Build:** Compilação de produção (`next build`) executada com sucesso com zero erros.
+
 
 ### 27/06/2026 - 21:05
 - **Correção na Criação de Ordens de Compra (`/purchases/new`):**
