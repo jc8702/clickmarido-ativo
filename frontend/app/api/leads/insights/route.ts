@@ -23,30 +23,31 @@ export async function GET() {
         winRate: 0,
         avgResponseTime: '0 min',
         totalRevenue: 0,
+        leadsForwardedToQuotation: 0,
+        forwardingRate: 0,
         leadsBySource: [],
         funnelDrops: [],
         lossAnalysis: [],
         temperatureStats: [],
         leadsHotAndStale: [],
-        slaBreachedLeads: []
+        slaBreachedLeads: [],
+        efficiencyBySource: [],
+        efficiencyByCampaign: []
       });
     }
 
-    // 2. Leads Qualificados (estágio LEAD_QUALIFICADO ou superior no funil)
-    const qualifiedStages = [
-      LeadFunnelStage.LEAD_QUALIFICADO,
-      LeadFunnelStage.REUNIAO_AGENDADA,
-      LeadFunnelStage.COMPARECEU,
-      LeadFunnelStage.PROPOSTA_SOLICITADA,
-      LeadFunnelStage.PROPOSTA_ENVIADA,
-      LeadFunnelStage.EM_NEGOCIACAO,
-      LeadFunnelStage.GANHO
+    // 2. Leads Qualificados
+    const qualifiedStages: LeadFunnelStage[] = [
+      LeadFunnelStage.QUALIFICADO,
+      LeadFunnelStage.EM_FOLLOWUP,
+      LeadFunnelStage.AGENDADO,
+      LeadFunnelStage.ENCAMINHADO_ORCAMENTO
     ];
 
     const qualifiedLeads = leads.filter(l => qualifiedStages.includes(l.funnelStage)).length;
 
-    // 3. Win Rate (Leads GANHO / Total Leads)
-    const wonLeads = leads.filter(l => l.funnelStage === LeadFunnelStage.GANHO).length;
+    // 3. Win Rate (Leads ENCAMINHADO_ORCAMENTO / Total Leads)
+    const wonLeads = leads.filter(l => l.funnelStage === LeadFunnelStage.ENCAMINHADO_ORCAMENTO).length;
     const winRate = Math.round((wonLeads / totalLeads) * 100);
 
     // 4. SLA / Tempo de Resposta Médio
@@ -82,7 +83,11 @@ export async function GET() {
       totalRevenue = quotations.reduce((acc, q) => acc + Number(q.total), 0);
     }
 
-    // 6. Leads por Origem (Canais)
+    // 6. Taxa de Encaminhamento para Orçamento (leads que geraram orçamentos reais)
+    const leadsForwardedToQuotation = leads.filter(l => l.quotationId !== null).length;
+    const forwardingRate = Math.round((leadsForwardedToQuotation / totalLeads) * 100);
+
+    // 7. Leads por Origem (Canais)
     const sourceMap: { [key: string]: number } = {};
     leads.forEach(lead => {
       const channel = lead.source?.channel || 'Outros';
@@ -93,19 +98,14 @@ export async function GET() {
       value
     }));
 
-    // 7. Funil de Vendas (Contagem por Etapa)
-    // Definimos a ordem lógica do funil comercial principal para o gráfico
+    // 8. Funil de Vendas (Contagem por Etapa)
     const stageOrder = [
       { id: LeadFunnelStage.NOVO_LEAD, label: 'Novo Lead' },
-      { id: LeadFunnelStage.SEM_CONTATO, label: 'Sem Contato' },
-      { id: LeadFunnelStage.EM_CONTATO, label: 'Em Contato' },
-      { id: LeadFunnelStage.CONTATO_REALIZADO, label: 'Contato Feito' },
-      { id: LeadFunnelStage.LEAD_QUALIFICADO, label: 'Qualificado' },
-      { id: LeadFunnelStage.REUNIAO_AGENDADA, label: 'Agendado' },
-      { id: LeadFunnelStage.PROPOSTA_SOLICITADA, label: 'Proposta Solicitada' },
-      { id: LeadFunnelStage.PROPOSTA_ENVIADA, label: 'Proposta Enviada' },
-      { id: LeadFunnelStage.EM_NEGOCIACAO, label: 'Em Negociação' },
-      { id: LeadFunnelStage.GANHO, label: 'Ganho (Fechado)' }
+      { id: LeadFunnelStage.EM_TRIAGEM, label: 'Em Triagem' },
+      { id: LeadFunnelStage.QUALIFICADO, label: 'Qualificado' },
+      { id: LeadFunnelStage.EM_FOLLOWUP, label: 'Em Follow-up' },
+      { id: LeadFunnelStage.AGENDADO, label: 'Agendado' },
+      { id: LeadFunnelStage.ENCAMINHADO_ORCAMENTO, label: 'Encaminhado Orçamento' }
     ];
 
     const funnelDrops = stageOrder.map(stage => {
@@ -116,10 +116,10 @@ export async function GET() {
       };
     });
 
-    // 8. Análise de Perda (Motivos de Descarte)
+    // 9. Análise de Perda (Motivos de Descarte)
     const lossMap: { [key: string]: number } = {};
     leads.forEach(lead => {
-      if (lead.funnelStage === LeadFunnelStage.PERDIDO || lead.funnelStage === LeadFunnelStage.SEM_RESPOSTA) {
+      if (lead.funnelStage === LeadFunnelStage.DESCARTADO) {
         const reason = lead.lossReason || 'Sem motivo especificado';
         lossMap[reason] = (lossMap[reason] || 0) + 1;
       }
@@ -128,29 +128,29 @@ export async function GET() {
       .map(([reason, count]) => ({ reason, count }))
       .sort((a, b) => b.count - a.count);
 
-    // 9. Temperatura do Funil
+    // 10. Temperatura do Funil
     const tempMap: { [key: string]: number } = {
       'FRIO': 0,
       'MORNO': 0,
       'QUENTE': 0,
-      'PRONTO_ORCAMENTO': 0
+      'URGENTE': 0
     };
     leads.forEach(lead => {
       const statusStr = lead.status.toString();
       tempMap[statusStr] = (tempMap[statusStr] || 0) + 1;
     });
     const temperatureStats = Object.entries(tempMap).map(([name, value]) => ({
-      name: name === 'PRONTO_ORCAMENTO' ? 'Pronto Orçamento' : name,
+      name,
       value
     }));
 
-    // 10. Alertas de Risco: Leads Quentes Inativos (>48h)
+    // 11. Alertas de Risco: Leads Quentes Inativos (>48h)
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const leadsHotAndStale = leads
       .filter(l => 
-        (l.status === LeadStatus.QUENTE || l.status === LeadStatus.PRONTO_ORCAMENTO) && 
-        l.funnelStage !== LeadFunnelStage.GANHO && 
-        l.funnelStage !== LeadFunnelStage.PERDIDO &&
+        (l.status === LeadStatus.QUENTE || l.status === LeadStatus.URGENTE) && 
+        l.funnelStage !== LeadFunnelStage.ENCAMINHADO_ORCAMENTO && 
+        l.funnelStage !== LeadFunnelStage.DESCARTADO &&
         new Date(l.updatedAt) < fortyEightHoursAgo
       )
       .map(l => ({
@@ -162,12 +162,12 @@ export async function GET() {
         lastUpdate: l.updatedAt
       }));
 
-    // 11. Alertas de Risco: Leads com quebra de SLA
+    // 12. Alertas de Risco: Leads com quebra de SLA
     const slaBreachedLeads = leads
       .filter(l => 
         l.slaBreachCount > 0 && 
-        l.funnelStage !== LeadFunnelStage.GANHO && 
-        l.funnelStage !== LeadFunnelStage.PERDIDO
+        l.funnelStage !== LeadFunnelStage.ENCAMINHADO_ORCAMENTO && 
+        l.funnelStage !== LeadFunnelStage.DESCARTADO
       )
       .map(l => ({
         id: l.id,
@@ -177,21 +177,66 @@ export async function GET() {
         funnelStage: l.funnelStage
       }));
 
+    // 13. Eficiência por Canal de Origem (Conversão Won / Total Leads)
+    const channelWonMap: { [key: string]: { total: number; won: number } } = {};
+    leads.forEach(lead => {
+      const channel = lead.source?.channel || 'Outros';
+      if (!channelWonMap[channel]) {
+        channelWonMap[channel] = { total: 0, won: 0 };
+      }
+      channelWonMap[channel].total += 1;
+      if (lead.funnelStage === LeadFunnelStage.ENCAMINHADO_ORCAMENTO) {
+        channelWonMap[channel].won += 1;
+      }
+    });
+
+    const efficiencyBySource = Object.entries(channelWonMap).map(([name, stats]) => ({
+      name,
+      total: stats.total,
+      won: stats.won,
+      rate: Math.round((stats.won / stats.total) * 100)
+    })).sort((a, b) => b.rate - a.rate);
+
+    // 14. Eficiência por Campanha de Vendas (Conversão Won / Total Leads)
+    const campaignWonMap: { [key: string]: { total: number; won: number } } = {};
+    leads.forEach(lead => {
+      const campaign = lead.source?.campaign || 'Orgânico';
+      if (!campaignWonMap[campaign]) {
+        campaignWonMap[campaign] = { total: 0, won: 0 };
+      }
+      campaignWonMap[campaign].total += 1;
+      if (lead.funnelStage === LeadFunnelStage.ENCAMINHADO_ORCAMENTO) {
+        campaignWonMap[campaign].won += 1;
+      }
+    });
+
+    const efficiencyByCampaign = Object.entries(campaignWonMap).map(([name, stats]) => ({
+      name,
+      total: stats.total,
+      won: stats.won,
+      rate: Math.round((stats.won / stats.total) * 100)
+    })).sort((a, b) => b.rate - a.rate);
+
     return NextResponse.json({
       totalLeads,
       qualifiedLeads,
       winRate,
       avgResponseTime: avgResponseTimeStr,
       totalRevenue,
+      leadsForwardedToQuotation,
+      forwardingRate,
       leadsBySource,
       funnelDrops,
       lossAnalysis,
       temperatureStats,
       leadsHotAndStale,
-      slaBreachedLeads
+      slaBreachedLeads,
+      efficiencyBySource,
+      efficiencyByCampaign
     });
   } catch (error) {
     console.error('Error calculating insights:', error);
     return NextResponse.json({ error: 'Erro ao calcular insights' }, { status: 500 });
   }
 }
+
