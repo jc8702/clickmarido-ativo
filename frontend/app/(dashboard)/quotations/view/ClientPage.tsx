@@ -2,16 +2,20 @@
 
 import React, { use } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { usePublicQuotation, useApproveQuotation } from '../../../../hooks/useQuotations';
+import { usePublicQuotation, useApproveQuotation, useRejectQuotation } from '../../../../hooks/useQuotations';
 
 function QuotationContent() {
   const searchParams = useSearchParams();
   const token = searchParams?.get('token');
 
   const { data, isLoading, error } = usePublicQuotation(token || '');
-  const { mutateAsync: approve, isPending } = useApproveQuotation();
+  const { mutateAsync: approve, isPending: isApproving } = useApproveQuotation();
+  const { mutateAsync: reject, isPending: isRejecting } = useRejectQuotation();
 
   const [approved, setApproved] = React.useState(false);
+  const [rejected, setRejected] = React.useState(false);
+  const [rejectReason, setRejectReason] = React.useState('');
+  const [showRejectForm, setShowRejectForm] = React.useState(false);
 
   if (!token) {
     return <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"><p>Token inválido ou não fornecido.</p></div>;
@@ -32,12 +36,23 @@ function QuotationContent() {
     );
   }
 
-  if (approved || data.status === 'approved') {
+  if (approved || data.status === 'approved' || data.status === 'aceito') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-green-900/20 p-4">
         <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-md w-full border-t-4 border-green-500 border border-neutral-200 dark:border-neutral-700">
           <h2 className="text-2xl font-bold text-green-700 dark:text-green-400 mb-4">Orçamento Aprovado! ✅</h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-6">Obrigado pela confiança, {data.customer_name}. Uma Ordem de Serviço foi gerada e nossa equipe entrará em contato em breve.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (rejected || data.status === 'reprovado') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-red-50 dark:bg-red-900/20 p-4">
+        <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-md w-full border-t-4 border-red-500 border border-neutral-200 dark:border-neutral-700">
+          <h2 className="text-2xl font-bold text-red-700 dark:text-red-400 mb-4">Orçamento Reprovado</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">Entendemos, {data.customer_name}. Caso tenha alguma dúvida ou queira uma nova proposta, entre em contato conosco.</p>
         </div>
       </div>
     );
@@ -49,6 +64,15 @@ function QuotationContent() {
       setApproved(true);
     } catch (err) {
       alert('Erro ao tentar aprovar o orçamento. Tente novamente.');
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await reject(token, rejectReason);
+      setRejected(true);
+    } catch (err) {
+      alert('Erro ao tentar rejeitar o orçamento. Tente novamente.');
     }
   };
 
@@ -121,15 +145,52 @@ function QuotationContent() {
             <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mt-2">Total: R$ {Number(data.total || 0).toFixed(2)}</p>
           </div>
 
-          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6">
-            <button 
-              onClick={handleApprove}
-              disabled={isPending}
-              className="w-full py-4 bg-green-600 text-white text-lg font-bold rounded-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl disabled:opacity-70 flex justify-center items-center gap-2"
-            >
-              {isPending ? 'Processando...' : 'Aceitar Orçamento'}
-            </button>
-            <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mt-3">Ao aceitar, você concorda com a realização dos serviços listados acima.</p>
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-6 space-y-4">
+            {!showRejectForm ? (
+              <>
+                <button 
+                  onClick={handleApprove}
+                  disabled={isApproving}
+                  className="w-full py-4 bg-green-600 text-white text-lg font-bold rounded-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl disabled:opacity-70 flex justify-center items-center gap-2"
+                >
+                  {isApproving ? 'Processando...' : 'Aceitar Orçamento'}
+                </button>
+                <button 
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={isRejecting}
+                  className="w-full py-3 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm font-medium rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors flex justify-center items-center gap-2"
+                >
+                  Reprovar Orçamento
+                </button>
+                <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">Ao aceitar, você concorda com a realização dos serviços listados acima.</p>
+              </>
+            ) : (
+              <div className="bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 space-y-4">
+                <h3 className="font-bold text-sm text-neutral-800 dark:text-neutral-200">Motivo da Reprovação (opcional)</h3>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Ex: Preço alto, prazo longo, não necessito mais do serviço..."
+                  className="w-full p-3 text-sm rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  rows={3}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowRejectForm(false)}
+                    className="flex-1 py-2.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm font-medium rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={isRejecting}
+                    className="flex-1 py-2.5 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors shadow-md disabled:opacity-70 flex justify-center items-center gap-2"
+                  >
+                    {isRejecting ? 'Processando...' : 'Confirmar Reprovação'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

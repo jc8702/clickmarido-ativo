@@ -217,6 +217,37 @@ export async function PUT(
         });
       }
     }
+
+    // Handle quotation rejection - return lead to funnel
+    if (body.status === 'reprovado') {
+      const lead = await prisma.lead.findFirst({
+        where: { quotationId: id },
+      });
+
+      if (lead) {
+        await prisma.lead.update({
+          where: { id: lead.id },
+          data: {
+            funnelStage: 'EM_FOLLOWUP',
+            status: 'MORNO',
+            quotationId: null,
+            qualificationStage: 'reprovado',
+            lossReason: body.loss_reason || 'Orçamento reprovado',
+            lossNotes: body.loss_notes || `Orçamento ${quotation.number} reprovado`,
+          },
+        });
+
+        await prisma.leadEvent.create({
+          data: {
+            leadId: lead.id,
+            type: 'LEAD_DISQUALIFIED',
+            oldValue: lead.funnelStage,
+            newValue: 'EM_FOLLOWUP',
+            notes: `Orçamento ${quotation.number} reprovado. Lead retornado ao funil para follow-up.`,
+          },
+        });
+      }
+    }
     // Return updated quotation with items
     const updated = await prisma.quotation.findUnique({
       where: { id },

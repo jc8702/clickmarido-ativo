@@ -189,3 +189,26 @@ export function useApproveQuotation() {
 
   return { mutateAsync, isPending };
 }
+
+export function useRejectQuotation() {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = async (token: string, reason?: string) => {
+    setIsPending(true);
+    try {
+      const response = await fetch(`/api/quotations/public/${token}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) throw new Error('Erro ao rejeitar orçamento');
+      return await response.json();
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending };
+}
