@@ -28,7 +28,10 @@ import {
   Lightbulb, 
   MessageSquare,
   ArrowRight,
-  Target
+  Target,
+  BarChart3,
+  Award,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,7 +41,12 @@ type AnalyticsData = {
   winRate: number;
   avgResponseTime: string;
   totalRevenue: number;
+  leadsForwardedToQuotation: number;
+  forwardingRate: number;
+  disqualifiedLeads: number;
+  disqualifiedRate: number;
   leadsBySource: { name: string; value: number }[];
+  leadsByPriority: { name: string; value: number }[];
   funnelDrops: { stage: string; count: number }[];
   lossAnalysis: { reason: string; count: number }[];
   temperatureStats: { name: string; value: number }[];
@@ -57,6 +65,33 @@ type AnalyticsData = {
     slaBreachCount: number;
     funnelStage: string;
   }[];
+  efficiencyBySource: {
+    name: string;
+    total: number;
+    won: number;
+    rate: number;
+  }[];
+  efficiencyByCampaign: {
+    name: string;
+    total: number;
+    won: number;
+    rate: number;
+  }[];
+  efficiencyByMethodology: {
+    name: string;
+    total: number;
+    won: number;
+    rate: number;
+  }[];
+  followUpPending: {
+    id: string;
+    name: string;
+    phone?: string;
+    nextFollowupAt: string;
+    funnelStage: string;
+    priority: string;
+  }[];
+  avgTimeInStage: { [key: string]: string };
 };
 
 export default function InsightsPage() {
@@ -132,21 +167,21 @@ export default function InsightsPage() {
       value: data?.totalLeads ? `${Math.round(((data.qualifiedLeads || 0) / data.totalLeads) * 100)}%` : '0%',
       description: `${data?.qualifiedLeads || 0} leads qualificados`,
       icon: Target,
+      color: 'text-indigo-600 dark:text-indigo-400'
+    },
+    {
+      title: 'Conversão p/ Orçamento',
+      value: `${data?.forwardingRate || 0}%`,
+      description: `${data?.leadsForwardedToQuotation || 0} convertidos`,
+      icon: TrendingUp,
       color: 'text-success-600 dark:text-success-400'
     },
     {
-      title: 'Valor do Pipeline',
-      value: formatCurrency(data?.totalRevenue || 0),
-      description: 'Em negociações ativas',
-      icon: DollarSign,
-      color: 'text-success-600 dark:text-success-400'
-    },
-    {
-      title: 'SLA de Atendimento',
-      value: data?.avgResponseTime || '0 min',
-      description: 'Tempo de 1ª resposta',
-      icon: Clock,
-      color: 'text-warning-600 dark:text-warning-400'
+      title: 'Desqualificados',
+      value: `${data?.disqualifiedRate || 0}%`,
+      description: `${data?.disqualifiedLeads || 0} leads descartados`,
+      icon: AlertTriangle,
+      color: 'text-red-500 dark:text-red-400'
     }
   ];
 
@@ -236,7 +271,7 @@ export default function InsightsPage() {
                     {data.funnelDrops.map((entry, index) => (
                       <Cell 
                         key={`cell-${index}`} 
-                        fill={entry.stage === 'Ganho (Fechado)' ? '#10B981' : '#5D3FD3'} 
+                        fill={entry.stage === 'Encaminhado Orçamento' ? '#10B981' : '#5D3FD3'} 
                       />
                     ))}
                   </Bar>
@@ -303,47 +338,66 @@ export default function InsightsPage() {
               </div>
             ) : (
               <div className="h-full flex items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg">
-                <p className="text-sm text-neutral-400">Sem origens registradas no banco.</p>
+                <p className="text-sm text-neutral-400">Nenhum lead capturado.</p>
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Motivos de Perda e Temperatura do Funil */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Motivos de Perda */}
+        {/* Motivos de Perda / Desqualificação */}
         <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900">
           <CardHeader>
             <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-500" />
-              Análise de Perdas
+              Motivos de Perda de Negócio
             </CardTitle>
             <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
-              Identificação dos gargalos de descarte e motivos de desistência.
+              Causas principais declaradas no descarte ou perda de contatos.
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-80 pr-4">
+          <CardContent className="h-80 flex flex-col justify-center">
             {data && data.lossAnalysis.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.lossAnalysis}>
-                  <XAxis dataKey="reason" stroke={labelColor} tickLine={false} axisLine={false} className="text-[10px]" />
-                  <YAxis stroke={labelColor} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
-                      borderColor: isDark ? '#374151' : '#E5E7EB',
-                      color: isDark ? '#F3F4F6' : '#111827',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 h-full">
+                <div className="flex-1 w-full h-full max-h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={data.lossAnalysis.map(l => ({ name: l.reason, value: l.count }))}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {data.lossAnalysis.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? '#1F2937' : '#FFFFFF', 
+                          borderColor: isDark ? '#374151' : '#E5E7EB',
+                          color: isDark ? '#F3F4F6' : '#111827',
+                          borderRadius: '8px'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0 sm:w-1/3 text-xs w-full max-h-[200px] overflow-y-auto pr-1">
+                  {data.lossAnalysis.map((entry, index) => (
+                    <div key={entry.reason} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[(index + 2) % COLORS.length] }} />
+                      <span className="font-semibold text-neutral-700 dark:text-neutral-300 line-clamp-1">{entry.reason}</span>
+                      <span className="text-neutral-400 ml-auto font-mono">({entry.count})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="h-full flex items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg">
-                <p className="text-sm text-neutral-400">Nenhuma desqualificação ou perda registrada.</p>
+                <p className="text-sm text-neutral-400">Nenhum descarte registrado.</p>
               </div>
             )}
           </CardContent>
@@ -357,7 +411,7 @@ export default function InsightsPage() {
               Temperatura de Vendas
             </CardTitle>
             <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
-              Engajamento e urgência dos leads ativos.
+              Engajamento e urgência dos leads ativos no CRM.
             </CardDescription>
           </CardHeader>
           <CardContent className="h-80 flex flex-col justify-center">
@@ -377,10 +431,10 @@ export default function InsightsPage() {
                       >
                         {data.temperatureStats.map((entry, index) => {
                           const name = entry.name.toUpperCase();
-                          let color = '#E5E7EB'; // Frio
-                          if (name === 'MORNO') color = '#9F7AEA'; // Morno
-                          if (name === 'QUENTE') color = '#F59E0B'; // Quente
-                          if (name.includes('ORÇAMENTO') || name.includes('ORCAMENTO')) color = '#EF4444'; // Crítico / Pronto
+                          let color = '#9CA3AF'; // Frio
+                          if (name === 'MORNO') color = '#3B82F6'; // Morno (Azul / Primary)
+                          if (name === 'QUENTE') color = '#F59E0B'; // Quente (Laranja)
+                          if (name === 'URGENTE') color = '#EF4444'; // Urgente (Vermelho)
                           return <Cell key={`cell-${index}`} fill={color} />;
                         })}
                       </Pie>
@@ -399,9 +453,9 @@ export default function InsightsPage() {
                   {data.temperatureStats.map((entry, index) => {
                     const name = entry.name.toUpperCase();
                     let color = '#9CA3AF'; // Frio
-                    if (name === 'MORNO') color = '#9F7AEA'; // Morno
-                    if (name === 'QUENTE') color = '#F59E0B'; // Quente
-                    if (name.includes('ORÇAMENTO') || name.includes('ORCAMENTO')) color = '#EF4444'; // Crítico / Pronto
+                    if (name === 'MORNO') color = '#3B82F6'; // Morno (Azul / Primary)
+                    if (name === 'QUENTE') color = '#F59E0B'; // Quente (Laranja)
+                    if (name === 'URGENTE') color = '#EF4444'; // Urgente (Vermelho)
                     return (
                       <div key={entry.name} className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -420,6 +474,186 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* SEÇÃO ADICIONAL: Tabela de Eficiência de Origens e Campanhas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Eficiência por Canal de Origem */}
+        <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+              <Award className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              Eficiência por Canal de Origem
+            </CardTitle>
+            <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+              Taxa de conversão (Leads Ganhos / Leads Capturados) por canal de comunicação.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="max-h-80 overflow-y-auto">
+            {data && data.efficiencyBySource && data.efficiencyBySource.length > 0 ? (
+              <div className="space-y-4">
+                {data.efficiencyBySource.map((item) => (
+                  <div key={item.name} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200">{item.name}</span>
+                      <span className="text-neutral-400">
+                        {item.won} ganhos / {item.total} total <strong className="text-success-600 dark:text-success-400 ml-2 font-mono">{item.rate}%</strong>
+                      </span>
+                    </div>
+                    {/* Barra de Progresso Sutil */}
+                    <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-success-500 dark:bg-success-600 rounded-full transition-all duration-500" 
+                        style={{ width: `${item.rate}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="min-h-[150px] flex items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg">
+                <p className="text-xs text-neutral-400">Nenhuma métrica de canal de origem gerada.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Eficiência por Campanha */}
+        <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              Eficiência por Campanha de Vendas
+            </CardTitle>
+            <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+              Taxa de conversão (Leads Ganhos / Leads Capturados) por campanha ativa.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="max-h-80 overflow-y-auto">
+            {data && data.efficiencyByCampaign && data.efficiencyByCampaign.length > 0 ? (
+              <div className="space-y-4">
+                {data.efficiencyByCampaign.map((item) => (
+                  <div key={item.name} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-neutral-800 dark:text-neutral-200 truncate max-w-[200px]" title={item.name}>
+                        {item.name}
+                      </span>
+                      <span className="text-neutral-400 shrink-0">
+                        {item.won} ganhos / {item.total} total <strong className="text-success-600 dark:text-success-400 ml-2 font-mono">{item.rate}%</strong>
+                      </span>
+                    </div>
+                    {/* Barra de Progresso Sutil */}
+                    <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary-500 dark:bg-primary-600 rounded-full transition-all duration-500" 
+                        style={{ width: `${item.rate}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="min-h-[150px] flex items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg">
+                <p className="text-xs text-neutral-400">Nenhuma métrica de campanha comercial gerada.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
+
+      {/* Secao: Eficiencia por Metodologia de Qualificacao */}
+      {data && data.efficiencyByMethodology && data.efficiencyByMethodology.length > 0 && (
+        <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              Eficiencia por Metodologia de Qualificacao
+            </CardTitle>
+            <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+              Taxa de conversao por metodologia de qualificacao utilizada.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {data.efficiencyByMethodology.map((item) => (
+                <div key={item.name} className="text-center p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/60 dark:border-neutral-700/60">
+                  <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">{item.name}</p>
+                  <p className="text-2xl font-extrabold text-primary-600 dark:text-primary-400 mt-2">{item.rate}%</p>
+                  <p className="text-[10px] text-neutral-400 mt-1">{item.won}/{item.total} ganhos</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Secao: Tempo Medio em Cada Etapa */}
+      {data && data.avgTimeInStage && Object.keys(data.avgTimeInStage).length > 0 && (
+        <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              Tempo Medio em Cada Etapa
+            </CardTitle>
+            <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+              Tempo medio que os leads permanecem em cada etapa do funil.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {Object.entries(data.avgTimeInStage).map(([stage, time]) => (
+                <div key={stage} className="text-center p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200/60 dark:border-neutral-700/60">
+                  <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 truncate">{stage}</p>
+                  <p className="text-lg font-extrabold text-primary-600 dark:text-primary-400 mt-1">{time}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Secao: Follow-up Pendente */}
+      <Card className="border border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-900 flex flex-col">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-warning-500" />
+            Follow-up Pendente
+          </CardTitle>
+          <CardDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+            Leads com follow-up atrasado que precisam de atencao imediata.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="max-h-72 overflow-y-auto">
+          {data && data.followUpPending && data.followUpPending.length > 0 ? (
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
+              {data.followUpPending.map(lead => (
+                <div key={lead.id} className="py-3 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-sm text-neutral-950 dark:text-neutral-50">{lead.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="warning" size="sm" className="text-[10px] py-0 font-bold">
+                        {lead.priority}
+                      </Badge>
+                      <span className="text-xs text-neutral-400">
+                        Follow-up: {new Date(lead.nextFollowupAt).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                  <Link href="/pre-vendas" className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-bold flex items-center gap-1 shrink-0">
+                    Ver no Kanban
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="min-h-[100px] flex items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-lg">
+              <p className="text-sm text-neutral-400 text-center px-4">Nenhum follow-up pendente no momento.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Seção Operacional: Alertas e Leads Críticos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
