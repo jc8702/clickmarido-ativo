@@ -170,12 +170,16 @@ export default function PreVendasPage() {
   const fetchLeads = () => {
     setRefreshing(true);
     const token = getToken();
-    fetch('/api/leads', {
+    fetch('/api/leads?limit=500', {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setLeads(data);
+      .then(result => {
+        if (result.data && Array.isArray(result.data)) {
+          setLeads(result.data);
+        } else if (Array.isArray(result)) {
+          setLeads(result);
+        }
       })
       .catch(err => console.error(err))
       .finally(() => {
