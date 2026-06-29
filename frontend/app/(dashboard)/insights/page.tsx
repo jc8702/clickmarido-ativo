@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/Badge';
 import Button from '@/components/Button';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart, 
   Bar, 
@@ -63,6 +64,7 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
+  const { getToken } = useAuth();
 
   const isDark = theme === 'dark';
   const labelColor = isDark ? '#D1D5DB' : '#374151';
@@ -70,7 +72,10 @@ export default function InsightsPage() {
 
   const fetchInsights = () => {
     setRefreshing(true);
-    fetch('/api/leads/insights')
+    const token = getToken();
+    fetch('/api/leads/insights', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(insights => {
         setData(insights);

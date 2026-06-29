@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import Button from '@/components/Button';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Users, 
   UserMinus, 
@@ -60,10 +61,14 @@ export default function PreVendasPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { getToken } = useAuth();
 
   const fetchLeads = () => {
     setRefreshing(true);
-    fetch('/api/leads')
+    const token = getToken();
+    fetch('/api/leads', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setLeads(data);
