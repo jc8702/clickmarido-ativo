@@ -770,11 +770,11 @@ export default function PreVendasPage() {
                     {...registerLead('intention')}
                     className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:ring-1 focus:ring-primary-500"
                   >
-                    <option value="apenas pesquisando">Apenas pesquisando</option>
-                    <option value="comparando opções">Comparando opções</option>
-                    <option value="pronto para orçamento">Pronto para orçamento</option>
-                    <option value="pronto para fechamento">Pronto para fechamento</option>
-                    <option value="acompanhamento posterior">Acompanhamento posterior</option>
+                    <option value="PESQUISANDO">Apenas pesquisando</option>
+                    <option value="COMPARANDO">Comparando opções</option>
+                    <option value="PRONTO_PARA_ORCAMENTO">Pronto para orçamento</option>
+                    <option value="PRONTO_PARA_FECHAMENTO">Pronto para fechamento</option>
+                    <option value="ACOMPANHAR_DEPOIS">Acompanhamento posterior</option>
                   </select>
                 </div>
 

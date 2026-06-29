@@ -4,13 +4,10 @@ import { LeadFunnelStage, LeadStatus } from '@prisma/client';
 
 export async function GET() {
   try {
-    // 1. Buscar todos os leads com origens, alertas e responsáveis
+    // 1. Buscar todos os leads com origens e responsáveis
     const leads = await prisma.lead.findMany({
       include: {
         source: true,
-        alerts: {
-          where: { resolved: false }
-        },
         responsavel: true,
       }
     });
