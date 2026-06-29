@@ -848,25 +848,63 @@ enum LeadStatus {
   FRIO
   MORNO
   QUENTE
-  PRONTO_ORCAMENTO
+  URGENTE
 }
 
 enum LeadFunnelStage {
   NOVO_LEAD
-  SEM_CONTATO
-  EM_CONTATO
-  CONTATO_REALIZADO
-  LEAD_QUALIFICADO
-  LEAD_NAO_QUALIFICADO
-  REUNIAO_AGENDADA
-  COMPARECEU
-  PROPOSTA_SOLICITADA
-  PROPOSTA_ENVIADA
-  EM_NEGOCIACAO
-  GANHO
-  PERDIDO
-  SEM_RESPOSTA
-  REATIVADO
+  EM_TRIAGEM
+  QUALIFICADO
+  EM_FOLLOWUP
+  AGENDADO
+  ENCAMINHADO_ORCAMENTO
+  DESCARTADO
+}
+
+enum LeadQualificationStage {
+  QUALIFICADO
+  PARCIALMENTE_QUALIFICADO
+  EM_VALIDACAO
+  DESQUALIFICADO
+  SEM_VALIDACAO
+}
+
+enum LeadIntention {
+  PESQUISANDO
+  COMPARANDO
+  PRONTO_PARA_ORCAMENTO
+  PRONTO_PARA_FECHAMENTO
+  ACOMPANHAR_DEPOIS
+}
+
+enum LeadNextAction {
+  LIGAR
+  RESPONDER_WHATSAPP
+  ENVIAR_PROPOSTA
+  AGENDAR_VISITA
+  AGENDAR_REUNIAO
+  PEDIR_MAIS_INFORMACOES
+  NUTRIR_LEAD
+  ENCAMINHAR_ORCAMENTO
+  DESCARTAR
+}
+
+enum LeadLossReason {
+  SEM_ORCAMENTO
+  SEM_TIMING
+  SEM_NECESSIDADE
+  SEM_AUTORIDADE
+  FORA_DE_PERFIL
+  CONCORRENCIA
+  RETORNO_FUTURO
+  CONTATO_INVALIDO
+}
+
+enum LeadPriority {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
 }
 
 enum LeadEventType {
@@ -928,7 +966,7 @@ model Lead {
   status            LeadStatus         @default(FRIO)
   funnelStage       LeadFunnelStage    @default(NOVO_LEAD)
   score             Int                @default(0)
-  lossReason        String?            @db.VarChar(100)
+  lossReason        LeadLossReason?
   lossNotes         String?            @db.Text
   firstResponseTime DateTime?
   slaBreachCount    Int                @default(0)
@@ -937,6 +975,35 @@ model Lead {
   events            LeadEvent[]
   appointments      LeadAppointment[]
   alerts            OperationalAlert[]
+
+  // CRM Avançado - Classificações
+  priority           LeadPriority       @default(MEDIA)
+  estimatedValue     Decimal?           @db.Decimal(10, 2)
+  qualificationStage LeadQualificationStage @default(SEM_VALIDACAO)
+  intention          LeadIntention?
+  nextAction         LeadNextAction?
+  prioritizationMethod String?
+  qualificationData  Json?
+  tags               String?
+
+  // Rastreamento de Cadência e SLA
+  lastContactAt      DateTime?
+  nextFollowupAt     DateTime?
+  cadenceCount       Int                @default(0)
+  cadenceInterval    Int?               // intervalo em horas entre follow-ups
+  riskAlert          String?            @db.Text
+  riskAlertLevel     String?            // BAIXO, MEDIO, ALTO, CRITICO
+
+  // Dados BANT (Budget, Authority, Need, Timing)
+  bantBudget         String?            // sim, nao, em_analise, indefinido
+  bantAuthority      String?            // decisor, influenciador, nao_identificado
+  bantNeed           String?            // critico, importante, nice_to_have, sem_necessidade
+  bantTiming         String?            // imediato, 1_3_meses, 3_6_meses, acima_6_meses, indefinido
+
+  // Dados CHAMP (Challenge, Authority, Money, Prioritization)
+  champChallenge     String?            // critico, importante, moderado, sem_desafio
+  champMoney         String?            // disponivel, aprovado, em_analise, sem_orcamento
+  champPriority      String?            // urgente, alta, media, baixa
 
   @@index([sourceId])
   @@index([responsavelId])

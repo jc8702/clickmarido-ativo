@@ -126,6 +126,7 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
   const [editStatus, setEditStatus] = useState('FRIO');
   const [editIntention, setEditIntention] = useState('');
   const [editNextAction, setEditNextAction] = useState('');
+  const [editQualificationStage, setEditQualificationStage] = useState('SEM_VALIDACAO');
   const [editPrioritizationMethod, setEditPrioritizationMethod] = useState('');
   const [editTags, setEditTags] = useState('');
   const [selectedMethodology, setSelectedMethodology] = useState('BANT');
@@ -159,6 +160,7 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
         setEditStatus(leadData.status || 'FRIO');
         setEditIntention(leadData.intention || '');
         setEditNextAction(leadData.nextAction || '');
+        setEditQualificationStage(leadData.qualificationStage || 'SEM_VALIDACAO');
         setEditPrioritizationMethod(leadData.prioritizationMethod || '');
         setEditTags(leadData.tags || '');
         
@@ -304,9 +306,10 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
       qData.spinNeedPayoff = methField4;
     }
 
-    // Calcular score comercial inicial com base em respostas de qualificação
+    // Calcular score comercial com base em respostas de qualificação
     let calculatedScore = 30; // base
     if (editPriority === 'ALTA') calculatedScore += 30;
+    else if (editPriority === 'URGENTE') calculatedScore += 35;
     if (editPriority === 'MEDIA') calculatedScore += 15;
     if (editStatus === 'URGENTE') calculatedScore += 30;
     if (editStatus === 'QUENTE') calculatedScore += 20;
@@ -321,9 +324,19 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
         status: editStatus,
         intention: editIntention || null,
         nextAction: editNextAction || null,
+        qualificationStage: editQualificationStage || null,
         prioritizationMethod: editPrioritizationMethod || null,
         tags: editTags || null,
         qualificationData: qData,
+        // BANT fields
+        bantBudget: selectedMethodology === 'BANT' ? methField1 || null : null,
+        bantAuthority: selectedMethodology === 'BANT' ? methField2 || null : null,
+        bantNeed: selectedMethodology === 'BANT' ? methField3 || null : null,
+        bantTiming: selectedMethodology === 'BANT' ? methField4 || null : null,
+        // CHAMP fields
+        champChallenge: selectedMethodology === 'CHAMP' ? methField1 || null : null,
+        champMoney: selectedMethodology === 'CHAMP' ? methField3 || null : null,
+        champPriority: selectedMethodology === 'CHAMP' ? methField4 || null : null,
         score: Math.min(100, calculatedScore)
       });
     } catch (err) {
@@ -717,6 +730,7 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                       <option value="BAIXA">Baixa</option>
                       <option value="MEDIA">Média</option>
                       <option value="ALTA">Alta</option>
+                      <option value="URGENTE">Urgente</option>
                     </select>
                   </div>
 
@@ -752,11 +766,12 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                       value={editIntention}
                       onChange={(e) => setEditIntention(e.target.value)}
                     >
-                      <option value="apenas pesquisando">Apenas pesquisando</option>
-                      <option value="comparando opções">Comparando opções</option>
-                      <option value="pronto para orçamento">Pronto para orçamento</option>
-                      <option value="pronto para fechamento">Pronto para fechamento</option>
-                      <option value="acompanhamento posterior">Acompanhamento posterior</option>
+                      <option value="">Não definida</option>
+                      <option value="PESQUISANDO">Pesquisando</option>
+                      <option value="COMPARANDO">Comparando opções</option>
+                      <option value="PRONTO_PARA_ORCAMENTO">Pronto para orçamento</option>
+                      <option value="PRONTO_PARA_FECHAMENTO">Pronto para fechamento</option>
+                      <option value="ACOMPANHAR_DEPOIS">Acompanhar depois</option>
                     </select>
                   </div>
 
@@ -768,13 +783,30 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                       onChange={(e) => setEditNextAction(e.target.value)}
                     >
                       <option value="">Nenhuma</option>
-                      <option value="ligar">Ligar</option>
-                      <option value="responder WhatsApp">Responder WhatsApp</option>
-                      <option value="enviar proposta">Enviar proposta</option>
-                      <option value="agendar visita">Agendar visita</option>
-                      <option value="agendar reunião">Agendar reunião</option>
-                      <option value="pedir mais informações">Pedir informações</option>
-                      <option value="nutrir lead">Nutrir lead</option>
+                      <option value="LIGAR">Ligar</option>
+                      <option value="RESPONDER_WHATSAPP">Responder WhatsApp</option>
+                      <option value="ENVIAR_PROPOSTA">Enviar proposta</option>
+                      <option value="AGENDAR_VISITA">Agendar visita</option>
+                      <option value="AGENDAR_REUNIAO">Agendar reunião</option>
+                      <option value="PEDIR_MAIS_INFORMACOES">Pedir informações</option>
+                      <option value="NUTRIR_LEAD">Nutrir lead</option>
+                      <option value="ENCAMINHAR_ORCAMENTO">Encaminhar para orçamento</option>
+                      <option value="DESCARTAR">Descartar</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Estágio de Qualificação</label>
+                    <select
+                      className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
+                      value={editQualificationStage}
+                      onChange={(e) => setEditQualificationStage(e.target.value)}
+                    >
+                      <option value="SEM_VALIDACAO">Sem qualificação</option>
+                      <option value="EM_VALIDACAO">Em validação</option>
+                      <option value="PARCIALMENTE_QUALIFICADO">Parcialmente qualificado</option>
+                      <option value="QUALIFICADO">Qualificado</option>
+                      <option value="DESQUALIFICADO">Desqualificado</option>
                     </select>
                   </div>
 
@@ -818,43 +850,59 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                         <label className="text-[10px] font-bold uppercase text-neutral-400 flex items-center gap-1">
                           <DollarSign className="w-3 h-3" /> Budget (Orçamento)
                         </label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Tem orçamento disponível? Qual o valor aproximado?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField1}
                           onChange={(e) => setMethField1(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="sim">Sim - Tem orçamento</option>
+                          <option value="em_analise">Em análise - Orçamento em aprovação</option>
+                          <option value="nao">Não - Sem orçamento</option>
+                          <option value="indefinido">Indefinido</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">👤 Authority (Autoridade)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="É o tomador de decisão final?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField2}
                           onChange={(e) => setMethField2(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="decisor">Decisor - Decide a compra</option>
+                          <option value="influenciador">Influenciador - Influencia a decisão</option>
+                          <option value="nao_identificado">Não identificado</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">🎯 Need (Necessidade)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Qual o problema técnico a ser solucionado?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField3}
                           onChange={(e) => setMethField3(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="critico">Crítico - Precisa resolver urgente</option>
+                          <option value="importante">Importante - Melhoria significativa</option>
+                          <option value="nice_to_have">Nice to have - Desejável</option>
+                          <option value="sem_necessidade">Sem necessidade</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">📅 Timing (Urgência / Tempo)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Qual o prazo esperado para execução?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField4}
                           onChange={(e) => setMethField4(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="imediato">Imediato - 1-2 semanas</option>
+                          <option value="1_3_meses">1-3 meses</option>
+                          <option value="3_6_meses">3-6 meses</option>
+                          <option value="acima_6_meses">Acima de 6 meses</option>
+                          <option value="indefinido">Indefinido</option>
+                        </select>
                       </div>
                     </div>
                   )}
@@ -863,43 +911,58 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                     <div className="space-y-3">
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">⚠️ Challenges (Desafios)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Qual o desafio ou dor principal do cliente?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField1}
                           onChange={(e) => setMethField1(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="critico">Crítico - Dor principal</option>
+                          <option value="importante">Importante - Afeta operação</option>
+                          <option value="moderado">Moderado - Melhoria desejada</option>
+                          <option value="sem_desafio">Sem desafio identificado</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">👤 Authority (Autoridade)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Quem aprova o pagamento?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField2}
                           onChange={(e) => setMethField2(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="decisor">Decisor - Aprova pagamento</option>
+                          <option value="influenciador">Influenciador - Recomenda</option>
+                          <option value="nao_identificado">Não identificado</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">💵 Money (Dinheiro)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Existe barreira financeira para o projeto?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField3}
                           onChange={(e) => setMethField3(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="disponivel">Disponível - Verba alocada</option>
+                          <option value="aprovado">Aprovado - Orçamento liberado</option>
+                          <option value="em_analise">Em análise - Aguardando aprovação</option>
+                          <option value="sem_orcamento">Sem orçamento</option>
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold uppercase text-neutral-400">⚡ Prioritization (Prioridade)</label>
-                        <input
-                          type="text"
-                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800"
-                          placeholder="Qual a prioridade deste conserto na rotina?"
+                        <select
+                          className="p-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200"
                           value={methField4}
                           onChange={(e) => setMethField4(e.target.value)}
-                        />
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="urgente">Urgente - Precisa agora</option>
+                          <option value="alta">Alta - Importante para negócio</option>
+                          <option value="media">Média - Pode aguardar</option>
+                          <option value="baixa">Baixa - Quando possível</option>
+                        </select>
                       </div>
                     </div>
                   )}
@@ -1095,14 +1158,14 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                   value={lossReason}
                   onChange={(e) => setLossReason(e.target.value)}
                 >
-                  <option value="sem orçamento">Sem orçamento</option>
-                  <option value="sem timing">Sem timing</option>
-                  <option value="sem necessidade">Sem necessidade</option>
-                  <option value="sem autoridade">Sem autoridade</option>
-                  <option value="fora de perfil">Fora de perfil</option>
-                  <option value="concorrência">Concorrência</option>
-                  <option value="retorno futuro">Retorno futuro</option>
-                  <option value="contato inválido">Contato inválido</option>
+                  <option value="SEM_ORCAMENTO">Sem orçamento</option>
+                  <option value="SEM_TIMING">Sem timing</option>
+                  <option value="SEM_NECESSIDADE">Sem necessidade</option>
+                  <option value="SEM_AUTORIDADE">Sem autoridade</option>
+                  <option value="FORA_DE_PERFIL">Fora de perfil</option>
+                  <option value="CONCORRENCIA">Concorrência</option>
+                  <option value="RETORNO_FUTURO">Retorno futuro</option>
+                  <option value="CONTATO_INVALIDO">Contato inválido</option>
                 </select>
               </div>
 

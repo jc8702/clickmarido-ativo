@@ -231,8 +231,8 @@ export async function PUT(
             funnelStage: 'EM_FOLLOWUP',
             status: 'MORNO',
             quotationId: null,
-            qualificationStage: 'reprovado',
-            lossReason: body.loss_reason || 'Orçamento reprovado',
+            qualificationStage: 'DESQUALIFICADO',
+            lossReason: body.loss_reason || 'SEM_ORCAMENTO',
             lossNotes: body.loss_notes || `Orçamento ${quotation.number} reprovado`,
           },
         });

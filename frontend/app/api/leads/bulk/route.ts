@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
-import { LeadStatus, LeadFunnelStage, LeadEventType } from '@prisma/client';
+import { 
+  LeadStatus, 
+  LeadFunnelStage, 
+  LeadEventType,
+  LeadPriority,
+  LeadIntention,
+} from '@prisma/client';
 import { leadBulkSchema, calculateInitialScore } from '@/lib/validations/lead.schema';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
         status: 'MORNO',
         priority: leadData.priority,
         estimatedValue: leadData.estimatedValue,
-        intention: leadData.intention,
+        intention: leadData.intention || undefined,
         hasPhone: !!trimmedPhone,
         hasEmail: !!trimmedEmail,
       });
@@ -87,10 +93,10 @@ export async function POST(request: NextRequest) {
             responsavelId: leadData.responsavelId || null,
             status: LeadStatus.MORNO,
             funnelStage: LeadFunnelStage.NOVO_LEAD,
-            priority: leadData.priority,
+            priority: leadData.priority as LeadPriority,
             estimatedValue: leadData.estimatedValue ?? null,
-            qualificationStage: 'ainda sem qualificação',
-            intention: leadData.intention?.trim() || null,
+            qualificationStage: 'SEM_VALIDACAO',
+            intention: (leadData.intention as LeadIntention) || null,
             score,
           },
         });

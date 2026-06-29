@@ -8,6 +8,7 @@ import { Badge } from '@/components/Badge';
 import Button from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { LeadDetailsDrawer } from '@/components/leads/LeadDetailsDrawer';
+import { LeadCardRich } from '@/components/leads/LeadCardRich';
 import { leadCreateSchema, calculateInitialScore, type LeadCreateValues } from '@/lib/validations/lead.schema';
 import { 
   Users, 
@@ -45,7 +46,7 @@ type Lead = {
   name: string;
   phone?: string | null;
   email?: string | null;
-  status: string; // FRIO, MORNO, QUENTE, URGENTE
+  status: string;
   funnelStage: string;
   slaBreachCount: number;
   source?: { channel: string; campaign?: string | null } | null;
@@ -53,8 +54,8 @@ type Lead = {
   updatedAt: string;
   responsavel?: User | null;
   
-  // Novos campos estruturais
-  priority: string; // BAIXA, MEDIA, ALTA
+  // Classificações
+  priority: string;
   estimatedValue?: number | null;
   qualificationStage: string;
   intention?: string | null;
@@ -62,6 +63,28 @@ type Lead = {
   prioritizationMethod?: string | null;
   tags?: string | null;
   score: number;
+  
+  // Rastreamento
+  lastContactAt?: string | null;
+  nextFollowupAt?: string | null;
+  cadenceCount: number;
+  riskAlert?: string | null;
+  riskAlertLevel?: string | null;
+  
+  // BANT
+  bantBudget?: string | null;
+  bantAuthority?: string | null;
+  bantNeed?: string | null;
+  bantTiming?: string | null;
+  
+  // CHAMP
+  champChallenge?: string | null;
+  champMoney?: string | null;
+  champPriority?: string | null;
+  
+  // Descarte
+  lossReason?: string | null;
+  lossNotes?: string | null;
 };
 
 const STAGES = [
@@ -110,7 +133,7 @@ export default function PreVendasPage() {
       status: 'MORNO',
       priority: 'MEDIA',
       estimatedValue: undefined,
-      intention: 'comparando opções',
+      intention: 'COMPARANDO',
       responsavelId: '',
       notes: '',
       tags: '',
@@ -129,7 +152,7 @@ export default function PreVendasPage() {
     status: watchedStatus,
     priority: watchedPriority,
     estimatedValue: watchedValue,
-    intention: watchedIntention,
+    intention: watchedIntention || undefined,
     hasPhone: !!watchedPhone,
     hasEmail: !!watchedEmail,
   });
@@ -140,7 +163,7 @@ export default function PreVendasPage() {
   const [bulkPreview, setBulkPreview] = useState<{ name: string; phone?: string; email?: string; channel?: string; campaign?: string }[]>([]);
 
   // Form de descarte
-  const [lossReason, setLossReason] = useState('sem orçamento');
+  const [lossReason, setLossReason] = useState('SEM_ORCAMENTO');
   const [lossNotes, setLossNotes] = useState('');
   const [submittingLoss, setSubmittingLoss] = useState(false);
 
@@ -557,133 +580,40 @@ export default function PreVendasPage() {
                 </div>
 
                 {/* Lista de Cards com scroll vertical */}
-                <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
+                <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
                   {stageLeads.map(lead => (
                     <div
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead.id)}
                       onDragEnd={handleDragEnd}
-                      onClick={() => setSelectedLeadId(lead.id)}
-                      className="cursor-pointer"
                     >
-                      <Card 
-                        gradient="none" 
-                        shadow="sm"
-                        interactive
-                        className={`bg-white dark:bg-neutral-800/90 border border-neutral-200/80 dark:border-neutral-700/60 p-3.5 flex flex-col gap-2.5 rounded-lg relative overflow-hidden transition-all duration-300 ${getTemperatureBorderClass(lead.status)} hover:border-primary-500/60 dark:hover:border-primary-400/40`}
-                      >
-                        {/* Topo do card: Nome + Idade */}
-                        <div className="flex justify-between items-start gap-2">
-                          <h4 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 line-clamp-1 leading-snug">
-                            {lead.name}
-                          </h4>
-                          <span className="text-[10px] text-neutral-400 font-semibold shrink-0" title={`Entrada em ${new Date(lead.createdAt).toLocaleString('pt-BR')}`}>
-                            {getLeadAge(lead.createdAt)}
-                          </span>
-                        </div>
-
-                        {/* Badges de classificação: Canal + Prioridade */}
-                        <div className="flex flex-wrap gap-1.5 items-center">
-                          {lead.source && (
-                            <Badge 
-                              variant={getSourceBadgeVariant(lead.source.channel)} 
-                              size="sm" 
-                              className="text-[9px] px-1.5 py-0 font-bold shrink-0"
-                            >
-                              {lead.source.channel}
-                            </Badge>
-                          )}
-                          <button 
-                            onClick={(e) => handleQuickPriorityChange(e, lead.id, lead.priority)}
-                            className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold transition-transform hover:scale-105 active:scale-95 ${getPriorityBadgeClass(lead.priority)}`}
-                            title="Clique para alterar prioridade rapidamente"
-                          >
-                            Prioridade: {lead.priority}
-                          </button>
-                        </div>
-
-                        {/* Informações detalhadas do Lead */}
-                        <div className="space-y-1 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                          {lead.estimatedValue && (
-                            <div className="flex items-center gap-1 text-success-600 dark:text-success-400 font-bold">
-                              <DollarSign className="w-3.5 h-3.5" />
-                              <span>Valor previsto: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(lead.estimatedValue)}</span>
-                            </div>
-                          )}
-                          {lead.intention && (
-                            <div className="flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400">
-                              <Target className="w-3.5 h-3.5 text-neutral-400" />
-                              <span className="truncate max-w-[200px]" title={`Intenção: ${lead.intention}`}>
-                                Intenção: {lead.intention}
-                              </span>
-                            </div>
-                          )}
-                          {lead.nextAction && (
-                            <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-medium">
-                              <Zap className="w-3.5 h-3.5 text-indigo-400" />
-                              <span className="truncate max-w-[200px]">
-                                Ação: {lead.nextAction}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Footer do card: SLA + Temperatura + Responsável */}
-                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800/40 text-xs">
-                          <div className="flex items-center gap-1.5">
-                            {lead.slaBreachCount > 0 && (
-                              <div className="flex items-center text-red-600 dark:text-red-400 gap-0.5" title={`${lead.slaBreachCount} quebras de SLA`}>
-                                <AlertTriangle className="w-3.5 h-3.5 fill-red-100 dark:fill-transparent" />
-                                <span className="text-[10px] font-bold">{lead.slaBreachCount}</span>
-                              </div>
-                            )}
-                            {lead.responsavel && (
-                              <span className="text-[10px] text-neutral-400 font-semibold truncate max-w-[80px]" title={`Responsável: ${lead.responsavel.name}`}>
-                                👤 {lead.responsavel.name}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Temperatura + Score + Ações Rápidas */}
-                          <div className="flex items-center gap-1">
-                            {/* Score */}
-                            {lead.score > 0 && (
-                              <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
-                                lead.score >= 70 ? 'text-success-700 bg-success-100 dark:text-success-300 dark:bg-success-900/30'
-                                : lead.score >= 40 ? 'text-warning-700 bg-warning-100 dark:text-warning-300 dark:bg-warning-900/30'
-                                : 'text-neutral-500 bg-neutral-100 dark:text-neutral-400 dark:bg-neutral-800'
-                              }`} title={`Score: ${lead.score}/100`}>
-                                {lead.score}
-                              </span>
-                            )}
-                            
-                            {/* Temperatura */}
-                            <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                              lead.status === 'URGENTE'
-                                ? 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-950/40 animate-pulse'
-                                : lead.status === 'QUENTE'
-                                ? 'text-warning-700 bg-warning-50 dark:text-warning-300 dark:bg-warning-950/30'
-                                : lead.status === 'MORNO'
-                                ? 'text-primary-700 bg-primary-50 dark:text-primary-300 dark:bg-primary-950/30'
-                                : 'text-neutral-600 bg-neutral-100 dark:text-neutral-400 dark:bg-neutral-700/50'
-                            }`}>
-                              {lead.status}
-                            </span>
-                            
-                            {/* Qualificar rápido */}
-                            {lead.funnelStage !== 'ENCAMINHADO_ORCAMENTO' && lead.funnelStage !== 'DESCARTADO' && (
-                              <button
-                                onClick={(e) => handleQuickQualify(e, lead.id)}
-                                className="p-1 rounded bg-success-500 hover:bg-success-600 text-white transition-all shadow-sm"
-                                title="Qualificar e criar orçamento rapidamente"
-                              >
-                                <UserCheck className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
+                      <LeadCardRich
+                        lead={lead}
+                        onClick={() => setSelectedLeadId(lead.id)}
+                        onQuickAction={(action, leadId) => {
+                          if (action === 'qualify') handleQuickQualify({ stopPropagation: () => {} } as any, leadId);
+                          else if (action === 'discard') {
+                            setLossLeadId(leadId);
+                            setShowLossModal(true);
+                          }
+                          else if (action === 'contact') {
+                            toast.success('Abrir registro de contato...');
+                          }
+                          else if (action === 'followup') {
+                            toast.success('Abrir registro de follow-up...');
+                          }
+                          else if (action === 'schedule') {
+                            toast.success('Abrir agendamento...');
+                          }
+                          else if (action === 'reassign') {
+                            toast.success('Abrir reatribuição...');
+                          }
+                        }}
+                        onPriorityChange={(leadId, newPriority) => {
+                          handleQuickPriorityChange({ stopPropagation: () => {} } as any, leadId, newPriority);
+                        }}
+                      />
                     </div>
                   ))}
 

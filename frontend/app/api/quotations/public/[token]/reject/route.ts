@@ -49,8 +49,8 @@ export async function POST(
           funnelStage: LeadFunnelStage.EM_FOLLOWUP,
           status: LeadStatus.MORNO,
           quotationId: null, // Desassocia do orçamento
-          qualificationStage: 'reprovado',
-          lossReason: reason || 'Orçamento reprovado pelo cliente',
+          qualificationStage: 'DESQUALIFICADO',
+          lossReason: 'SEM_ORCAMENTO',
           lossNotes: `Orçamento ${quotation.number} reprovado. Motivo: ${reason || 'Não informado'}`,
         },
       });

@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as jwt from 'jsonwebtoken';
-import { LeadStatus, LeadFunnelStage, LeadEventType } from '@prisma/client';
+import { 
+  LeadStatus, 
+  LeadFunnelStage, 
+  LeadEventType,
+  LeadPriority,
+  LeadQualificationStage,
+  LeadIntention,
+  LeadNextAction,
+} from '@prisma/client';
 import { leadCreateSchema, calculateInitialScore } from '@/lib/validations/lead.schema';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -88,14 +96,19 @@ export async function POST(request: NextRequest) {
       status: data.status,
       priority: data.priority,
       estimatedValue: data.estimatedValue,
-      intention: data.intention,
+      intention: data.intention || undefined,
       hasPhone: !!trimmedPhone,
       hasEmail: !!trimmedEmail,
+      bantBudget: data.bantBudget,
+      bantAuthority: data.bantAuthority,
+      bantNeed: data.bantNeed,
+      bantTiming: data.bantTiming,
     });
 
     // 3. Determinar método de priorização com base nos dados
     let prioritizationMethod: string | null = null;
-    if (data.priority === 'ALTA') prioritizationMethod = 'alta prioridade';
+    if (data.priority === 'URGENTE') prioritizationMethod = 'oportunidade em risco';
+    else if (data.priority === 'ALTA') prioritizationMethod = 'alta prioridade';
     else if (data.status === 'URGENTE') prioritizationMethod = 'oportunidade em risco';
     else if (data.status === 'QUENTE') prioritizationMethod = 'follow-up hoje';
 
@@ -109,14 +122,23 @@ export async function POST(request: NextRequest) {
         responsavelId: data.responsavelId || null,
         status: data.status as LeadStatus,
         funnelStage: LeadFunnelStage.NOVO_LEAD,
-        priority: data.priority,
+        priority: data.priority as LeadPriority,
         estimatedValue: data.estimatedValue ?? null,
-        qualificationStage: 'ainda sem qualificação',
-        intention: data.intention?.trim() || null,
-        nextAction: data.nextAction?.trim() || null,
+        qualificationStage: (data.qualificationStage as LeadQualificationStage) || 'SEM_VALIDACAO',
+        intention: (data.intention as LeadIntention) || null,
+        nextAction: (data.nextAction as LeadNextAction) || null,
         prioritizationMethod,
         tags: data.tags?.trim() || null,
         score,
+        // BANT
+        bantBudget: data.bantBudget || null,
+        bantAuthority: data.bantAuthority || null,
+        bantNeed: data.bantNeed || null,
+        bantTiming: data.bantTiming || null,
+        // CHAMP
+        champChallenge: data.champChallenge || null,
+        champMoney: data.champMoney || null,
+        champPriority: data.champPriority || null,
       },
       include: {
         source: true,
@@ -133,6 +155,8 @@ export async function POST(request: NextRequest) {
       `Score: ${score}/100`,
       data.estimatedValue ? `Valor previsto: R$ ${data.estimatedValue}` : null,
       data.intention ? `Intenção: ${data.intention}` : null,
+      data.bantBudget ? `BANT Budget: ${data.bantBudget}` : null,
+      data.bantAuthority ? `BANT Authority: ${data.bantAuthority}` : null,
     ];
     const eventNotes = eventParts.filter(Boolean).join(' | ');
 
@@ -151,6 +175,10 @@ export async function POST(request: NextRequest) {
           estimatedValue: data.estimatedValue,
           intention: data.intention,
           score,
+          bantBudget: data.bantBudget,
+          bantAuthority: data.bantAuthority,
+          bantNeed: data.bantNeed,
+          bantTiming: data.bantTiming,
         }),
         userId: decoded.userId,
         notes: eventNotes || 'Lead criado manualmente.',

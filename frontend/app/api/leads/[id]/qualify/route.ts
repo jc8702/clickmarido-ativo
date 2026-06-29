@@ -1,0 +1,165 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import * as jwt from 'jsonwebtoken';
+import { LeadStatus, LeadFunnelStage, LeadEventType } from '@prisma/client';
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+function validateToken(request: NextRequest) {
+  if (!JWT_SECRET) return null;
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const token = authHeader.substring(7);
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+  } catch {
+    return null;
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const decoded = validateToken(request);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const { id: leadId } = await params;
+
+    // 1. Carregar o Lead
+    const lead = await prisma.lead.findUnique({
+      where: { id: leadId },
+    });
+
+    if (!lead) {
+      return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 });
+    }
+
+    // Se já foi qualificado, retorna os dados existentes
+    if (lead.quotationId && lead.customerId) {
+      return NextResponse.json({
+        success: true,
+        alreadyQualified: true,
+        customerId: lead.customerId,
+        quotationId: lead.quotationId,
+        message: 'Lead já foi qualificado anteriormente.',
+      });
+    }
+
+    // 2. Resolver ou Criar o Customer (Cliente)
+    let customer = null;
+
+    // Buscar por telefone
+    if (lead.phone) {
+      customer = await prisma.customer.findFirst({
+        where: { phone: lead.phone.trim() },
+      });
+    }
+
+    // Se não achou e tem email, buscar por email
+    if (!customer && lead.email) {
+      customer = await prisma.customer.findUnique({
+        where: { email: lead.email.toLowerCase().trim() },
+      });
+    }
+
+    // Se ainda não existir, cria o novo cliente
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          name: lead.name,
+          phone: lead.phone || 'Não informado',
+          email: lead.email || null,
+          addresses: '[]',
+        },
+      });
+    }
+
+    // 3. Gerar Número de Orçamento (PRO-DDMMYYYY-XXXX)
+    const today = new Date();
+    const dateStr = `${String(today.getDate()).padStart(2, '0')}${String(today.getMonth() + 1).padStart(2, '0')}${today.getFullYear()}`;
+    const prefix = `PRO-${dateStr}-`;
+
+    const lastQuotation = await prisma.quotation.findFirst({
+      where: { number: { startsWith: prefix } },
+      orderBy: { number: 'desc' },
+    });
+
+    let sequence = 1;
+    if (lastQuotation && lastQuotation.number) {
+      const lastSeqStr = lastQuotation.number.replace(prefix, '');
+      const lastSeq = parseInt(lastSeqStr, 10);
+      if (!isNaN(lastSeq)) {
+        sequence = lastSeq + 1;
+      }
+    }
+
+    const generatedNumber = `${prefix}${String(sequence).padStart(4, '0')}`;
+
+    // 4. Criar a Quotation (Orçamento) em rascunho
+    const quotation = await prisma.quotation.create({
+      data: {
+        number: generatedNumber,
+        customerId: customer.id,
+        total: lead.estimatedValue || 0,
+        status: 'rascunho',
+        temperature: lead.status === 'FRIO' ? 'FRIO' : lead.status === 'MORNO' ? 'MORNO' : 'QUENTE',
+        notes: lead.lossNotes ? `Lead qualificado. Notas comerciais: ${lead.lossNotes}` : 'Orçamento gerado automaticamente via qualificação de lead no Pré-Vendas.',
+      },
+    });
+
+    // 5. Atualizar o Lead
+    await prisma.lead.update({
+      where: { id: leadId },
+      data: {
+        customerId: customer.id,
+        quotationId: quotation.id,
+        status: lead.status === 'FRIO' ? LeadStatus.MORNO : lead.status, // Garante que não use status inválido
+        funnelStage: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
+        qualificationStage: 'QUALIFICADO',
+      },
+    });
+
+    // 6. Gravar Histórico de Eventos
+    await prisma.leadEvent.createMany({
+      data: [
+        {
+          leadId,
+          type: LeadEventType.LEAD_QUALIFIED,
+          newValue: customer.id,
+          userId: decoded.userId,
+          notes: `Lead qualificado e convertido em cliente (${customer.name}).`,
+        },
+        {
+          leadId,
+          type: LeadEventType.STAGE_CHANGED,
+          oldValue: lead.funnelStage,
+          newValue: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
+          userId: decoded.userId,
+          notes: 'Lead avançado para a etapa de Encaminhado para Orçamento.',
+        },
+        {
+          leadId,
+          type: LeadEventType.PROPOSAL_REQUESTED,
+          newValue: quotation.id,
+          userId: decoded.userId,
+          notes: `Orçamento comercial gerado: número ${generatedNumber}.`,
+        },
+      ],
+    });
+
+    return NextResponse.json({
+      success: true,
+      customerId: customer.id,
+      quotationId: quotation.id,
+      quotationNumber: generatedNumber,
+      message: 'Lead qualificado e encaminhado para Orçamentos com sucesso!',
+    });
+  } catch (error) {
+    console.error('Error qualifying lead:', error);
+    return NextResponse.json({ error: 'Erro ao qualificar lead' }, { status: 500 });
+  }
+}
