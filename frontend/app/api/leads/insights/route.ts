@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { LeadFunnelStage, LeadStatus } from '@prisma/client';
+import { validateToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const user = validateToken(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+  }
   try {
     // 1. Buscar todos os leads com origens e responsáveis
     const leads = await prisma.lead.findMany({

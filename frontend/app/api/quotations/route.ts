@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import * as jwt from 'jsonwebtoken';
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function validateToken(request: NextRequest) {
-  if (!JWT_SECRET) {
-    return NextResponse.json({ error: 'Configuração inválida' }, { status: 500 });
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-
-  try {
-    const token = authHeader.substring(7);
-    jwt.verify(token, JWT_SECRET);
-    return true;
-  } catch {
-    return null;
-  }
-}
+import { validateToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest): Promise<Response> {
   try {

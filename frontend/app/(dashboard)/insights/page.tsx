@@ -31,7 +31,8 @@ import {
   Target,
   BarChart3,
   Award,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -149,6 +150,18 @@ export default function InsightsPage() {
         <div className="text-center space-y-3">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">Processando métricas de CRM e inteligência comercial...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">Nenhum dado disponível</p>
+          <button onClick={fetchInsights} className="mt-3 text-xs text-primary-600 hover:underline">Tentar novamente</button>
         </div>
       </div>
     );

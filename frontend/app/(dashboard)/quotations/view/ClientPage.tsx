@@ -47,7 +47,7 @@ function QuotationContent() {
     );
   }
 
-  if (rejected || data.status === 'reprovado') {
+  if (rejected || data.status === 'rejeitado') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-50 dark:bg-red-900/20 p-4">
         <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-md w-full border-t-4 border-red-500 border border-neutral-200 dark:border-neutral-700">

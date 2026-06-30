@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import * as jwt from 'jsonwebtoken';
+import { validateToken } from '@/lib/auth';
 import { LeadStatus, LeadFunnelStage, LeadEventType } from '@prisma/client';
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function validateToken(request: NextRequest) {
-  if (!JWT_SECRET) return null;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  try {
-    const token = authHeader.substring(7);
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(
   request: NextRequest,
@@ -29,9 +15,13 @@ export async function POST(
 
     const { id: leadId } = await params;
 
-    // 1. Carregar o Lead
+    // 1. Carregar o Lead com source e responsavel
     const lead = await prisma.lead.findUnique({
       where: { id: leadId },
+      include: {
+        source: true,
+        responsavel: true,
+      },
     });
 
     if (!lead) {
@@ -99,63 +89,90 @@ export async function POST(
 
     const generatedNumber = `${prefix}${String(sequence).padStart(4, '0')}`;
 
-    // 4. Criar a Quotation (Orçamento) em rascunho
-    const quotation = await prisma.quotation.create({
-      data: {
-        number: generatedNumber,
-        customerId: customer.id,
-        total: lead.estimatedValue || 0,
-        status: 'rascunho',
-        temperature: lead.status === 'FRIO' ? 'FRIO' : lead.status === 'MORNO' ? 'MORNO' : 'QUENTE',
-        notes: lead.lossNotes ? `Lead qualificado. Notas comerciais: ${lead.lossNotes}` : 'Orçamento gerado automaticamente via qualificação de lead no Pré-Vendas.',
-      },
-    });
+    // 4. Extrair dados de qualificação do lead
+    const qualificationData = lead.qualificationData as any;
+    let leadQualification = null;
+    if (qualificationData?.methodology) {
+      leadQualification = qualificationData.methodology;
+    }
 
-    // 5. Atualizar o Lead
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: {
-        customerId: customer.id,
-        quotationId: quotation.id,
-        status: lead.status === 'FRIO' ? LeadStatus.MORNO : lead.status, // Garante que não use status inválido
-        funnelStage: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
-        qualificationStage: 'QUALIFICADO',
-      },
-    });
+    // 5. Executar todas as operações em uma transação
+    const result = await prisma.$transaction(async (tx) => {
+      // Criar a Quotation (Orçamento) em rascunho com dados do lead
+      const quotation = await tx.quotation.create({
+        data: {
+          number: generatedNumber,
+          customerId: customer!.id,
+          total: lead.estimatedValue || 0,
+          status: 'rascunho',
+          temperature: lead.status === 'FRIO' ? 'FRIO' : lead.status === 'MORNO' ? 'MORNO' : 'QUENTE',
+          notes: lead.lossNotes ? `Lead qualificado. Notas comerciais: ${lead.lossNotes}` : 'Orçamento gerado automaticamente via qualificação de lead no Pré-Vendas.',
+          leadId: lead.id,
+          leadSourceChannel: lead.source?.channel || null,
+          leadSourceCampaign: lead.source?.campaign || null,
+          leadPriority: lead.priority,
+          leadScore: lead.score,
+          leadIntention: lead.intention || null,
+          leadQualification,
+          leadResponsavelId: lead.responsavelId || null,
+        },
+      });
 
-    // 6. Gravar Histórico de Eventos
-    await prisma.leadEvent.createMany({
-      data: [
-        {
-          leadId,
-          type: LeadEventType.LEAD_QUALIFIED,
-          newValue: customer.id,
-          userId: decoded.userId,
-          notes: `Lead qualificado e convertido em cliente (${customer.name}).`,
+      // Atualizar o Lead
+      await tx.lead.update({
+        where: { id: leadId },
+        data: {
+          customerId: customer!.id,
+          quotationId: quotation.id,
+          status: lead.status === 'FRIO' ? LeadStatus.MORNO : lead.status,
+          funnelStage: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
+          qualificationStage: 'QUALIFICADO',
         },
-        {
-          leadId,
-          type: LeadEventType.STAGE_CHANGED,
-          oldValue: lead.funnelStage,
-          newValue: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
-          userId: decoded.userId,
-          notes: 'Lead avançado para a etapa de Encaminhado para Orçamento.',
-        },
-        {
-          leadId,
-          type: LeadEventType.PROPOSAL_REQUESTED,
-          newValue: quotation.id,
-          userId: decoded.userId,
-          notes: `Orçamento comercial gerado: número ${generatedNumber}.`,
-        },
-      ],
+      });
+
+      // Gravar Histórico de Eventos
+      await tx.leadEvent.createMany({
+        data: [
+          {
+            leadId,
+            type: LeadEventType.LEAD_QUALIFIED,
+            newValue: customer!.id,
+            userId: decoded.userId,
+            notes: `Lead qualificado e convertido em cliente (${customer!.name}).`,
+          },
+          {
+            leadId,
+            type: LeadEventType.STAGE_CHANGED,
+            oldValue: lead.funnelStage,
+            newValue: LeadFunnelStage.ENCAMINHADO_ORCAMENTO,
+            userId: decoded.userId,
+            notes: 'Lead avançado para a etapa de Encaminhado para Orçamento.',
+          },
+          {
+            leadId,
+            type: LeadEventType.PROPOSAL_REQUESTED,
+            newValue: quotation.id,
+            userId: decoded.userId,
+            notes: `Orçamento comercial gerado: número ${generatedNumber}. Origem: ${lead.source?.channel || 'N/A'}${lead.source?.campaign ? ` / ${lead.source.campaign}` : ''}. Score: ${lead.score}/100.`,
+          },
+        ],
+      });
+
+      return { quotationId: quotation.id, quotationNumber: generatedNumber };
     });
 
     return NextResponse.json({
       success: true,
       customerId: customer.id,
-      quotationId: quotation.id,
-      quotationNumber: generatedNumber,
+      quotationId: result.quotationId,
+      quotationNumber: result.quotationNumber,
+      leadOrigin: {
+        channel: lead.source?.channel,
+        campaign: lead.source?.campaign,
+        priority: lead.priority,
+        score: lead.score,
+        intention: lead.intention,
+      },
       message: 'Lead qualificado e encaminhado para Orçamentos com sucesso!',
     });
   } catch (error) {

@@ -25,14 +25,14 @@ export async function POST(
       return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
     }
 
-    // Atualizar status do orçamento para reprovado
+    // Atualizar status do orçamento para rejeitado
     await prisma.quotation.update({
       where: { id: token },
       data: {
-        status: 'reprovado',
+        status: 'rejeitado',
         notes: quotation.notes 
-          ? `${quotation.notes}\n\nReprovado pelo cliente. Motivo: ${reason || 'Não informado'}`
-          : `Reprovado pelo cliente. Motivo: ${reason || 'Não informado'}`,
+          ? `${quotation.notes}\n\nRejeitado pelo cliente. Motivo: ${reason || 'Não informado'}`
+          : `Rejeitado pelo cliente. Motivo: ${reason || 'Não informado'}`,
       },
     });
 

@@ -614,8 +614,26 @@ export default function PreVendasPage() {
                             toast.success('Abrir reatribuição...');
                           }
                         }}
-                        onPriorityChange={(leadId, newPriority) => {
-                          handleQuickPriorityChange({ stopPropagation: () => {} } as any, leadId, newPriority);
+                        onPriorityChange={async (leadId, newPriority) => {
+                          try {
+                            const token = getToken();
+                            const res = await fetch(`/api/leads/${leadId}`, {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                Authorization: `Bearer ${token}`
+                              },
+                              body: JSON.stringify({ priority: newPriority })
+                            });
+                            if (res.ok) {
+                              toast.success(`Prioridade alterada para ${newPriority}!`);
+                              fetchLeads();
+                            } else {
+                              toast.error('Erro ao alterar prioridade.');
+                            }
+                          } catch {
+                            toast.error('Erro ao alterar prioridade.');
+                          }
                         }}
                       />
                     </div>
@@ -853,14 +871,14 @@ export default function PreVendasPage() {
                   value={lossReason}
                   onChange={(e) => setLossReason(e.target.value)}
                 >
-                  <option value="sem orçamento">Sem orçamento</option>
-                  <option value="sem timing">Sem timing</option>
-                  <option value="sem necessidade">Sem necessidade</option>
-                  <option value="sem autoridade">Sem autoridade</option>
-                  <option value="fora de perfil">Fora de perfil</option>
-                  <option value="concorrência">Concorrência</option>
-                  <option value="retorno futuro">Retorno futuro</option>
-                  <option value="contato inválido">Contato inválido</option>
+                  <option value="SEM_ORCAMENTO">Sem orçamento</option>
+                  <option value="SEM_TIMING">Sem timing</option>
+                  <option value="SEM_NECESSIDADE">Sem necessidade</option>
+                  <option value="SEM_AUTORIDADE">Sem autoridade</option>
+                  <option value="FORA_DE_PERFIL">Fora de perfil</option>
+                  <option value="CONCORRENCIA">Concorrência</option>
+                  <option value="RETORNO_FUTURO">Retorno futuro</option>
+                  <option value="CONTATO_INVALIDO">Contato inválido</option>
                 </select>
               </div>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import * as jwt from 'jsonwebtoken';
+import { validateToken } from '@/lib/auth';
 import { 
   LeadStatus, 
   LeadFunnelStage, 
@@ -9,20 +9,6 @@ import {
   LeadIntention,
 } from '@prisma/client';
 import { leadBulkSchema, calculateInitialScore } from '@/lib/validations/lead.schema';
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function validateToken(request: NextRequest) {
-  if (!JWT_SECRET) return null;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  try {
-    const token = authHeader.substring(7);
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {

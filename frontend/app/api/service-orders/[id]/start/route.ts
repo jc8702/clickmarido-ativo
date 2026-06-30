@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
+import { validateToken } from '@/lib/auth';
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function validateToken(request: NextRequest) {
-  if (!JWT_SECRET) return null;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  try {
-    jwt.verify(authHeader.substring(7), JWT_SECRET);
-    return true;
-  } catch {
-    return null;
-  }
-}
 
 type RouteParams = { params: Promise<{ id: string }> };
 

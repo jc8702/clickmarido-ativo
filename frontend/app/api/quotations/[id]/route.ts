@@ -1,26 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function validateToken(request: NextRequest) {
-  if (!JWT_SECRET) {
-    return NextResponse.json({ error: 'Configuração inválida' }, { status: 500 });
-  }
-
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-
-  try {
-    const token = authHeader.substring(7);
-    jwt.verify(token, JWT_SECRET);
-    return true;
-  } catch {
-    return null;
-  }
-}
+import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -219,7 +199,7 @@ export async function PUT(
     }
 
     // Handle quotation rejection - return lead to funnel
-    if (body.status === 'reprovado') {
+    if (body.status === 'rejeitado') {
       const lead = await prisma.lead.findFirst({
         where: { quotationId: id },
       });
@@ -233,7 +213,7 @@ export async function PUT(
             quotationId: null,
             qualificationStage: 'DESQUALIFICADO',
             lossReason: body.loss_reason || 'SEM_ORCAMENTO',
-            lossNotes: body.loss_notes || `Orçamento ${quotation.number} reprovado`,
+            lossNotes: body.loss_notes || `Orçamento ${quotation.number} rejeitado`,
           },
         });
 
@@ -243,7 +223,7 @@ export async function PUT(
             type: 'LEAD_DISQUALIFIED',
             oldValue: lead.funnelStage,
             newValue: 'EM_FOLLOWUP',
-            notes: `Orçamento ${quotation.number} reprovado. Lead retornado ao funil para follow-up.`,
+            notes: `Orçamento ${quotation.number} rejeitado. Lead retornado ao funil para follow-up.`,
           },
         });
       }

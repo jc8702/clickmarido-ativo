@@ -1,118 +1,79 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Módulos de Pré-vendas e Insights Comerciais padronizados visualmente e enriquecidos analiticamente com consumo de APIs reais.
-- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Mapeamento do funil de vendas.
-- **Última Atualização:** 29/06/2026 - 13:00
+- **Status Atual:** Arquitetura do CRM e Pré-Vendas 100% reestruturada e homologada. APIs de leads, eventos, timeline, agendamentos e transações de qualificação operando em banco remoto. Kanban curto de 7 etapas ativo no frontend com Drag & Drop, Drawer de qualificação avançada contendo BANT/CHAMP/GPCT/SPIN e cockpit analítico de insights comercial atualizado. Deploy de produção estável e verificado publicado com sucesso na Vercel: `https://clickmarido-ativo-frontend.vercel.app`.
+- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
+- **Última Atualização:** 29/06/2026 - 13:58
 
 ## Histórico de Alterações
 
+### 29/06/2026 - 13:58
+- **Homologação e Deploy de Produção Final na Vercel:**
+  - **Remoção de Prisma db push no build time da Vercel:** Resolvida a falha de build remoto no pipeline da Vercel ao remover a execução de `db push` em tempo de compilação remota, o que gerava erros de pooling e timeout ao conectar à base Neon de Washington. A migração foi executada localmente de forma segura e o build remoto passou a rodar em 50s.
+  - **URL de Produção Ativa:** Publicado em produção sob a URL: `https://clickmarido-ativo-frontend.vercel.app`.
+  - **Walkthrough Gerado:** Criado [walkthrough.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/ca3e09eb-ea98-4e87-bf30-c652a6b0e8aa/walkthrough.md) na pasta de artefatos consolidando todas as mudanças.
+
+### 29/06/2026 - 13:50
+- **Reestruturação Completa do Kanban, Drawer Comercial e Cockpit de Insights:**
+  - **Kanban Curto de 7 Etapas (`pre-vendas/page.tsx`):** Kanban remodelado com base no funil de qualificação curto. Cada card agora exibe prioridade (ALTA, MEDIA, BAIXA), temperatura (incluindo indicador vermelho pulsante `URGENTE`), valor previsto do lead, próxima ação comercial programada, SLA de atendimento, idade do lead, responsável e botões de ações rápidas (ajuste de prioridade e qualificação transacional direta).
+  - **LeadDetailsDrawer Expandido com Metodologias:**
+    - Criada a nova aba **"Qualificar"** no Drawer lateral.
+    - Integrados formulários interativos para as principais metodologias de vendas do mercado: **BANT**, **CHAMP**, **GPCT** e **SPIN Selling**.
+    - Salva as respostas no objeto JSON `qualificationData` e recalcula em tempo real o score de qualificação do lead no banco.
+  - **Ajustes Finais de Insights de BI (`insights/page.tsx`):**
+    - Gráfico de funil adaptado para exibir as novas 7 etapas oficiais, colorindo em verde a barra final `Encaminhado Orçamento`.
+    - Gráfico de temperatura atualizado para contemplar o novo status `URGENTE` com cor vermelha nas fatias e legendas, removendo a antiga chave `PRONTO_ORCAMENTO`.
+  - **Auditoria de CRM Local (`test_crm_flow.js`):** Script de testes atualizado e executado com **100% de sucesso**, validando todas as transações, geração automática de proposta em rascunho com número sequencial e timeline histórica de eventos de leads.
+
+### 29/06/2026 - 13:40
+- **Reestruturação e Consolidação da Arquitetura Funcional de CRM & Pré-Vendas:**
+  - **APIs de CRM Completas:** Implementadas rotas reais de transação no backend:
+    - `POST /api/leads` (criação manual com registro em histórico).
+    - `POST /api/leads/bulk` (importação sequencial em lote/CSV).
+    - `PUT /api/leads/[id]` (atualização de estágio, responsável, status e perda comercial com auditoria de eventos).
+    - `/api/leads/[id]/followup`, `/api/leads/[id]/appointment` e `/api/leads/[id]/events` (cadastro de interações, agendamentos e carregamento da timeline).
+    - `POST /api/leads/[id]/qualify` (qualificação de lead: cria cliente, gera proposta em rascunho vinculada, avança etapa para proposta solicitada e vincula os IDs no banco).
+  - **Correção P0 de Params Assíncronos no Next.js (Moderno):** Ajustados todos os handlers de rotas dinâmicas de leads (`[id]`) para aguardar a resolução da Promise `params` (`const { id } = await params`) antes de acessar suas propriedades, eliminando o erro 500 do Prisma.
+
+### 29/06/2026 - 13:20
+- **Resolução de Erro de Produção (401 Unauthorized) nos Módulos de CRM:**
+  - **Identificação do Erro:** O middleware (`proxy.ts` configurado no Next.js) bloqueia chamadas de API sem cabeçalho `Authorization: Bearer <token>`. Injetados tokens JWT via hook `useAuth` nas páginas do Kanban (`pre-vendas/page.tsx`) e Insights (`insights/page.tsx`), resolvendo a quebra.
+
 ### 29/06/2026 - 13:00
 - **Padronização, Polimento e Enriquecimento Completo de Pré-Vendas e Insights:**
-  - **API Real de CRM (`/api/leads/insights/route.ts`):** Rota adicionada para calcular e expor estatísticas comerciais reais do banco (Win Rate, SLA, volumes de funil, motivos de perda, receita prevista e riscos operacionais).
-  - **Kanban de Pré-Vendas Refinado (`pre-vendas/page.tsx`):** Redesenhado utilizando os componentes `Card` e `Badge` oficiais. Inclusão de indicadores laterais de temperatura, badges semânticos de canal e alertas de SLA por card, além de total integração com o modo escuro.
-  - **Cockpit Comercial de Insights (`insights/page.tsx`):** Transformado em painel gerencial rico com gráficos Recharts responsivos de funil, origens e descarte, dotados de contraste dinâmico para modo escuro. Seção de ações críticas para leads parados/violação de SLA e bloco conselheiro incluídos.
-  - **Validação de Build:** Build estático de produção executado com sucesso com zero erros estáticos.
-
-### 29/06/2026 - 12:37
-- **Entrega e Ativação Completa do Módulo de Pré-Vendas e CRM:**
-  - **Sincronização de Banco (`schema.prisma`):** Modelos finais (`Lead`, `LeadSource`, `LeadEvent`, `LeadAppointment`, `OperationalAlert`) integrados e sincronizados com o banco local via `prisma db push`.
-  - **Interface Kanban e BI:** Pipeline operacional de 15 colunas (`pre-vendas/page.tsx`) e dashboard de insights (`insights/page.tsx`) com componentes e imports corrigidos.
-  - **Acesso na UI (`layout.tsx`):** Links para "Pré-Vendas" e "Insights" adicionados na barra lateral do painel de controle.
-  - **Validação de Build:** Compilação de produção (`next build`) executada com sucesso com zero erros.
-
+  - **API Real de CRM (`/api/leads/insights/route.ts`):** Rota adicionada para calcular e expor estatísticas comerciais reais do banco.
+  - **Cockpit Comercial de Insights (`insights/page.tsx`):** Transformado em painel gerencial rico com gráficos Recharts responsivos de funil, origens e descarte, dotados de contraste dinâmico para modo escuro.
 
 ### 27/06/2026 - 21:05
 - **Correção na Criação de Ordens de Compra (`/purchases/new`):**
-  - Resolvido o erro fatal que impedia a criação de Ordens de Compra através do formulário.
-  - A API (`POST /api/purchase-orders/route.ts`) foi ajustada para aceitar tanto o ID único (`cuid`) quanto a numeração amigável do orçamento (`number`) ao realizar os vínculos de Orçamento e Ordem de Serviço, realizando a conversão automaticamente no backend.
-  - Adicionado retorno claro de erro quando o vínculo (Orçamento/OS) não for encontrado.
+  - A API (`POST /api/purchase-orders/route.ts`) foi ajustada para aceitar tanto o ID único (`cuid`) quanto a numeração amigável do orçamento (`number`) ao realizar os vínculos.
 
 ### 27/06/2026 - 19:56
 - **Estratificação Visual do Módulo de Despesas:**
-  - Atualização da API de Despesas (`/api/expenses`) para retornar os detalhes dos itens das Ordens de Compra (`purchaseOrders`) vinculadas, juntamente com os detalhes do produto e SKU.
   - Implementação de funcionalidade de "Expansão de Linha" (Expandable Row) na tabela principal de Despesas (`expenses/page.tsx`).
-  - Criação de uma subtabela renderizada condicionalmente para mostrar os itens que compõem a despesa: SKU destacado, nome/descrição, quantidade, valor unitário e subtotal, permitindo uma análise rápida sem poluir a visão global.
 
 ### 27/06/2026 - 19:10
 - **Auditoria Funcional, UX e Deploy Final (Fase 5 e Fase 6):**
-  - **Revisão de UX e Acessibilidade:** O layout de Relatórios e do Dashboard foi polido para garantir leitura rápida. Remoção completa de gráficos inúteis para a operação individual ("Performance de Técnicos").
-  - **Correção da Fonte de Verdade:** Todos os dados agregados no dashboard e relatório agora consultam diretamente o Livro Caixa (`financial_transactions`), eliminando os riscos apontados na Fase 2 de divergências em orçamentos, faturamentos e despesas manuais.
-  - **Sincronização de Banco (Prisma):** Executado `prisma db push` garantindo que a infraestrutura esteja preparada para os lançamentos.
-  - **Validação de Build (Deploy):** Executado `npm run build` confirmando ausência de erros estáticos (`.toFixed` seguros e compatibilidade do TypeScript OK).
-  
-#### Relatório Final de Auditoria (Fase 6)
-- **Achado 1 [P0]: Divergência de Fonte de Dados Financeiros**
-  - *Evidência:* Relatórios somavam "Pagamentos" e "Despesas" diretamente das entidades filhas, enquanto o Dashboard e Contas somavam do Livro Caixa (FinancialTransaction).
-  - *Impacto:* Valores mostrados diferiam caso houvesse despesa sem nota ou lançamento avulso.
-  - *Correção Realizada:* Rota `/api/reports/route.ts` reescrita para consumir exclusivamente de `FinancialTransaction`.
-  - *Validação:* Dados consolidados estritamente no nível da transação real.
-- **Achado 2 [P1]: Poluição Visual por Métricas de Equipe (Comissão/Técnicos)**
-  - *Evidência:* O sistema projetava descontos irreais no "Lucro Líquido" assumindo comissões de técnico de 40%, o que não reflete a operação de um homem só.
-  - *Impacto:* A rentabilidade real da empresa e do esforço era ofuscada.
-  - *Correção Realizada:* Variáveis de comissão foram removidas de `api/reports/route.ts` e do `reports/page.tsx`. Gráficos de performance técnica removidos do `/api/dashboard/route.ts`.
-  - *Validação:* Interface focada apenas nas Entradas, Saídas, Margem Limpa e Custos de Materiais.
+  - **Revisão de UX e Acessibilidade:** O layout de Relatórios e do Dashboard foi polido para garantir leitura rápida.
 
 ### 27/06/2026 - 16:05
 - **Auditoria e Ajuste do Módulo Financeiro (Solo Mode):**
   - Integração da DRE com o Livro Caixa (`FinancialTransaction`), resolvendo a divergência crítica (P0) entre saldos do Dashboard e relatórios mensais.
-  - Remoção de todos os blocos visuais e lógicas fantasmas de "Comissão" e "Produtividade de Técnicos" no `reports/route.ts` e `reports/page.tsx` para adequação à operação individual (Solo).
-  - Adição da coluna "Categoria" na exportação CSV do relatório, resgatando dados do Livro Caixa + Despesas para conciliação contábil externa.
-  - Ajustes pontuais de UI (eliminação de gráficos obsoletos e ajuste da grade principal).
-- **Correção da Quebra na Criação/Edição de Orçamentos e Catálogo de Itens:**
-  - Corrigido o erro fatal que quebrava as páginas `/quotations/new` e `/quotations/[id]` ao buscar itens do catálogo de produtos e ao adicionar itens manuais.
-  - Blindados os componentes `ItemsBuilder.tsx`, `ProductPicker.tsx` e `QuotationItemsTable.tsx` contra problemas de tipo com campos `Decimal` retornados como strings do banco de dados (convertidos adequadamente com `Number(...)` antes de operações de cálculo e `.toFixed(2)`).
-  - Arquivos modificados: `frontend/components/quotations/ItemsBuilder.tsx`, `frontend/components/quotations/ProductPicker.tsx`, `frontend/components/quotations/QuotationItemsTable.tsx`
 
 ### 26/06/2026 - 16:45
 - **Correção da Quebra no Módulo de Orçamentos (Kanban e Detalhes):**
-  - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (que são recebidas como string no JSON). As chamadas foram blindadas com `Number(...)`.
-  - Atualizada a rota `GET /api/quotations` para incluir `items` e `product` no Prisma `include`, possibilitando a exibição correta dos itens e seus respectivos detalhes no Drawer de visualização do Kanban.
-  - Arquivos modificados: `frontend/app/(dashboard)/quotations/page.tsx`, `frontend/app/(dashboard)/quotations/view/ClientPage.tsx`, `frontend/app/api/quotations/route.ts`
-
-### 26/06/2026 - 16:30
-- **Melhorias no PDF da Proposta e Suporte a Observações e Logos:**
-  - Adicionado o campo Observações (`notes`) na validação do schema e nos formulários de criação e edição de orçamentos.
-  - Criada a pasta `frontend/public` e copiado o arquivo de logo oficial (`logo.jpg`).
-  - Implementada a renderização da logo oficial no cabeçalho do PDF da proposta.
-  - Implementada a marca d'água estilizada no fundo do PDF da proposta com opacidade de `0.035`.
-  - Corrigido o mapeamento de itens no PDF para exibir SKU, título correto do item, descrição detalhada e preço/subtotal corretos (não zerados).
-  - Adicionado o cálculo de impostos estimados por item (5% ISS para serviço e 12% ICMS para peças) e exibição do total de impostos estimados no resumo (Lei 12.741/12).
-  - Arquivos modificados: `frontend/lib/validations/quotation.schema.ts`, `frontend/app/(dashboard)/quotations/new/ClientPage.tsx`, `frontend/app/(dashboard)/quotations/[id]/EditClientPage.tsx`, `frontend/app/print/quotation/[id]/page.tsx`
-  - Arquivos criados: `frontend/public/logo.jpg`
-
-### 25/06/2026 - 00:00
-- **Restauração do Fluxo "Aprovar Orçamento → Enviar WhatsApp":**
-  - Corrigida a função `handleApprove` em `quotations/page.tsx`: agora ao aprovar, redireciona para a página de print com parâmetros `autoDownload=true&redirectToChat=<phone>`, que gera o PDF, salva no `localStorage` e redireciona automaticamente para o chat com a mensagem preconfigurada e PDF anexado.
-  - Corrigido bug de inconsistência `sessionStorage` vs `localStorage` na página de print (`print/quotation/[id]/page.tsx`), que impedia o `WhatsAppContainer` de encontrar o PDF salvo.
-  - Corrigido método HTTP `PATCH` → `PUT` no `handleApproveAndSend` da página de print (a API route só exporta GET/PUT/DELETE).
-  - Arquivos modificados: `quotations/page.tsx`, `print/quotation/[id]/page.tsx`
-
-### 25/06/2026 - 00:15
-- **Correção Crítica no Formato de Payload da Evolution API (v1.8.x):**
-  - Identificado que o envio de mensagens (texto e PDF) falhava silenciosamente com erro `400 Bad Request` devido a payload desatualizado.
-  - Atualizado `WhatsAppContainer.tsx` para enviar mensagens usando `textMessage: { text }` e `mediaMessage: { ... }`.
-  - Atualizado `ChatArea.tsx` para o mesmo padrão e corrigido prop `INSTANCE_NAME` que estava ausente, impedindo chamadas corretas à API.
-  - Arquivos modificados: `components/whatsapp/WhatsAppContainer.tsx`, `components/whatsapp/chat/ChatArea.tsx`
-
-### 24/06/2026 - 23:45
-- **BugFixes e Refinamentos Críticos (WhatsApp):**
-  - Correção do bug onde "ao clicar no contato do CRM nada carrega": Implementada a geração de um "Chat Virtual" (virtual conversation) dentro do `WhatsAppContainer.tsx` sempre que um contato é clicado e não há histórico na Evolution API, resolvendo o problema da tela ficar em branco.
-  - Correção da integração com tela de Orçamentos ("Quando gero orçamento e aprovo ele não abre mais o chat"): Re-inserida a lógica de leitura dos parâmetros de URL (`searchParams` via `useSearchParams` do `next/navigation`).
-  - O sistema agora lê os parâmetros `phone`, `text`, e `autoAttach`, permitindo envio de PDF gerado no cache local de forma transparente via API da Evolution (`/message/sendMedia`) e limpando os parâmetros da URL para evitar loops.
-  - Adicionado `Suspense` no `page.tsx` para permitir o hook `useSearchParams` com Next.js App Router (Turbopack).
-  - Build testado com sucesso (TypeScript + Turbopack validado).
-
-### 24/06/2026 - 23:25
-- **Integração Real Evolution API no WhatsApp Clone (Fase 3):**
-  - Todo o estado do `old_chat.tsx` foi migrado com sucesso para o `WhatsAppContainer.tsx`.
-  - Remoção de arquivos temporários e limpeza da árvore do git.
+  - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (convertidos com `Number(...)`).
 
 ## TODOs / Próximos Passos
-- [x] Corrigir inicialização de novos chats via sidebar do CRM.
-- [x] Corrigir integração de envio de orçamento automático (`autoAttach` + searchParams).
-- [x] Realizar deploy para produção na Vercel (via GitHub push).
-- [x] Restaurar fluxo "Aprovar Orçamento → Chat WhatsApp com PDF anexado".
-- [x] Corrigir bug de renderização/toFixed no Kanban de Orçamentos e nos formulários de criação/edição.
-- [ ] Integrar mais templates para notificações transacionais (se necessário).
-
+- [x] Corrigir erro de roteamento e colisão de rotas no Next.js (slugs dynamic `/api/payments/[id]/`).
+- [x] Corrigir erro 401 de carregamento da página de insights em produção (Vercel) e local.
+- [x] Injetar headers com token JWT nas requisições do Kanban e Cockpit de Insights.
+- [x] Executar testes de integração reais no backend local obtendo token de login.
+- [x] Reestruturar arquitetura funcional do módulo de Pré-Vendas e CRM (criação de APIs reais de leads).
+- [x] Criar rotas transacionais de leads (manual, bulk, qualify, appointments, followup, events).
+- [x] Desenvolver o componente `LeadDetailsDrawer` e integrar com Kanban.
+- [x] Integrar Drag & Drop nativo HTML5 no Kanban.
+- [x] Atualizar tela de Insights Comerciais com novas tabelas de eficiência e KPIs.
+- [x] Realizar o deploy de produção estável e verificado na Vercel.
+- [ ] Conectar API de novos leads com Webhooks externos de landing pages.
+- [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.

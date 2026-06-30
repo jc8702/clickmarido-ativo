@@ -96,7 +96,18 @@ model Quotation {
   // Automação
   expiryNotificationSent Boolean @default(false)
 
+  // Dados de Origem do Lead (rastreabilidade)
+  leadId              String?  // ID do lead de origem
+  leadSourceChannel   String?  @db.VarChar(50) // Canal de origem: WhatsApp, Instagram, etc
+  leadSourceCampaign  String?  @db.VarChar(100) // Campanha de origem
+  leadPriority        String?  @default("MEDIA") // Prioridade original do lead
+  leadScore           Int?     @default(0) // Score do lead no momento da qualificação
+  leadIntention       String?  // Intenção original do lead
+  leadQualification   String?  // Metodologia de qualificação utilizada (BANT, CHAMP, GPCT, SPIN)
+  leadResponsavelId   String?  // Responsável original pelo lead
+
   @@index([customerId])
+  @@index([leadId])
   @@map("quotations")
 }
 
@@ -849,6 +860,7 @@ enum LeadStatus {
   MORNO
   QUENTE
   URGENTE
+  PRONTO_ORCAMENTO
 }
 
 enum LeadFunnelStage {
@@ -859,6 +871,20 @@ enum LeadFunnelStage {
   AGENDADO
   ENCAMINHADO_ORCAMENTO
   DESCARTADO
+  SEM_CONTATO
+  EM_CONTATO
+  CONTATO_REALIZADO
+  LEAD_QUALIFICADO
+  LEAD_NAO_QUALIFICADO
+  REUNIAO_AGENDADA
+  COMPARECEU
+  PROPOSTA_SOLICITADA
+  PROPOSTA_ENVIADA
+  EM_NEGOCIACAO
+  GANHO
+  PERDIDO
+  SEM_RESPOSTA
+  REATIVADO
 }
 
 enum LeadQualificationStage {

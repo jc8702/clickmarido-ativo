@@ -47,3 +47,16 @@ export const verifyToken = (token: string) => {
     return null;
   }
 };
+
+export function validateToken(request: NextRequest): { userId: string; email: string; role: string } | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const token = authHeader.substring(7);
+    return jwt.verify(token, secret) as { userId: string; email: string; role: string };
+  } catch {
+    return null;
+  }
+}
