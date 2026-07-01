@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const purchaseOrder = await prisma.purchaseOrder.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: { include: { product: true } } },
     });
 
     if (!purchaseOrder) {
@@ -57,6 +57,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             status: itemStatus,
           },
         });
+
+        // Incrementar o estoque físico do produto se for do tipo 'PECA'
+        const qtyToAdd = Math.round(parseFloat(rx.quantityReceived)) || 0;
+        if (dbItem.productId && dbItem.product?.type === 'PECA' && qtyToAdd > 0) {
+          await tx.product.update({
+            where: { id: dbItem.productId },
+            data: {
+              quantity: {
+                increment: qtyToAdd,
+              },
+            },
+          });
+        }
       }
 
       // 2. Buscar itens atualizados para recalcular o status global da OC

@@ -191,6 +191,36 @@ export async function POST(request: NextRequest): Promise<Response> {
         }
       }
 
+      // 8.1. Se pagamento aprovado, atualizar OS vinculada para 'concluida'
+      if (isPaymentApproved(mpStatus) && payment!.quotationId) {
+        const affectedOS = await tx.serviceOrder.findMany({
+          where: { quotationId: payment!.quotationId },
+          select: { id: true, number: true, status: true },
+        });
+
+        const pendingOS = affectedOS.filter((os) => os.status !== 'concluida');
+
+        if (pendingOS.length > 0) {
+          await tx.serviceOrder.updateMany({
+            where: { quotationId: payment!.quotationId },
+            data: { status: 'concluida' },
+          });
+
+          for (const os of pendingOS) {
+            await tx.auditLog.create({
+              data: {
+                entity: 'service_order',
+                entityId: os.id,
+                action: 'completed_via_payment_webhook_mp',
+                oldValue: { status: os.status },
+                newValue: { status: 'concluida' },
+                createdBy: 'system_webhook_mp',
+              },
+            });
+          }
+        }
+      }
+
       // 9. Criar transação financeira (idempotente - verificar se já existe)
       const existingTransaction = await tx.financialTransaction.findFirst({
         where: {
