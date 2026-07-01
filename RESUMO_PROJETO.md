@@ -7,6 +7,12 @@
 
 ## Histórico de Alterações
 
+### 01/07/2026 - 17:15
+- **Integração Pagamento & NPS & Correções UX:**
+  - **Invoice Avulso:** Schema Prisma ajustado para tornar a relação com `Quotation` opcional, e webhook de aprovação de pagamentos refatorado para criar automaticamente Invoices de faturamento a partir de pagamentos independentes.
+  - **Pesquisas NPS Pendentes:** Criado endpoint `/api/nps/pending` e integrado na interface para listar clientes com pagamentos aprovados recentes que ainda não receberam avaliação NPS, com funcionalidade de envio via WhatsApp.
+  - **UX Premium & Sidebar:** Redesign completo da Dashboard do NPS com Glassmorphism, badges modernos e tab layout. Removido o salto indesejado de página da Sidebar com a propriedade `scroll={false}` nos links do Next.js.
+
 ### 01/07/2026 - 16:15
 - **Evolução e Melhoria Completa no Módulo NPS:**
   - **Endpoint Público e Seguro:** A API de POST do NPS ([route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/nps/route.ts)) agora aceita submissões anônimas dos clientes, validando no banco se o `clientId` existe de fato para proteger a segurança do endpoint.

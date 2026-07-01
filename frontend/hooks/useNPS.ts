@@ -53,3 +53,26 @@ export function useNPS(params: { page?: number; limit?: number } = {}) {
     mutate,
   };
 }
+
+export interface NPSPending {
+  paymentId: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  paymentAmount: number;
+  paymentDate: string;
+}
+
+export function usePendingNPS() {
+  const { data, error, mutate, isLoading } = useSWR<{
+    success: boolean;
+    data: NPSPending[];
+  }>(`/api/nps/pending`, fetcher);
+
+  return {
+    pending: data?.data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}

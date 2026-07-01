@@ -109,6 +109,7 @@ export function Sidebar({
               <Link
                 key={link.href}
                 href={link.href}
+                scroll={false}
                 onClick={() => {
                   // Close sidebar on mobile after navigation
                   if (window.innerWidth < 768) {

@@ -49,23 +49,49 @@ async function handleApprove(
         });
       }
 
+      let currentInvoiceId = payment.invoiceId;
+
       // P0-1: Só marcar invoice como paga se total dos pagamentos >= total da invoice
-      if (payment.invoiceId) {
-        const invoice = await tx.invoice.findUnique({ where: { id: payment.invoiceId } });
+      if (currentInvoiceId) {
+        const invoice = await tx.invoice.findUnique({ where: { id: currentInvoiceId } });
         if (invoice && invoice.status !== 'paga') {
           const totalPaid = await tx.payment.aggregate({
-            where: { invoiceId: payment.invoiceId, status: 'confirmado' },
+            where: { invoiceId: currentInvoiceId, status: 'confirmado' },
             _sum: { amount: true },
           });
           const paidAmount = Number(totalPaid._sum.amount || 0) + Number(payment.amount);
 
           if (paidAmount >= Number(invoice.totalAmount)) {
             await tx.invoice.update({
-              where: { id: payment.invoiceId },
+              where: { id: currentInvoiceId },
               data: { status: 'paga' },
             });
           }
         }
+      } else {
+        // Criar uma nova Invoice (Fatura) para este pagamento avulso
+        const invoiceCount = await tx.invoice.count();
+        const invoiceNumber = `INV-${now.getFullYear()}-${String(invoiceCount + 1).padStart(4, '0')}-${Math.floor(Math.random() * 1000)}`;
+        
+        const newInvoice = await tx.invoice.create({
+          data: {
+            customerId: payment.customerId,
+            invoiceNumber,
+            issueDate: now,
+            dueDate: now,
+            subtotal: payment.amount,
+            totalAmount: payment.amount,
+            status: 'paga',
+            description: payment.description || 'Fatura gerada automaticamente por pagamento avulso',
+          }
+        });
+
+        await tx.payment.update({
+          where: { id },
+          data: { invoiceId: newInvoice.id }
+        });
+        
+        currentInvoiceId = newInvoice.id;
       }
 
       // Prevenir duplicidade: verificar se já existe transação financeira para este pagamento
@@ -78,7 +104,7 @@ async function handleApprove(
           data: {
             type: 'PAYMENT_RECEIVED',
             paymentId: payment.id,
-            invoiceId: payment.invoiceId || null,
+            invoiceId: currentInvoiceId || null,
             credit: payment.amount,
             debit: 0,
             description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (${payment.method.toUpperCase()})`,
