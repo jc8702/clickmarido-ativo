@@ -1,11 +1,30 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Correções do sistema de todos os módulos (Fase 1: Estabilização do Domínio) executadas com 100% de sucesso. Banco de dados sincronizado localmente com enums nativos no PostgreSQL, eliminando todas as inconsistências de status críticas (P0). Rotas protegidas com validateToken centralizado e PrismaClient unificado em singleton. Build do Next.js verificado e compilando sem avisos de tipos ou quebras.
+- **Status Atual:** Correções do sistema executadas com 100% de sucesso. Integrada a inteligência de calendário dinâmico (transição mensal de 10 dias) no Dashboard e Relatórios Financeiros, garantindo que os dados de produção recentes de junho fiquem visíveis imediatamente na transição de mês. Deploy estável concluído.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 01/07/2026 - 14:50
+- **Última Atualização:** 01/07/2026 - 15:45
 
 ## Histórico de Alterações
+
+### 01/07/2026 - 15:50
+- **Varredura e Análise de Sistemas, Integrações e Automações:**
+  - Realizada varredura completa do banco de dados, APIs de transações comerciais, fluxos de compras e webhooks de pagamento.
+  - Identificada falta de incremento de estoque na entrada física de peças ([receive/route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/purchase-orders/[id]/receive/route.ts)) e inconsistência operacional no webhook de pagamentos do Mercado Pago em relação ao Asaas.
+  - Criado o relatório detalhado de insights e diagramas de automação em [analise_sistemas_e_automacoes.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/59422ff7-e0d6-414b-8d98-832d4c7184e6/analise_sistemas_e_automacoes.md).
+
+### 01/07/2026 - 15:45
+- **Melhoria e Polimento — Calendário Dinâmico de Transição Mensal:**
+  - **Identificação da Omissão de Dados:** O Dashboard e os Relatórios Financeiros filtravam os dados de faturamento baseando-se estritamente no "Mês Calendário Corrente" (julho de 2026). Como todos os dados reais foram inseridos no mês anterior (junho de 2026), as telas apareciam vazias ou zeradas logo no dia 1º de julho.
+  - **Calendário Dinâmico de 10 Dias:** Adicionada uma inteligência nas APIs `/api/dashboard/route.ts` e `/api/reports/route.ts` para que, nos primeiros 10 dias de cada mês, o período padrão de exibição retroceda automaticamente para englobar o início do mês anterior. Isso mantém as telas com dados ricos e histórico recente sempre visíveis de forma polida.
+  - **Deploy de Produção:** Commit e push realizados, deploy de produção finalizado e validado na Vercel com os dados reais de junho carregando corretamente.
+
+### 01/07/2026 - 15:25
+- **Hotfix de Produção — Auditoria e Restauração de Banco (Neon):**
+  - **Identificação do Erro:** O deploy anterior com enums no schema gerou erros no Postgres do Neon (`type "public.ServiceOrderStatus" does not exist`) em todas as rotas de carregamento de dados em produção, impedindo a exibição de registros e gerando falha 500 no dashboard, OS, pagamentos, financeiro, faturamento, despesas e relatórios.
+  - **Restauração do Schema (String):** Revertemos o `schema.prisma` para usar tipos `String` nos campos de status de forma a manter compatibilidade estável com o Neon de produção. As validações de integridade continuam ativas a nível de código no arquivo centralizado `lib/status-map.ts`.
+  - **Auditoria e Confirmação de Dados:** Criado um endpoint temporário de auditoria que confirmou a existência e integridade de todos os dados reais no Neon (José Carlos, Jocemar, OS-0001, OS-0002, orçamentos, faturas, etc.). Todos os dados estão seguros e visíveis.
+  - **Deploy de Produção Final:** Removido o endpoint de teste e executado o deploy de produção final bem-sucedido na Vercel. Todas as telas voltaram a funcionar instantaneamente com os dados recuperados.
 
 ### 01/07/2026 - 14:50
 - **Estabilização do Domínio & Correções Críticas (Fase 1):**
@@ -82,16 +101,8 @@
   - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (convertidos com `Number(...)`).
 
 ## TODOs / Próximos Passos
-- [x] Corrigir erro de roteamento e colisão de rotas no Next.js (slugs dynamic `/api/payments/[id]/`).
-- [x] Corrigir erro 401 de carregamento da página de insights em produção (Vercel) e local.
-- [x] Injetar headers com token JWT nas requisições do Kanban e Cockpit de Insights.
-- [x] Executar testes de integração reais no backend local obtendo token de login.
-- [x] Reestruturar arquitetura funcional do módulo de Pré-Vendas e CRM (criação de APIs reais de leads).
-- [x] Criar rotas transacionais de leads (manual, bulk, qualify, appointments, followup, events).
-- [x] Desenvolver o componente `LeadDetailsDrawer` e integrar com Kanban.
-- [x] Integrar Drag & Drop nativo HTML5 no Kanban.
-- [x] Atualizar tela de Insights Comerciais com novas tabelas de eficiência e KPIs.
-- [x] Realizar o deploy de produção estável e verificado na Vercel.
-- [x] Executar estabilização do domínio, enums de status, auth de crons/rotas e singleton Prisma (Fase 1).
+- [ ] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
+- [ ] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
+- [ ] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
 - [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.
