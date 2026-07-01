@@ -12,10 +12,22 @@ export default function SurveyPage() {
   const [customerName, setCustomerName] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string>('');
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [loadingName, setLoadingName] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleScoreChange = (value: number) => {
+    setScore(value);
+    setSelectedReasons([]);
+  };
+
+  const handleReasonToggle = (reason: string) => {
+    setSelectedReasons(prev =>
+      prev.includes(reason) ? prev.filter(r => r !== reason) : [...prev, reason]
+    );
+  };
 
   useEffect(() => {
     if (!clientId) return;
@@ -46,6 +58,10 @@ export default function SurveyPage() {
     setSubmitting(true);
     setError(null);
 
+    const formattedFeedback = selectedReasons.length > 0
+      ? `[Opções: ${selectedReasons.join(', ')}] ${feedback}`
+      : feedback;
+
     try {
       const res = await fetch('/api/nps', {
         method: 'POST',
@@ -53,7 +69,7 @@ export default function SurveyPage() {
         body: JSON.stringify({
           clientId,
           score,
-          feedback,
+          feedback: formattedFeedback,
         }),
       });
 
@@ -104,6 +120,23 @@ export default function SurveyPage() {
               <p className="text-neutral-500 dark:text-neutral-400 text-sm max-w-md">
                 Muito obrigado{customerName ? `, ${customerName}` : ''}! Seu feedback é muito valioso para mantermos a qualidade do nosso serviço.
               </p>
+              {score !== null && score >= 9 && (
+                <div className="pt-4 animate-fadeIn">
+                  <div className="bg-primary-50 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900/50 p-4 rounded-2xl space-y-3">
+                    <p className="text-xs font-bold text-primary-700 dark:text-primary-400">
+                      Ficamos muito felizes! Que tal compartilhar sua nota no Google da Click Marido?
+                    </p>
+                    <a
+                      href="https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUrcGqqljv_U"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white text-xs font-black py-2 px-5 rounded-xl shadow-md transition-all gap-1.5"
+                    >
+                      ⭐ Avaliar no Google
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="pt-2 text-xs text-neutral-400 font-mono">
               Click Marido — Atendimento Residencial
@@ -143,7 +176,7 @@ export default function SurveyPage() {
                   <button
                     key={num}
                     type="button"
-                    onClick={() => setScore(num)}
+                    onClick={() => handleScoreChange(num)}
                     className={`h-11 w-11 md:h-12 md:w-12 text-sm font-bold rounded-full border transition-all duration-200 flex items-center justify-center select-none ${
                       score === num
                         ? getSelectedColor(num)
@@ -163,14 +196,69 @@ export default function SurveyPage() {
                 <span>10 - Extremamente provável</span>
               </div>
 
+              {/* Opções de Justificativa com base na nota */}
+              {score !== null && (
+                <div className="space-y-3 animate-fadeIn">
+                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
+                    {score >= 9
+                      ? "O que você mais gostou no nosso serviço? (Selecione)"
+                      : score >= 7
+                      ? "O que faltou para a sua experiência ser nota 10? (Selecione)"
+                      : "O que poderíamos ter feito melhor? (Selecione)"}
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {(score >= 9
+                      ? [
+                          'Pontualidade e compromisso',
+                          'Limpeza e zelo pelo ambiente',
+                          'Educação e postura do técnico',
+                          'Agilidade na resolução do serviço'
+                        ]
+                      : score >= 7
+                      ? [
+                          'Preços mais competitivos',
+                          'Agilidade no início do atendimento',
+                          'Mais opções de parcelamento',
+                          'Explicações técnicas detalhadas'
+                        ]
+                      : [
+                          'Pontualidade do técnico',
+                          'Limpeza do ambiente pós-serviço',
+                          'Qualidade e acabamento do serviço',
+                          'Preço cobrado',
+                          'Cordialidade / Atendimento'
+                        ]
+                    ).map((reason) => (
+                      <button
+                        key={reason}
+                        type="button"
+                        onClick={() => handleReasonToggle(reason)}
+                        className={`text-left text-xs py-2.5 px-3.5 rounded-xl border font-semibold transition-all duration-200 flex items-center justify-between ${
+                          selectedReasons.includes(reason)
+                            ? 'bg-primary-50 dark:bg-primary-950/20 text-primary-600 dark:text-primary-400 border-primary-500 font-bold'
+                            : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
+                        }`}
+                      >
+                        <span>{reason}</span>
+                        {selectedReasons.includes(reason) && (
+                          <svg className="h-4.5 w-4.5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Área de Comentário */}
               {score !== null && (
                 <div className="space-y-2 animate-fadeIn">
-                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                    Conte-nos mais sobre a sua nota (opcional):
+                  <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
+                    Comentários adicionais (opcional):
                   </label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
                     placeholder={getPlaceholder()}

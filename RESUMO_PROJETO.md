@@ -1,11 +1,18 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Correções do sistema executadas com 100% de sucesso. Integrada a inteligência de calendário dinâmico (transição mensal de 10 dias) no Dashboard e Relatórios Financeiros, garantindo que os dados de produção recentes de junho fiquem visíveis imediatamente na transição de mês. Deploy estável concluído.
+- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks estável concluído.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 01/07/2026 - 15:45
+- **Última Atualização:** 01/07/2026 - 16:15
 
 ## Histórico de Alterações
+
+### 01/07/2026 - 16:15
+- **Evolução e Melhoria Completa no Módulo NPS:**
+  - **Endpoint Público e Seguro:** A API de POST do NPS ([route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/nps/route.ts)) agora aceita submissões anônimas dos clientes, validando no banco se o `clientId` existe de fato para proteger a segurança do endpoint.
+  - **Layout de Formulário Dinâmico:** Enriquecida a página de pesquisa do cliente ([page.tsx - Survey](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/survey/[id]/page.tsx)) com checkboxes de múltiplos motivos dinâmicos baseados na nota (Promotor, Neutro, Detrator) e botão para avaliar no Google.
+  - **Visualização Visual no Dashboard:** O histórico administrativo de avaliações ([page.tsx - Dashboard](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/nps/page.tsx)) agora parseia os feedbacks estruturados do banco de dados e exibe os motivos como tags coloridas no histórico.
+  - **Correção da URL no Cron:** Ajustado o redirecionamento dinâmico no cron de WhatsApp para apontar para a rota pública `/survey/[id]`.
 
 ### 01/07/2026 - 15:50
 - **Varredura e Análise de Sistemas, Integrações e Automações:**
@@ -101,8 +108,8 @@
   - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (convertidos com `Number(...)`).
 
 ## TODOs / Próximos Passos
-- [ ] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
-- [ ] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
-- [ ] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
+- [x] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
+- [x] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
+- [x] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
 - [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.

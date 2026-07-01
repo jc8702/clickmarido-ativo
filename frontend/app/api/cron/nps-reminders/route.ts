@@ -73,9 +73,9 @@ export async function GET(request: NextRequest) {
 
         // Se tem telefone válido, envia notificação
         if (payment.customer.phone) {
-          // Link dinâmico da pesquisa (usando a URL de produção ou localhost)
+          // Link dinâmico da pesquisa (usando a rota pública /survey/[id])
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
-          const npsLink = `${appUrl}/nps?clientId=${payment.customerId}&paymentId=${payment.id}`;
+          const npsLink = `${appUrl}/survey/${payment.customerId}?paymentId=${payment.id}`;
 
           // Enviar WhatsApp
           const result = await sendWhatsAppNotification({

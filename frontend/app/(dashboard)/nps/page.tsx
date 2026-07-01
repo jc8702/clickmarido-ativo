@@ -16,6 +16,17 @@ export default function NPSPage() {
     limit: 10,
   });
 
+  const parseFeedback = (feedbackText: string | null) => {
+    if (!feedbackText) return { options: [], comment: '' };
+    const match = feedbackText.match(/^\[Opções: (.*?)\]\s*(.*)$/s);
+    if (match) {
+      const options = match[1].split(',').map(o => o.trim());
+      const comment = match[2];
+      return { options, comment };
+    }
+    return { options: [], comment: feedbackText };
+  };
+
   const getClassification = (score: number) => {
     if (score >= 75) return { label: 'Zona de Excelência', color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50' };
     if (score >= 50) return { label: 'Zona de Qualidade', color: 'text-sky-500 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50' };
@@ -208,8 +219,41 @@ export default function NPSPage() {
                         <TableCell className="whitespace-nowrap text-sm">
                           {getScoreBadge(item.score)}
                         </TableCell>
-                        <TableCell className="text-sm text-neutral-600 dark:text-neutral-300 max-w-xs truncate">
-                          {item.feedback || <span className="text-neutral-400 italic">Sem comentário</span>}
+                        <TableCell className="text-sm text-neutral-600 dark:text-neutral-300 max-w-md">
+                          {(() => {
+                            const { options, comment } = parseFeedback(item.feedback);
+                            return (
+                              <div className="space-y-1.5">
+                                {options.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {options.map((opt) => (
+                                      <span
+                                        key={opt}
+                                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                          item.score >= 9
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/40'
+                                            : item.score >= 7
+                                            ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/40'
+                                            : 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/40'
+                                        }`}
+                                      >
+                                        {opt}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {comment ? (
+                                  <div className="truncate max-w-xs" title={comment}>
+                                    {comment}
+                                  </div>
+                                ) : options.length > 0 ? (
+                                  <span className="text-neutral-400 text-xs italic">Sem comentário adicional</span>
+                                ) : (
+                                  <span className="text-neutral-400 italic">Sem comentário</span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                       </TableRow>
                     ))

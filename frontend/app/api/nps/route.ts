@@ -67,15 +67,9 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 }
 
-// Submit a new NPS score - requer autenticação para evitar manipulação
+// Submit a new NPS score - rota pública para clientes finais responderem à pesquisa
 export async function POST(req: NextRequest): Promise<Response> {
   try {
-    // Autenticação obrigatória
-    const auth = await verifyAuth(req);
-    if (!auth.success) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
     const body = await req.json();
     const { clientId, score, feedback } = body;
 
@@ -83,14 +77,25 @@ export async function POST(req: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'clientId and score are required' }, { status: 400 });
     }
 
-    if (score < 0 || score > 10) {
-      return NextResponse.json({ error: 'score must be between 0 and 10' }, { status: 400 });
+    const parsedScore = parseInt(score, 10);
+    if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 10) {
+      return NextResponse.json({ error: 'score must be an integer between 0 and 10' }, { status: 400 });
+    }
+
+    // Validar se o cliente existe de fato para segurança do endpoint
+    const customerExists = await prisma.customer.findUnique({
+      where: { id: clientId },
+      select: { id: true },
+    });
+
+    if (!customerExists) {
+      return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
     const nps = await prisma.nPS.create({
       data: {
         clientId,
-        score,
+        score: parsedScore,
         feedback: feedback || null,
       }
     });
