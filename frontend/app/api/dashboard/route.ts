@@ -9,7 +9,12 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Inteligência de Transição de Mês:
+    // Se estivermos nos primeiros 10 dias do mês, buscar dados a partir do início do mês anterior.
+    let startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (now.getDate() <= 10) {
+      startOfMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    }
 
     // 1. Clientes Totais
     const customersTotal = await prisma.customer.count();

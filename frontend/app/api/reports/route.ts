@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
     const exportParam = searchParams.get('export');
 
     const now = new Date();
-    const startDate = startDateParam ? new Date(startDateParam) : new Date(now.getFullYear(), now.getMonth(), 1);
+    // Inteligência de Transição de Mês:
+    // Por padrão (sem filtros explícitos), se estivermos nos primeiros 10 dias do mês,
+    // exibir dados a partir do início do mês anterior.
+    let startDate = startDateParam ? new Date(startDateParam) : new Date(now.getFullYear(), now.getMonth(), 1);
+    if (!startDateParam && now.getDate() <= 10) {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    }
     const endDate = endDateParam ? new Date(endDateParam) : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     // Ajustar fim do dia para incluir tudo
