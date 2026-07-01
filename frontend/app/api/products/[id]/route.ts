@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { productSchema } from '@/lib/validations/product.schema';
 import { validateToken } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 type RouteParams = { params: Promise<{ id: string }> };
 

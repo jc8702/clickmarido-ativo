@@ -1,11 +1,28 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Arquitetura do CRM e Pré-Vendas 100% reestruturada e homologada. APIs de leads, eventos, timeline, agendamentos e transações de qualificação operando em banco remoto. Kanban curto de 7 etapas ativo no frontend com Drag & Drop, Drawer de qualificação avançada contendo BANT/CHAMP/GPCT/SPIN e cockpit analítico de insights comercial atualizado. Deploy de produção estável e verificado publicado com sucesso na Vercel: `https://clickmarido-ativo-frontend.vercel.app`.
+- **Status Atual:** Correções do sistema de todos os módulos (Fase 1: Estabilização do Domínio) executadas com 100% de sucesso. Banco de dados sincronizado localmente com enums nativos no PostgreSQL, eliminando todas as inconsistências de status críticas (P0). Rotas protegidas com validateToken centralizado e PrismaClient unificado em singleton. Build do Next.js verificado e compilando sem avisos de tipos ou quebras.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 29/06/2026 - 13:58
+- **Última Atualização:** 01/07/2026 - 14:50
 
 ## Histórico de Alterações
+
+### 01/07/2026 - 14:50
+- **Estabilização do Domínio & Correções Críticas (Fase 1):**
+  - **Prisma Schema e Banco de Dados:** Criados enums nativos (`QuotationStatus`, `ServiceOrderStatus`, `PaymentStatus`, `InvoiceStatus`, `PurchaseOrderStatus`, `ExpenseStatus`, `AppointmentStatusModel`) e atualizados os modelos no `schema.prisma`. Sincronização executada com sucesso via `db push`.
+  - **P0-1: Normalização de Status de Pagamento:** Webhook Asaas e relatórios consolidados no status `confirmado`. Webhook Asaas emite faturas com status `emitida` (não `gerada`).
+  - **P0-2: Dashboard Sync:** APIs e UI corrigidos para exibir status `em_execucao` em vez de `em_progresso` para ordens de serviço ativas.
+  - **P0-3: Quotation View:** Removido o status legado `'approved'` no frontend, padronizando em `'aceito'`.
+  - **P0-5: Purchase Order History:** Ajustado gênero de `'recebido'` para `'recebida'`.
+  - **P0-7: Kanban de Orçamentos:** Inserida coluna `'cancelado'` com cor e label correspondentes no fluxo do Kanban.
+  - **Unificação de Autenticação e Whitelist:**
+    - Corrigido bypass crítico no cron SLA-Check por meio do helper `verifyCronSecret()` que exige configuração obrigatória do token.
+    - Adicionada autenticação em rotas órfãs: `cron/sla`, `appointments/[id]`, `appointments/[id]/status`, `appointments/conflicts`, `appointments/technician/[id]/week`, `reviews/summary` e `reviews/technician/[id]`.
+    - Implementado whitelist de campos em `appointments/[id]` contra mass-assignment (`APPOINTMENT_ALLOWED_FIELDS`).
+    - Analytics real (sem mocks) implementado no banco sob autenticação JWT.
+  - **Remoção de Prisma Client Múltiplos:** Todos os 14 arquivos que instanciavam `new PrismaClient()` migrados para usar a instância global `@/lib/prisma`.
+  - **Ledger Financeiro Consistente:** Campo `balance` em `FinancialTransaction` calculado a partir do histórico de saldo anterior da conta.
+  - **STATUS-MAP:** Criados `lib/status-map.ts` e `docs/STATUS-MAP.md` servindo como documentação oficial.
 
 ### 29/06/2026 - 13:58
 - **Homologação e Deploy de Produção Final na Vercel:**
@@ -75,5 +92,6 @@
 - [x] Integrar Drag & Drop nativo HTML5 no Kanban.
 - [x] Atualizar tela de Insights Comerciais com novas tabelas de eficiência e KPIs.
 - [x] Realizar o deploy de produção estável e verificado na Vercel.
+- [x] Executar estabilização do domínio, enums de status, auth de crons/rotas e singleton Prisma (Fase 1).
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
 - [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.

@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET;
-
-function decodeToken(request: NextRequest): { userId: string; email: string; role: string } | null {
-  if (!JWT_SECRET) return null;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  try {
-    return jwt.verify(authHeader.substring(7), JWT_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+import { validateToken } from '@/lib/auth';
 
 type RouteParams = { params: Promise<{ id: string }> };
 

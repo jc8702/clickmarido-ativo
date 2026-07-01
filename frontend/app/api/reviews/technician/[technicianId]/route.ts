@@ -1,13 +1,16 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ technicianId: string }> }
 ) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { technicianId } = await params;
 
     const technician = await prisma.technician.findUnique({

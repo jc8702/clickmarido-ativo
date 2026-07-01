@@ -13,15 +13,27 @@ export async function logFinancialTransaction(params: {
   userEmail?: string;
 }) {
   try {
+    const debit = params.debit || 0;
+    const credit = params.credit || 0;
+
+    // Buscar a última transação para calcular o saldo acumulado
+    const lastTransaction = await prisma.financialTransaction.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { balance: true },
+    });
+
+    const prevBalance = lastTransaction?.balance ? Number(lastTransaction.balance) : 0;
+    const newBalance = prevBalance + credit - debit;
+
     await prisma.financialTransaction.create({
       data: {
         type: params.type,
         invoiceId: params.invoiceId,
         paymentId: params.paymentId,
         expenseId: params.expenseId,
-        debit: params.debit || 0,
-        credit: params.credit || 0,
-        balance: 0, // Should be calculated in a real ledger, keeping 0 for now
+        debit,
+        credit,
+        balance: newBalance,
         description: params.description,
         notes: params.notes,
         userId: params.userId,

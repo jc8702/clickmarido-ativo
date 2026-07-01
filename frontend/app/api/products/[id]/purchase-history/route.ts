@@ -124,7 +124,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Estatísticas de compra do SKU
     const completedPurchases = purchaseItems.filter(
-      (item) => item.purchaseOrder.status === 'recebido' || item.purchaseOrder.status === 'aprovado'
+      (item) => item.purchaseOrder.status === 'recebida' || item.purchaseOrder.status === 'aprovada'
     );
     
     const totalSpent = completedPurchases.reduce((acc, curr) => acc + Number(curr.subtotal), 0);

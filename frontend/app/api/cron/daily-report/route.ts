@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     // 4. Pagamentos recebidos hoje
     const paymentsReceived = await prisma.payment.count({
       where: {
-        status: 'pago',
+        status: 'confirmado',
         paidAt: {
           gte: todayStart,
           lte: todayEnd,
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     // 5. Total faturado hoje
     const totalRevenueSum = await prisma.payment.aggregate({
       where: {
-        status: 'pago',
+        status: 'confirmado',
         paidAt: {
           gte: todayStart,
           lte: todayEnd,

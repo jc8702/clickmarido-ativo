@@ -42,6 +42,7 @@ const statusColors: Record<string, 'primary' | 'success' | 'warning' | 'danger' 
   aceito: 'success',
   aprovado: 'success',
   rejeitado: 'danger',
+  cancelado: 'danger',
 };
 
 const statusLabels: Record<string, string> = {
@@ -51,9 +52,10 @@ const statusLabels: Record<string, string> = {
   aceito: 'Aprovado',
   aprovado: 'Aprovado',
   rejeitado: 'Rejeitado',
+  cancelado: 'Cancelado',
 };
 
-const columns = ['rascunho', 'pendente', 'enviado', 'aceito', 'rejeitado'];
+const columns = ['rascunho', 'pendente', 'enviado', 'aceito', 'rejeitado', 'cancelado'];
 
 export default function QuotationsPage() {
   const { user, logout } = useAuth();

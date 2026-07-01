@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyCronSecret } from '@/lib/auth';
 
 // SLA limite de tempo de primeira resposta (ex: 15 minutos = 15 * 60 * 1000 ms)
 const SLA_LIMIT_MS = 15 * 60 * 1000;
 
 export async function GET(req: Request) {
   try {
+    if (!verifyCronSecret(req)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const cutoffTime = new Date(Date.now() - SLA_LIMIT_MS);
     
     // Busca leads criados antes do cutoffTime, que ainda não tiveram contato (firstResponseTime = null)

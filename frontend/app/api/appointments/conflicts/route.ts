@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const technicianId = searchParams.get('technicianId');
     const date = searchParams.get('date');

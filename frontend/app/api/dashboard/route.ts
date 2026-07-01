@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // 4. Ordens / Serviços Em Progresso (agendadas e em progresso)
     const ordersInProgress = await prisma.serviceOrder.count({
       where: {
-        status: { in: ['agendada', 'em_progresso'] }
+        status: { in: ['agendada', 'em_execucao'] }
       }
     });
 

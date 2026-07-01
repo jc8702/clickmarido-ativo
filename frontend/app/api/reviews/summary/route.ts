@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const reviews = await prisma.review.findMany({
       include: {
         customer: {

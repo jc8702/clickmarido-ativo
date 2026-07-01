@@ -1,13 +1,17 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
+import { APPOINTMENT_ALLOWED_FIELDS } from '@/lib/status-map';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     const appointment = await prisma.appointment.findUnique({
@@ -62,6 +66,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -84,9 +92,24 @@ export async function PATCH(
       );
     }
 
+    // Anti mass-assignment: aceitar apenas campos permitidos
+    const safeData: Record<string, unknown> = {};
+    for (const field of APPOINTMENT_ALLOWED_FIELDS) {
+      if (body[field] !== undefined) {
+        safeData[field] = body[field];
+      }
+    }
+
+    if (Object.keys(safeData).length === 0) {
+      return NextResponse.json(
+        { error: 'Nenhum campo válido para atualizar' },
+        { status: 400 }
+      );
+    }
+
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
-      data: body,
+      data: safeData,
       include: {
         serviceOrder: true,
         technician: true,
@@ -109,6 +132,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     const appointment = await prisma.appointment.findUnique({
@@ -144,3 +171,4 @@ export async function DELETE(
     );
   }
 }
+

@@ -60,3 +60,15 @@ export function validateToken(request: NextRequest): { userId: string; email: st
     return null;
   }
 }
+
+/**
+ * Verifica CRON_SECRET no header Authorization.
+ * Retorna true se autenticado, false caso contrário.
+ * SEGURO: se CRON_SECRET não estiver configurado, REJEITA a request.
+ */
+export function verifyCronSecret(request: NextRequest | Request): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return false; // Não configurado = bloqueado
+  const authHeader = request.headers.get('authorization');
+  return authHeader === `Bearer ${cronSecret}`;
+}

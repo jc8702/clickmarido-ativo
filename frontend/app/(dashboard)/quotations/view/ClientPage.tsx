@@ -36,7 +36,7 @@ function QuotationContent() {
     );
   }
 
-  if (approved || data.status === 'approved' || data.status === 'aceito') {
+  if (approved || data.status === 'aceito') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-green-900/20 p-4">
         <div className="bg-white dark:bg-neutral-800 p-8 rounded shadow text-center max-w-md w-full border-t-4 border-green-500 border border-neutral-200 dark:border-neutral-700">

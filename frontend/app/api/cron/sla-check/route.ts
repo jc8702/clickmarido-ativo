@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { LeadStatus, LeadFunnelStage, LeadEventType } from '@prisma/client';
+import { verifyCronSecret } from '@/lib/auth';
 
 // Cron job: Verifica leads estagnados e quebra de SLA
 // Pode ser chamado via Vercel Cron ou external scheduler
@@ -20,11 +21,8 @@ const STALE_THRESHOLDS = {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar secret para segurança
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Verificar secret para segurança (SEGURO: rejeita se não configurado)
+    if (!verifyCronSecret(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

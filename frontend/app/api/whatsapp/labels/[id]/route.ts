@@ -1,27 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
-
-const prisma = new PrismaClient();
-
-function getUserId(request: NextRequest): string | null {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) return null;
-  try {
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'clickmarido_secret') as { userId: string };
-    return decoded.userId;
-  } catch {
-    return null;
-  }
-}
+import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
 // DELETE - Deletar etiqueta
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
+  const auth = validateToken(request);
+  const userId = auth?.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
@@ -53,7 +40,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = getUserId(request);
+  const auth = validateToken(request);
+  const userId = auth?.userId;
   if (!userId) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }

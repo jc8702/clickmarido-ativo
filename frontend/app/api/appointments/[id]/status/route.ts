@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { validateToken } from '@/lib/auth';
 
 // Transições válidas de status
 const validTransitions: Record<string, string[]> = {
@@ -18,6 +17,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { status } = body;

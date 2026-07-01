@@ -51,7 +51,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     }
 
     // 5. Idempotência: se já está pago, ignorar
-    if (payment.status === 'pago') {
+    if (payment.status === 'confirmado') {
       console.log(`[WEBHOOK ASAAS] Pagamento ${payment.id} já processado`);
       return NextResponse.json({ received: true, status: 'already_processed' });
     }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const updated = await prisma.payment.update({
       where: { id: payment.id },
       data: {
-        status: 'pago',
+        status: 'confirmado',
         paidAt: new Date(payload.confirmedDate || new Date()),
       },
       include: { quotation: true, customer: true },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest): Promise<Response> {
         entityId: payment.id,
         action: 'updated',
         oldValue: { status: oldStatus },
-        newValue: { status: 'pago' },
+        newValue: { status: 'confirmado' },
         createdBy: 'system_webhook_asaas',
       },
     });
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest): Promise<Response> {
               subtotal,
               taxAmount,
               totalAmount,
-              status: 'gerada',
+              status: 'emitida',
               description: `Nota fiscal referente ao pagamento do orçamento ${payment.quotationId.slice(-6).toUpperCase()}`,
             },
           });

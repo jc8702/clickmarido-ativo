@@ -171,14 +171,14 @@ export default function Dashboard() {
 
   const statusBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'neutral'> = {
     agendada: 'primary',
-    em_progresso: 'warning',
+    em_execucao: 'warning',
     concluida: 'success',
     cancelada: 'danger',
   };
 
   const statusLabels: Record<string, string> = {
     agendada: 'Agendada',
-    em_progresso: 'Em Execução',
+    em_execucao: 'Em Execução',
     concluida: 'Concluída',
     cancelada: 'Cancelada',
   };

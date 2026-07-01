@@ -70,7 +70,7 @@ model Quotation {
   customerId     String
   items          QuotationItem[]
   total          Decimal         @default(0) @db.Decimal(10, 2)
-  status         String          @default("rascunho")
+  status         QuotationStatus          @default(rascunho)
   temperature    String          @default("MORNO") // QUENTE, MORNO, FRIO
   notes          String          @default("")
   createdAt      DateTime        @default(now())
@@ -190,7 +190,7 @@ model ServiceOrder {
   scheduledTime  DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
-  status         String              @default("agendada") @db.VarChar(20)
+  status         ServiceOrderStatus              @default(agendada)
   address        String              @default("") @db.VarChar(500)
   notes          String              @default("")
   finalTotal     Decimal             @default(0) @db.Decimal(10, 2)
@@ -225,7 +225,7 @@ model Payment {
   customerId  String
   amount      Decimal    @default(0) @db.Decimal(10, 2)
   method      String     @default("pix") @db.VarChar(20)
-  status      String     @default("pendente") @db.VarChar(20)
+  status      PaymentStatus     @default(pendente)
   pixCode     String     @default("") @db.Text
   description String     @default("")
   paidAt      DateTime?
@@ -311,7 +311,7 @@ model Invoice {
   discountAmount Decimal? @default(0) @db.Decimal(10, 2)
 
   // Status
-  status String  @default("rascunho")
+  status InvoiceStatus  @default(rascunho)
   nfeUrl String? @db.Text
 
   // Fiscal
@@ -357,7 +357,7 @@ model Expense {
   paidAt      DateTime?
 
   // Status
-  status String @default("pendente")
+  status ExpenseStatus @default(pendente)
 
   // Documento
   documentType   String? // NOTA_FISCAL, RECIBO, OUTRO
@@ -437,7 +437,7 @@ model PurchaseOrder {
   quotationId          String?
   serviceOrderId       String?
   expenseId            String?
-  status               String               @default("rascunho")
+  status               PurchaseOrderStatus               @default(rascunho)
   issueDate            DateTime             @default(now())
   expectedDeliveryDate DateTime?
   deliveredAt          DateTime?
@@ -603,7 +603,7 @@ model Appointment {
   // Campos
   date     DateTime
   duration Int // minutos
-  status   String   @default("agendada") @db.VarChar(20) // agendada, confirmada, em_andamento, concluida, cancelada, nao_compareceu
+  status   AppointmentStatusModel   @default(agendada) // agendada, confirmada, em_andamento, concluida, cancelada, nao_compareceu
   notes    String?  @db.Text
   location String   @db.VarChar(500)
 
@@ -1082,3 +1082,56 @@ model OperationalAlert {
   @@index([leadId])
   @@map("operational_alerts")
 }
+
+enum QuotationStatus {
+  rascunho
+  pendente
+  enviado
+  aceito
+  rejeitado
+  cancelado
+}
+
+enum ServiceOrderStatus {
+  agendada
+  em_execucao
+  concluida
+  cancelada
+}
+
+enum PaymentStatus {
+  pendente
+  confirmado
+  cancelado
+}
+
+enum InvoiceStatus {
+  rascunho
+  emitida
+  paga
+  cancelada
+}
+
+enum PurchaseOrderStatus {
+  rascunho
+  emitida
+  aprovada
+  recebida
+  cancelada
+}
+
+enum ExpenseStatus {
+  pendente
+  paga
+  cancelada
+}
+
+enum AppointmentStatusModel {
+  agendada
+  confirmada
+  em_andamento
+  concluida
+  cancelada
+  nao_compareceu
+}
+
