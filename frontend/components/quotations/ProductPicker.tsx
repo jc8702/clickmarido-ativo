@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Modal } from '@/components/Modal';
 import { Button } from '@/components/Button';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
 interface Product {
   id: string;
@@ -76,13 +77,7 @@ export function ProductPicker({ onSelect, onClose }: ProductPickerProps) {
     searchInputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useEscapeToClose(true, onClose);
 
   const handleSelect = (product: Product) => {
     setSelectedProduct(product);

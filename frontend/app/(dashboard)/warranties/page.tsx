@@ -35,10 +35,13 @@ export default function WarrantiesPage() {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeWarrantyId, setActiveWarrantyId] = useState<string | null>(null);
+  const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [claimLoading, setClaimLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEscapeToClose(activeWarrantyId !== null, () => setActiveWarrantyId(null));
+  useEscapeToClose(deleteModalId !== null, () => setDeleteModalId(null));
 
   const fetchWarranties = async () => {
     setLoading(true);
@@ -77,6 +80,21 @@ export default function WarrantiesPage() {
       alert('Erro ao acionar garantia.');
     } finally {
       setClaimLoading(false);
+    }
+  };
+
+  const handleDeleteWarranty = async () => {
+    if (!deleteModalId) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/warranties/${deleteModalId}`);
+      setDeleteModalId(null);
+      fetchWarranties();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir garantia.');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -147,20 +165,29 @@ export default function WarrantiesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {!expired ? (
+                        <div className="flex items-center gap-2">
+                          {!expired ? (
+                            <Button 
+                              variant="primary" 
+                              size="sm" 
+                              onClick={() => {
+                                setActiveWarrantyId(row.id);
+                                setNotes('');
+                              }}
+                            >
+                              Acionar Garantia
+                            </Button>
+                          ) : (
+                            <span className="text-neutral-400 dark:text-neutral-500 text-xs font-semibold whitespace-nowrap">Sem cobertura</span>
+                          )}
                           <Button 
-                            variant="primary" 
+                            variant="danger" 
                             size="sm" 
-                            onClick={() => {
-                              setActiveWarrantyId(row.id);
-                              setNotes('');
-                            }}
+                            onClick={() => setDeleteModalId(row.id)}
                           >
-                            Acionar Garantia
+                            Excluir
                           </Button>
-                        ) : (
-                          <span className="text-neutral-400 dark:text-neutral-500 text-xs font-semibold">Sem cobertura</span>
-                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -202,6 +229,26 @@ export default function WarrantiesPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={deleteModalId !== null}
+        onClose={() => setDeleteModalId(null)}
+        title="Excluir Garantia"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Tem certeza que deseja excluir esta garantia permanentemente?
+          </p>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={() => setDeleteModalId(null)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDeleteWarranty} isLoading={deleteLoading}>
+              Sim, Excluir
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

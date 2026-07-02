@@ -9,6 +9,8 @@ import Button from '@/components/Button';
 import { useAuth } from '@/hooks/useAuth';
 import { LeadDetailsDrawer } from '@/components/leads/LeadDetailsDrawer';
 import { LeadCardRich } from '@/components/leads/LeadCardRich';
+import { Modal } from '@/components/Modal';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 import { leadCreateSchema, calculateInitialScore, type LeadCreateValues } from '@/lib/validations/lead.schema';
 import { 
   Users, 
@@ -32,7 +34,8 @@ import {
   Flame,
   Zap,
   Target,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -110,6 +113,8 @@ export default function PreVendasPage() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showLossModal, setShowLossModal] = useState(false);
   const [lossLeadId, setLossLeadId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
   
   // Drag and drop states
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
@@ -166,6 +171,11 @@ export default function PreVendasPage() {
   const [lossReason, setLossReason] = useState('SEM_ORCAMENTO');
   const [lossNotes, setLossNotes] = useState('');
   const [submittingLoss, setSubmittingLoss] = useState(false);
+
+  useEscapeToClose(showCreateModal, () => { setShowCreateModal(false); resetLead(); });
+  useEscapeToClose(showBulkModal, () => { setShowBulkModal(false); setBulkCsvText(''); setBulkPreview([]); });
+  useEscapeToClose(showLossModal, () => { setShowLossModal(false); setLossLeadId(null); setLossNotes(''); });
+  useEscapeToClose(showDeleteModal, () => { setShowDeleteModal(false); setDeleteLeadId(null); });
 
   const fetchLeads = () => {
     setRefreshing(true);
@@ -448,6 +458,29 @@ export default function PreVendasPage() {
     }
   };
 
+  const handleDeleteLead = async () => {
+    if (!deleteLeadId) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/leads/${deleteLeadId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success('Lead excluído com sucesso!');
+        setShowDeleteModal(false);
+        setDeleteLeadId(null);
+        setSelectedLeadId(null); // Fecha o drawer se estiver aberto
+        fetchLeads();
+      } else {
+        toast.error('Erro ao excluir lead.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao excluir lead.');
+    }
+  };
+
   // Ação rápida: Alterar prioridade diretamente do card
   const handleQuickPriorityChange = async (e: React.MouseEvent, leadId: string, currentPriority: string) => {
     e.stopPropagation();
@@ -612,6 +645,10 @@ export default function PreVendasPage() {
                           }
                           else if (action === 'reassign') {
                             toast.success('Abrir reatribuição...');
+                          }
+                          else if (action === 'delete') {
+                            setDeleteLeadId(leadId);
+                            setShowDeleteModal(true);
                           }
                         }}
                         onPriorityChange={async (leadId, newPriority) => {

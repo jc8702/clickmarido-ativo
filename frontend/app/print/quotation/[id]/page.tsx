@@ -83,7 +83,11 @@ export default function PrintQuotationPage() {
     // Escuta tecla Escape para fechar
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        window.close();
+        setShowApprovalModal((prev) => {
+          if (prev) return false;
+          window.close();
+          return prev;
+        });
       }
     };
     window.addEventListener('keydown', handleEscape);

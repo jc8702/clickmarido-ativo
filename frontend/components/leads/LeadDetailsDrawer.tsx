@@ -15,8 +15,10 @@ import {
   History,
   TrendingUp,
   ExternalLink,
-  Award
+  Award,
+  Trash2
 } from 'lucide-react';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 import toast from 'react-hot-toast';
 import { LeadTimeline } from './LeadTimeline';
 import { LeadFollowupForm } from './LeadFollowupForm';
@@ -99,6 +101,8 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
   const [qualifying, setQualifying] = useState(false);
   const [showLossModal, setShowLossModal] = useState(false);
   const [targetStage, setTargetStage] = useState<string | null>(null);
+
+  useEscapeToClose(!showLossModal, onClose);
 
   const fetchLeadData = async () => {
     if (!leadId) return;
@@ -221,6 +225,25 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Tem certeza que deseja excluir permanentemente este lead? Esta ação não pode ser desfeita.')) return;
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast.success('Lead excluído com sucesso!');
+        onLeadUpdated();
+        onClose();
+      } else {
+        toast.error('Erro ao excluir lead.');
+      }
+    } catch (error) {
+      toast.error('Erro ao excluir lead.');
+    }
+  };
+
   if (!lead) return null;
 
   return (
@@ -242,12 +265,21 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
               {lead.status}
             </Badge>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={handleDelete}
+              className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-all"
+              title="Excluir Lead"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Corpo Scrollável */}

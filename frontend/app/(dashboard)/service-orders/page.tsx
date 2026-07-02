@@ -56,6 +56,7 @@ export default function ServiceOrdersPage() {
 
   useEscapeToClose(activeModalId !== null, () => setActiveModalId(null));
   useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
+  useEscapeToClose(startModalId !== null, () => setStartModalId(null));
 
   const fetchOrders = async () => {
     setLoading(true);

@@ -27,6 +27,7 @@ import {
   AlertCircle,
   CheckCircle2,
   History,
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -295,6 +296,13 @@ export function LeadCardRich({ lead, onClick, onQuickAction, onPriorityChange }:
                     className="w-full px-3 py-1.5 text-left text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 flex items-center gap-2"
                   >
                     <UserPlus className="w-3 h-3" /> Reatribuir
+                  </button>
+                  <div className="border-t border-neutral-100 dark:border-neutral-700 my-1" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onQuickAction('delete', lead.id); setShowActions(false); }}
+                    className="w-full px-3 py-1.5 text-left text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-3 h-3" /> Excluir
                   </button>
                   <div className="border-t border-neutral-100 dark:border-neutral-700 my-1" />
                   <button
