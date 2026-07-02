@@ -14,12 +14,26 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
+    let technicianId: string | undefined;
+    try {
+      const body = await request.json();
+      technicianId = body.technicianId;
+    } catch (e) {
+      // Corpo vazio, tudo bem
+    }
+
+    const dataToUpdate: any = {
+      status: 'em_execucao',
+      startedAt: new Date(),
+    };
+
+    if (technicianId !== undefined) {
+      dataToUpdate.technicianId = technicianId;
+    }
+
     const order = await prisma.serviceOrder.update({
       where: { id },
-      data: {
-        status: 'em_execucao',
-        startedAt: new Date(),
-      },
+      data: dataToUpdate,
       include: { customer: true, technician: true },
     });
 

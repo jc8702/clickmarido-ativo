@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Table, TableHead, TableHeader, TableRow, TableCell } from '@/components/Table';
 import { Badge } from '@/components/Badge';
 import { Modal } from '@/components/Modal';
+import { StartServiceOrderModal } from '@/components/service-orders/StartServiceOrderModal';
 import ServiceOrderForm from '../../../components/ServiceOrderForm';
 import CreateServiceOrderForm from '../../../components/CreateServiceOrderForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -50,6 +51,7 @@ export default function ServiceOrdersPage() {
   const [orders, setOrders] = useState<ServiceOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeModalId, setActiveModalId] = useState<string | null>(null);
+  const [startModalId, setStartModalId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   useEscapeToClose(activeModalId !== null, () => setActiveModalId(null));
@@ -70,15 +72,6 @@ export default function ServiceOrdersPage() {
   useEffect(() => {
     fetchOrders();
   }, []);
-
-  const handleStart = async (id: string) => {
-    try {
-      await api.patch(`/service-orders/${id}/start`);
-      fetchOrders();
-    } catch (err) {
-      alert('Erro ao iniciar a OS.');
-    }
-  };
 
   const handleDeleteOrder = async (id: string) => {
     if (!confirm('Deseja realmente excluir esta ordem de serviço definitivamente?')) return;
@@ -158,7 +151,7 @@ export default function ServiceOrdersPage() {
                     <TableCell>
                       <div className="flex gap-2">
                         {row.status === 'agendada' && (
-                          <Button variant="primary" size="sm" onClick={() => handleStart(row.id)}>
+                          <Button variant="primary" size="sm" onClick={() => setStartModalId(row.id)}>
                             Iniciar
                           </Button>
                         )}
@@ -210,6 +203,16 @@ export default function ServiceOrdersPage() {
           }}
         />
       </Modal>
+
+      <StartServiceOrderModal
+        isOpen={startModalId !== null}
+        osId={startModalId}
+        onClose={() => setStartModalId(null)}
+        onSuccess={() => {
+          setStartModalId(null);
+          fetchOrders();
+        }}
+      />
     </div>
   );
 }

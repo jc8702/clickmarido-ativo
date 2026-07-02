@@ -226,6 +226,7 @@ model ServiceOrder {
   // Automação
   automationLog     Json?
   notificationsSent Json?
+  checklist         Json?
 
   @@index([quotationId])
   @@index([customerId])

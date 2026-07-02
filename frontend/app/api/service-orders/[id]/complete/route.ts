@@ -12,7 +12,7 @@ async function handleCompleteOS(request: NextRequest, id: string): Promise<Respo
 
     const body = await request.json();
     const finalTotal = body.final_total || body.finalTotal;
-    const { signerName, signatureData, notes } = body;
+    const { signerName, signatureData, notes, checklist } = body;
 
     const updateData: any = {
       status: 'concluida',
@@ -25,6 +25,10 @@ async function handleCompleteOS(request: NextRequest, id: string): Promise<Respo
 
     if (notes) {
       updateData.notes = notes;
+    }
+    
+    if (checklist) {
+      updateData.checklist = checklist;
     }
 
     const oldValue = await prisma.serviceOrder.findUnique({

@@ -33,10 +33,16 @@ interface MaterialUsage {
 }
 
 export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormProps) {
-  const [step, setStep] = useState<'details' | 'materials' | 'signature'>('details');
+  const [step, setStep] = useState<'details' | 'materials' | 'checklist' | 'signature'>('details');
   const [formData, setFormData] = useState({
     final_total: so.final_total || so.amount || 0,
     technician_notes: ''
+  });
+  const [checklist, setChecklist] = useState({
+    clean_area: false,
+    functionality_tested: false,
+    customer_oriented: false,
+    garbage_removed: false,
   });
   const [photos, setPhotos] = useState<{ before: File | null; after: File | null }>({
     before: null,
@@ -141,7 +147,8 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
         final_total: Number(formData.final_total),
         technician_notes: formData.technician_notes,
         before_photo_url,
-        after_photo_url
+        after_photo_url,
+        checklist
       };
       await api.patch(`/service-orders/${so.id}/complete`, completePayload);
 
@@ -164,39 +171,58 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
   return (
     <div className="space-y-6">
       {/* Indicador de Abas */}
-      <div className="flex border-b border-neutral-200 dark:border-neutral-700">
+      <div className="flex border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto whitespace-nowrap hide-scrollbar">
         <button
           type="button"
           onClick={() => setStep('details')}
-          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
             step === 'details'
               ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
           }`}
         >
-          1. Detalhes & Fotos
+          1. Detalhes
         </button>
         <button
           type="button"
           onClick={() => setStep('materials')}
-          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
             step === 'materials'
               ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
           }`}
         >
-          2. Materiais Utilizados
+          2. Materiais
         </button>
         <button
           type="button"
-          onClick={() => setStep('signature')}
-          className={`flex-1 py-3 text-sm font-bold border-b-2 transition-all ${
+          onClick={() => setStep('checklist')}
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
+            step === 'checklist'
+              ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+              : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+          }`}
+        >
+          3. Checklist
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const allChecked = Object.values(checklist).every(v => v);
+            if (!allChecked) {
+              alert('Preencha todos os itens do checklist antes de ir para a assinatura.');
+              setStep('checklist');
+              return;
+            }
+            setStep('signature');
+          }}
+          className={`px-4 py-3 text-sm font-bold border-b-2 transition-all ${
             step === 'signature'
               ? 'border-primary-500 text-primary-600 dark:text-primary-400'
               : 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
           }`}
         >
-          3. Assinatura do Cliente
+          4. Assinatura
         </button>
       </div>
 
@@ -330,17 +356,81 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
 
           <div className="flex justify-between pt-4 border-t border-neutral-200 dark:border-neutral-700">
             <Button variant="secondary" onClick={() => setStep('details')} type="button">← Voltar</Button>
-            <Button onClick={() => setStep('signature')} type="button">Próximo: Assinatura →</Button>
+            <Button onClick={() => setStep('checklist')} type="button">Próximo: Checklist →</Button>
           </div>
         </div>
       )}
 
-      {/* Aba 3: Assinatura */}
+      {/* Aba 3: Checklist */}
+      {step === 'checklist' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-neutral-50 dark:bg-neutral-800 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700">
+            <h4 className="font-bold text-neutral-900 dark:text-neutral-100 mb-4">Checklist de Conclusão</h4>
+            <div className="space-y-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checklist.clean_area}
+                  onChange={(e) => setChecklist({ ...checklist, clean_area: e.target.checked })}
+                  className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-neutral-800 dark:text-neutral-200">A área de trabalho foi deixada limpa e organizada?</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checklist.functionality_tested}
+                  onChange={(e) => setChecklist({ ...checklist, functionality_tested: e.target.checked })}
+                  className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-neutral-800 dark:text-neutral-200">Foi realizado teste de funcionamento do serviço executado?</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checklist.customer_oriented}
+                  onChange={(e) => setChecklist({ ...checklist, customer_oriented: e.target.checked })}
+                  className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-neutral-800 dark:text-neutral-200">O cliente foi orientado sobre o serviço e suas garantias?</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checklist.garbage_removed}
+                  onChange={(e) => setChecklist({ ...checklist, garbage_removed: e.target.checked })}
+                  className="w-5 h-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-neutral-800 dark:text-neutral-200">Lixos e entulhos foram devidamente retirados do local?</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <Button variant="secondary" onClick={() => setStep('materials')} type="button">← Voltar</Button>
+            <Button onClick={() => {
+              const allChecked = Object.values(checklist).every(v => v);
+              if (!allChecked) {
+                alert('Preencha todos os itens do checklist antes de ir para a assinatura.');
+                return;
+              }
+              setStep('signature');
+            }} type="button">
+              Próximo: Assinatura →
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Aba 4: Assinatura */}
       {step === 'signature' && (
         <div className="space-y-4 animate-fade-in">
           <SignaturePad
             onSave={handleCompleteWithSignature}
-            onCancel={() => setStep('materials')}
+            onCancel={() => setStep('checklist')}
             isLoading={loading}
           />
         </div>
