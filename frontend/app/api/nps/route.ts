@@ -42,6 +42,12 @@ export async function GET(req: NextRequest): Promise<Response> {
       include: {
         customer: {
           select: { name: true, phone: true }
+        },
+        technician: {
+          select: { name: true, specialty: true }
+        },
+        serviceOrder: {
+          select: { number: true, completedAt: true }
         }
       }
     });
@@ -71,7 +77,7 @@ export async function GET(req: NextRequest): Promise<Response> {
 export async function POST(req: NextRequest): Promise<Response> {
   try {
     const body = await req.json();
-    const { clientId, score, feedback } = body;
+    const { clientId, score, feedback, serviceOrderId, technicianId, technicianScore } = body;
 
     if (!clientId || score === undefined) {
       return NextResponse.json({ error: 'clientId and score are required' }, { status: 400 });
@@ -80,6 +86,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     const parsedScore = parseInt(score, 10);
     if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 10) {
       return NextResponse.json({ error: 'score must be an integer between 0 and 10' }, { status: 400 });
+    }
+
+    let parsedTechScore = null;
+    if (technicianScore !== undefined && technicianScore !== null) {
+      parsedTechScore = parseInt(technicianScore, 10);
+      if (isNaN(parsedTechScore) || parsedTechScore < 1 || parsedTechScore > 5) {
+        return NextResponse.json({ error: 'technicianScore must be an integer between 1 and 5' }, { status: 400 });
+      }
     }
 
     // Validar se o cliente existe de fato para segurança do endpoint
@@ -97,6 +111,9 @@ export async function POST(req: NextRequest): Promise<Response> {
         clientId,
         score: parsedScore,
         feedback: feedback || null,
+        serviceOrderId: serviceOrderId || null,
+        technicianId: technicianId || null,
+        technicianScore: parsedTechScore,
       }
     });
 

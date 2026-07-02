@@ -1,16 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/Card';
 import { Button } from '@/components/Button';
 
 export default function SurveyPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const clientId = params?.id as string;
+  const serviceOrderId = searchParams?.get('os');
+  const technicianId = searchParams?.get('tech');
 
   const [customerName, setCustomerName] = useState<string>('');
+  const [technicianName, setTechnicianName] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
+  const [technicianScore, setTechnicianScore] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string>('');
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [loadingName, setLoadingName] = useState<boolean>(true);
@@ -21,6 +26,10 @@ export default function SurveyPage() {
   const handleScoreChange = (value: number) => {
     setScore(value);
     setSelectedReasons([]);
+  };
+
+  const handleTechScoreChange = (value: number) => {
+    setTechnicianScore(value);
   };
 
   const handleReasonToggle = (reason: string) => {
@@ -48,8 +57,24 @@ export default function SurveyPage() {
       }
     };
 
+    const fetchTechnicianName = async () => {
+      if (!technicianId) return;
+      try {
+        const res = await fetch(`/api/nps/technician/${technicianId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.technician && data.technician.name) {
+            setTechnicianName(data.technician.name);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar nome do técnico:', err);
+      }
+    };
+
     fetchCustomerName();
-  }, [clientId]);
+    fetchTechnicianName();
+  }, [clientId, technicianId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +95,9 @@ export default function SurveyPage() {
           clientId,
           score,
           feedback: formattedFeedback,
+          serviceOrderId,
+          technicianId,
+          technicianScore,
         }),
       });
 
@@ -148,7 +176,7 @@ export default function SurveyPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 p-4 py-12">
       <div className="w-full max-w-lg space-y-6">
         {/* Header/Logo */}
         <div className="text-center space-y-1">
@@ -159,7 +187,7 @@ export default function SurveyPage() {
         </div>
 
         <Card className="shadow-2xl border-neutral-100 dark:border-neutral-800">
-          <CardContent className="p-6 md:p-8 space-y-6">
+          <CardContent className="p-6 md:p-8 space-y-8">
             <div className="text-center space-y-2">
               <h1 className="text-xl md:text-2xl font-black text-neutral-900 dark:text-neutral-100 leading-tight">
                 {loadingName ? 'Olá!' : `Olá, ${customerName || 'Cliente Click Marido'}!`}
@@ -169,31 +197,30 @@ export default function SurveyPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* Régua de notas */}
-              <div className="grid grid-cols-6 gap-2 md:flex md:flex-wrap md:justify-center md:gap-2.5">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => handleScoreChange(num)}
-                    className={`h-11 w-11 md:h-12 md:w-12 text-sm font-bold rounded-full border transition-all duration-200 flex items-center justify-center select-none ${
-                      score === num
-                        ? getSelectedColor(num)
-                        : `bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 ${getScoreColor(
-                            num
-                          )}`
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
-
-              {/* Rótulos da Régua */}
-              <div className="flex justify-between text-[11px] text-neutral-400 dark:text-neutral-500 font-semibold px-1">
-                <span>0 - Pouco provável</span>
-                <span>10 - Extremamente provável</span>
+              <div className="space-y-2">
+                <div className="grid grid-cols-6 gap-2 md:flex md:flex-wrap md:justify-center md:gap-2.5">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => handleScoreChange(num)}
+                      className={`h-11 w-11 md:h-12 md:w-12 text-sm font-bold rounded-full border transition-all duration-200 flex items-center justify-center select-none ${
+                        score === num
+                          ? getSelectedColor(num)
+                          : \`bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 \${getScoreColor(num)}\`
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+                {/* Rótulos da Régua */}
+                <div className="flex justify-between text-[11px] text-neutral-400 dark:text-neutral-500 font-semibold px-1 pt-1">
+                  <span>0 - Pouco provável</span>
+                  <span>10 - Extremamente provável</span>
+                </div>
               </div>
 
               {/* Opções de Justificativa com base na nota */}
@@ -251,9 +278,40 @@ export default function SurveyPage() {
                 </div>
               )}
 
+              {/* Avaliação do Técnico (só mostra se tiver técnico e se já deu a nota principal) */}
+              {score !== null && technicianId && (
+                <div className="space-y-3 pt-4 border-t border-neutral-100 dark:border-neutral-800 animate-fadeIn">
+                  <label className="text-sm font-bold text-neutral-800 dark:text-neutral-200 block text-center">
+                    Como você avalia o serviço executado pelo técnico {technicianName ? <span className="text-primary-600 dark:text-primary-400">{technicianName}</span> : ''}?
+                  </label>
+                  <div className="flex justify-center gap-2 md:gap-4">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => handleTechScoreChange(num)}
+                        className={`transition-all duration-200 transform hover:scale-110 ${
+                          technicianScore && technicianScore >= num 
+                            ? 'text-amber-400' 
+                            : 'text-neutral-300 dark:text-neutral-700'
+                        }`}
+                      >
+                        <svg className="w-10 h-10 md:w-12 md:h-12 drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-[11px] text-neutral-400 dark:text-neutral-500 font-semibold px-4 pt-1">
+                    <span>Ruim</span>
+                    <span>Excelente</span>
+                  </div>
+                </div>
+              )}
+
               {/* Área de Comentário */}
               {score !== null && (
-                <div className="space-y-2 animate-fadeIn">
+                <div className="space-y-2 pt-2 animate-fadeIn">
                   <label className="text-xs font-bold text-neutral-700 dark:text-neutral-300 block">
                     Comentários adicionais (opcional):
                   </label>
@@ -279,7 +337,7 @@ export default function SurveyPage() {
                 variant="primary"
                 fullWidth
                 size="lg"
-                disabled={score === null || submitting}
+                disabled={score === null || submitting || (technicianId !== null && technicianScore === null)}
                 isLoading={submitting}
                 className="rounded-xl font-bold py-3 transition-transform hover:scale-[1.01]"
               >

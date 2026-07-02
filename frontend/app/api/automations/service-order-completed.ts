@@ -18,19 +18,7 @@ export async function handleServiceOrderCompleted(
       include: { quotation: true, customer: true },
     });
 
-    // 1.5 Enviar notificação de WhatsApp com link do NPS para o cliente
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
-    const surveyLink = `${appUrl}/survey/${serviceOrder.customerId}`;
-
-    fireAndForgetNotification({
-      phone: serviceOrder.customer.phone,
-      template: 'service_order_completed',
-      variables: {
-        customerName: serviceOrder.customer.name,
-        serviceOrderId: serviceOrder.id.slice(-6).toUpperCase(),
-        surveyLink: surveyLink,
-      },
-    });
+    // Notificação foi movida para o CRON de NPS (24h após execução)
 
     // 2. Check if payment already exists
     const existingPayment = await prisma.payment.findFirst({

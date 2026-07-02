@@ -45,6 +45,7 @@ model Technician {
   serviceOrders ServiceOrder[]
   appointments  Appointment[]
   reviews       Review[]
+  nps           NPS[]
 
   @@map("technicians")
 }
@@ -227,6 +228,8 @@ model ServiceOrder {
   automationLog     Json?
   notificationsSent Json?
   checklist         Json?
+
+  nps               NPS[]
 
   @@index([quotationId])
   @@index([customerId])
@@ -752,14 +755,22 @@ model NPS {
   score    Int // 0-10
   feedback String? @db.Text
 
+  // Técnico
+  serviceOrderId String?
+  technicianId   String?
+  technicianScore Int? // 1-5
+
   // Audit
   createdAt DateTime @default(now())
 
   // Relations
   customer Customer @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  technician Technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
 
   @@index([clientId])
   @@index([score])
+  @@index([technicianId])
   @@map("nps_surveys")
 }
 

@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Encontrar pagamentos confirmados nos últimos 30 dias
-    const recentPayments = await prisma.payment.findMany({
+    // Encontrar ordens de serviço concluídas nos últimos 30 dias
+    const recentOrders = await prisma.serviceOrder.findMany({
       where: {
-        status: 'confirmado',
-        confirmedAt: {
+        status: 'concluida',
+        completedAt: {
           gte: thirtyDaysAgo,
         },
       },
@@ -33,32 +33,35 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        technician: true,
       },
       orderBy: {
-        confirmedAt: 'desc',
+        completedAt: 'desc',
       },
     });
 
     // Filtrar clientes que NÃO responderam/receberam NPS recentemente
     const pendingCustomersMap = new Map();
 
-    for (const payment of recentPayments) {
-      if (!payment.customer) continue;
+    for (const order of recentOrders) {
+      if (!order.customer) continue;
       
       // Se o cliente já tem um NPS nos últimos 30 dias, ignorar
-      if (payment.customer.nps && payment.customer.nps.length > 0) {
+      if (order.customer.nps && order.customer.nps.length > 0) {
         continue;
       }
 
-      // Evitar duplicidade de cliente na lista
-      if (!pendingCustomersMap.has(payment.customerId)) {
-        pendingCustomersMap.set(payment.customerId, {
-          paymentId: payment.id,
-          customerId: payment.customer.id,
-          customerName: payment.customer.name,
-          customerPhone: payment.customer.phone,
-          paymentAmount: Number(payment.amount),
-          paymentDate: payment.confirmedAt,
+      // Evitar duplicidade de cliente na lista (pega a mais recente)
+      if (!pendingCustomersMap.has(order.customerId)) {
+        pendingCustomersMap.set(order.customerId, {
+          paymentId: order.id, // Manteve nome para compatibilidade com o hook atual
+          customerId: order.customer.id,
+          customerName: order.customer.name,
+          customerPhone: order.customer.phone,
+          paymentAmount: Number(order.totalValue), // Manteve nome
+          paymentDate: order.completedAt, // Manteve nome
+          osId: order.id,
+          technicianId: order.technicianId
         });
       }
     }
