@@ -82,6 +82,7 @@ export default function NPSPage() {
           <button 
             onClick={() => setActiveTab('dashboard')}
             className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'dashboard' ? 'bg-white dark:bg-neutral-700 shadow-sm text-primary-600 dark:text-primary-400' : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}`}
+          >
             Dashboard
           </button>
           <button 

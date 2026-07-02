@@ -209,7 +209,7 @@ export default function SurveyPage() {
                       className={`h-11 w-11 md:h-12 md:w-12 text-sm font-bold rounded-full border transition-all duration-200 flex items-center justify-center select-none ${
                         score === num
                           ? getSelectedColor(num)
-                          : \`bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 \${getScoreColor(num)}\`
+                          : 'bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-800 ' + getScoreColor(num)
                       }`}
                     >
                       {num}
