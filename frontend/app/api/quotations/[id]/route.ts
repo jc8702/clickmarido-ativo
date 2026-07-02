@@ -241,7 +241,7 @@ export async function PUT(
     if (body.status === 'enviado' && oldValue?.status !== 'enviado' && updated) {
       try {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
-        const quotationLink = `${appUrl}/quotations/view/${updated.id}`;
+        const quotationLink = `${appUrl}/print/quotation/${updated.id}`;
 
         const { sendWhatsAppNotification } = await import('@/lib/notifications/whatsapp');
 
