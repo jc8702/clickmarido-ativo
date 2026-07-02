@@ -3,15 +3,72 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
-import { useQuotation } from '@/hooks/useQuotations';
-
 export default function PrintQuotationPage() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const router = useRouter();
-  const { data: quote, isLoading } = useQuotation(id as string);
+  const [quote, setQuote] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [libLoaded, setLibLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        // 1. Tenta buscar da API autenticada se houver token no localStorage
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        let response = null;
+        if (token) {
+          response = await fetch(`/api/quotations/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+
+        // 2. Se falhar ou não tiver token, usa a API pública
+        if (!response || !response.ok) {
+          response = await fetch(`/api/quotations/public/${id}`);
+        }
+
+        if (response && response.ok) {
+          const rawData = await response.json();
+          // Mapeia os dados da API pública/privada para o formato esperado pelo layout
+          const mapped = {
+            id: rawData.id,
+            number: rawData.number,
+            createdAt: rawData.valid_until || rawData.createdAt || new Date().toISOString(),
+            validUntil: rawData.valid_until,
+            status: rawData.status,
+            total: rawData.total,
+            discountPercentage: rawData.discountPercentage || 0,
+            notes: rawData.notes,
+            customer: rawData.customer || {
+              name: rawData.customer_name,
+              phone: rawData.customer_phone,
+              email: rawData.customer_email || 'Não informado',
+            },
+            items: rawData.items ? rawData.items.map((item: any) => ({
+              product: { name: item.name || item.product?.name || '' },
+              quantity: item.quantity,
+              unitPrice: item.unit_price || item.unitPrice,
+            })) : []
+          };
+          setQuote(mapped);
+        } else {
+          setQuote(null);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar orçamento na página de impressão:', err);
+        setQuote(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
 
   useEffect(() => {
     // Escuta tecla Escape para fechar
