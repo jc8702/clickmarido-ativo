@@ -109,6 +109,7 @@ model Quotation {
   approvedAt          DateTime?
   approvedBy          String?  @db.VarChar(255)
   approvalIp          String?  @db.VarChar(50)
+  signatureImage      String?  @db.Text
 
   // Dados de Origem do Lead (rastreabilidade)
   leadId              String?  // ID do lead de origem

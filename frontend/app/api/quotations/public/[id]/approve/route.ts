@@ -29,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: 'Cotação não encontrada' }, { status: 404 });
     }
 
-    if (quotation.status === 'aprovado') {
+    if (quotation.status === 'aceito') {
       return NextResponse.json({ error: 'Esta cotação já foi aprovada anteriormente' }, { status: 400 });
     }
 
@@ -40,10 +40,11 @@ export async function POST(
     const updatedQuotation = await prisma.quotation.update({
       where: { id },
       data: {
-        status: 'aprovado',
+        status: 'aceito',
         approvedAt: new Date(),
         approvedBy: signatureName,
         approvalIp: ip,
+        signatureImage: body.signatureImage || null,
         notes: quotation.notes ? `${quotation.notes}\nAssinado digitalmente por: ${signatureName}` : `Assinado digitalmente por: ${signatureName}`,
       },
     });
@@ -59,7 +60,7 @@ export async function POST(
       try {
         const addresses = Array.isArray(quotation.customer.addresses) 
           ? quotation.customer.addresses 
-          : JSON.parse(quotation.customer.addresses as string || '[]');
+          : JSON.parse((quotation.customer.addresses as string) || '[]');
         
         const firstAddress = addresses[0];
         if (firstAddress) {
@@ -89,17 +90,49 @@ export async function POST(
         }
       }
 
+      // Encontrar técnico correspondente
+      let technicianId = null;
+      try {
+        const itemWithCategory = await prisma.quotationItem.findFirst({
+          where: { quotationId: id },
+          include: { product: true }
+        });
+
+        if (itemWithCategory?.product?.category) {
+          const matchingTechnician = await prisma.technician.findFirst({
+            where: {
+              active: true,
+              specialty: {
+                contains: itemWithCategory.product.category,
+                mode: 'insensitive'
+              }
+            }
+          });
+          if (matchingTechnician) {
+            technicianId = matchingTechnician.id;
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar tecnico', err);
+      }
+
       // Criar a OS
+      const osData: any = {
+        number: osNumber,
+        quotationId: id,
+        customerId: quotation.customerId,
+        status: 'agendada',
+        address,
+        finalTotal: quotation.total,
+        notes: `Gerado automaticamente via aprovação digital pelo cliente (${signatureName}).`,
+      };
+
+      if (technicianId) {
+        osData.technicianId = technicianId;
+      }
+
       await prisma.serviceOrder.create({
-        data: {
-          number: osNumber,
-          quotationId: id,
-          customerId: quotation.customerId,
-          status: 'agendada',
-          address,
-          finalTotal: quotation.total,
-          notes: `Gerado automaticamente via aprovação digital pelo cliente (${signatureName}).`,
-        },
+        data: osData,
       });
     }
 
