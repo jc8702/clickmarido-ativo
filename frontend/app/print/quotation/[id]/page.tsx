@@ -11,6 +11,13 @@ export default function PrintQuotationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [libLoaded, setLibLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // States para aprovação digital
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [signatureName, setSignatureName] = useState('');
+  const [signatureAgreed, setSignatureAgreed] = useState(false);
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [approvedSuccess, setApprovedSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -145,6 +152,33 @@ export default function PrintQuotationPage() {
       window.html2pdf().from(element).set(opt).save();
     } else {
       alert('Biblioteca de PDF ainda carregando. Por favor, aguarde um instante.');
+    }
+  };
+
+  const handleClientApproval = async () => {
+    if (!signatureName.trim() || !signatureAgreed) {
+      alert("Por favor, preencha seu nome e confirme o aceite dos termos.");
+      return;
+    }
+    setApprovalLoading(true);
+    try {
+      const res = await fetch(`/api/quotations/public/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signatureName }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erro ao aprovar proposta');
+      }
+      setApprovedSuccess(true);
+      setShowApprovalModal(false);
+      setQuote({ ...quote, status: 'aprovado' });
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Erro ao aprovar proposta. Tente novamente.');
+    } finally {
+      setApprovalLoading(false);
     }
   };
 
@@ -316,17 +350,24 @@ export default function PrintQuotationPage() {
           >
             Baixar PDF Premium
           </button>
-          <button 
-            onClick={handleApproveAndSend} 
-            disabled={!libLoaded || actionLoading}
-            className="px-5 py-2 bg-[#00a884] hover:bg-[#008f6f] text-white text-xs font-black rounded-2xl shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-1.564-.783-2.67-1.428-3.69-2.934-.207-.306.208-.282.64-.135.15-.15.347-.404.518-.606.173-.199.231-.347.33-.578.1-.23.05-.433-.025-.582-.075-.15-.67-1.616-.918-2.214-.242-.58-.487-.502-.67-.512-.172-.01-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.553 4.12 1.517 5.86L.231 23.769l6.05-1.587A11.93 11.93 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.984c-1.802 0-3.513-.464-5.02-1.346l-.36-.213-3.731.98.995-3.639-.234-.373A9.948 9.948 0 012.016 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10z"/>
-            </svg>
-            {actionLoading ? 'Gerando...' : 'Aprovar e Enviar no WhatsApp'}
-          </button>
+          {quote.status === 'aprovado' || approvedSuccess ? (
+            <div className="px-5 py-2 bg-green-100 text-green-800 text-xs font-black rounded-2xl border border-green-200 flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Proposta Aprovada
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowApprovalModal(true)} 
+              className="px-5 py-2 bg-[#00a884] hover:bg-[#008f6f] text-white text-xs font-black rounded-2xl shadow-md transition-all flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Aprovar e Assinar
+            </button>
+          )}
         </div>
       </div>
 
@@ -542,6 +583,73 @@ export default function PrintQuotationPage() {
           </div>
         </div>
       </div>
+      {/* Modal de Assinatura */}
+      {showApprovalModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 print:hidden">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2 font-title">
+              Assinatura Digital
+            </h3>
+            <p className="text-sm text-neutral-500 mb-6">
+              Para aprovar a proposta <strong className="text-neutral-700 dark:text-neutral-300">#{quote.number || quote.id.slice(0, 8).toUpperCase()}</strong>, preencha os dados abaixo.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Nome Completo
+                </label>
+                <input
+                  type="text"
+                  value={signatureName}
+                  onChange={(e) => setSignatureName(e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <label className="flex items-start gap-3 p-3 border border-neutral-200 dark:border-neutral-700 rounded-xl cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={signatureAgreed}
+                  onChange={(e) => setSignatureAgreed(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Declaro que li e concordo com os termos e condições comerciais desta proposta.
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-8 flex gap-3">
+              <button
+                onClick={() => setShowApprovalModal(false)}
+                disabled={approvalLoading}
+                className="flex-1 py-3 px-4 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-bold rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleClientApproval}
+                disabled={approvalLoading || !signatureName.trim() || !signatureAgreed}
+                className="flex-1 py-3 px-4 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                {approvalLoading ? (
+                  <span className="animate-pulse">Aprovando...</span>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Assinar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

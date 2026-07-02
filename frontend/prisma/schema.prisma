@@ -105,6 +105,11 @@ model Quotation {
   // Automação
   expiryNotificationSent Boolean @default(false)
 
+  // Aprovação Digital
+  approvedAt          DateTime?
+  approvedBy          String?  @db.VarChar(255)
+  approvalIp          String?  @db.VarChar(50)
+
   // Dados de Origem do Lead (rastreabilidade)
   leadId              String?  // ID do lead de origem
   leadSourceChannel   String?  @db.VarChar(50) // Canal de origem: WhatsApp, Instagram, etc
