@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
           const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
           const npsLink = `${appUrl}/survey/${payment.customerId}?paymentId=${payment.id}`;
 
-          // Enviar WhatsApp
           const result = await sendWhatsAppNotification({
             phone: payment.customer.phone,
+            email: payment.customer.email || undefined,
             template: 'service_order_completed', // Reutiliza o template de OS finalizada que pede avaliação
             variables: {
               customerName: payment.customer.name,

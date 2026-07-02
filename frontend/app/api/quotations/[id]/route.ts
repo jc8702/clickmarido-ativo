@@ -237,6 +237,31 @@ export async function PUT(
       },
     });
 
+    // Automação: Enviar notificação quando o status do orçamento for atualizado para 'enviado'
+    if (body.status === 'enviado' && oldValue?.status !== 'enviado' && updated) {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://clickmarido-ativo-frontend.vercel.app';
+        const quotationLink = `${appUrl}/quotations/view/${updated.id}`;
+
+        const { sendWhatsAppNotification } = await import('@/lib/notifications/whatsapp');
+
+        await sendWhatsAppNotification({
+          phone: updated.customer.phone,
+          email: updated.customer.email || undefined,
+          template: 'quotation_sent',
+          variables: {
+            customerName: updated.customer.name,
+            number: updated.number || 'OS',
+            link: quotationLink,
+          },
+        });
+
+        console.log(`[AUTOMATION] Notificação de orçamento enviado disparada para ${updated.customer.name}`);
+      } catch (err: any) {
+        console.error('[AUTOMATION ERROR] Falha ao enviar notificação de orçamento:', err.message);
+      }
+    }
+
     // Registrar log de auditoria
     const { logAudit } = await import('@/lib/audit');
     await logAudit({

@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         // Disparar notificação via WhatsApp
         const result = await sendWhatsAppNotification({
           phone: warranty.customer.phone,
+          email: warranty.customer.email || undefined,
           template: 'warranty_expiring',
           variables: {
             customer_name: warranty.customer.name,

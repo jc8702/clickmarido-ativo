@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks concluído. Estrutura de integração oficial com a API do Gmail via OAuth 2.0 implementada.
+- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks concluído. Estrutura de integração oficial e automação multicanal (Gmail API via OAuth 2.0 + WhatsApp) finalizada em produção.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 02/07/2026 - 09:25
+- **Última Atualização:** 02/07/2026 - 10:40
 
 ## Histórico de Alterações
+
+### 02/07/2026 - 10:40
+- **Automação Completa de Disparos de E-mail (Gmail API):**
+  - Adaptação do helper [whatsapp.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/notifications/whatsapp.ts) para despachar e-mails automaticamente pelo Gmail sempre que houver e-mail cadastrado para o cliente.
+  - Criação de templates de e-mail em HTML premium para NPS, Orçamentos, Cobranças e Garantias.
+  - Integração do envio automático de proposta na API de Orçamentos [route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/quotations/%5Bid%5D/route.ts) ao mudar o status para `'enviado'`.
+  - Atualização dos crons (`nps-reminders`, `payment-reminders`, `warranty-expiry-check`, `quotation-expiry-check`) para passarem o e-mail do cliente.
+  - Criação de validador de layouts de e-mail [test_notifications.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_notifications.js).
 
 ### 02/07/2026 - 09:25
 - **Integração Gmail API via OAuth 2.0 (Abordagem Profissional):**
@@ -125,6 +133,6 @@
 - [x] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
 - [x] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
 - [x] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
-- [ ] Configurar credenciais do Google Cloud e refresh token para envio de e-mails via Gmail API.
+- [x] Configurar credenciais do Google Cloud e refresh token para envio de e-mails via Gmail API.
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
 - [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.

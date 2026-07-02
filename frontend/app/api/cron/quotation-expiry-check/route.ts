@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
         else if (quotationDate < fourteenDaysAgo && !quotation.expiryNotificationSent) {
           const result = await sendWhatsAppNotification({
             phone: quotation.customer.phone,
+            email: quotation.customer.email || undefined,
             template: 'payment_pending', // Lembrete de pendência do orçamento
             variables: {
               customer_name: quotation.customer.name,

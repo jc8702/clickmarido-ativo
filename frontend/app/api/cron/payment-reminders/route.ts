@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         // Send reminder
         const result = await sendWhatsAppNotification({
           phone: payment.customer.phone,
+          email: payment.customer.email || undefined,
           template: 'payment_reminder',
           variables: {
             customer_name: payment.customer.name,
