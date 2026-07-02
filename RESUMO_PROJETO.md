@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks estável concluído.
+- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks concluído. Estrutura de integração oficial com a API do Gmail via OAuth 2.0 implementada.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 01/07/2026 - 16:15
+- **Última Atualização:** 02/07/2026 - 09:25
 
 ## Histórico de Alterações
+
+### 02/07/2026 - 09:25
+- **Integração Gmail API via OAuth 2.0 (Abordagem Profissional):**
+  - Instalação da dependência oficial `googleapis` no projeto `frontend`.
+  - Criação do helper [gmail.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/gmail.ts) para gerenciar a autenticação e renovação automática de tokens do Google.
+  - Implementação das rotas administrativas de setup: `/api/auth/google/login` e `/api/auth/google/callback` para geração e captura do `refresh_token` offline.
+  - Criação do endpoint `/api/email/test` e do script standalone [test_gmail.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_gmail.js) para validação local de chaves de ambiente.
+  - Adicionados campos de exemplo no [.env.example](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/.env.example).
 
 ### 01/07/2026 - 17:15
 - **Integração Pagamento & NPS & Correções UX:**
@@ -117,5 +125,6 @@
 - [x] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
 - [x] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
 - [x] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
+- [ ] Configurar credenciais do Google Cloud e refresh token para envio de e-mails via Gmail API.
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
 - [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.
