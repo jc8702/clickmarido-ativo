@@ -31,6 +31,15 @@ model Technician {
   phone         String         @default("") @db.VarChar(20)
   specialty     String         @default("") @db.VarChar(100)
   active        Boolean        @default(true)
+
+  // Dados pessoais e profissionais
+  document      String         @default("") @db.VarChar(20)    // CPF
+  address       String         @default("") @db.VarChar(500)
+  avatarUrl     String?        @db.Text
+  bio           String         @default("") @db.Text
+  hourlyRate    Decimal?       @db.Decimal(10, 2)              // Valor hora/serviço
+  hireDate      DateTime?                                      // Data de contratação
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   serviceOrders ServiceOrder[]

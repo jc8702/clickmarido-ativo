@@ -1,11 +1,37 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Evolução do Módulo NPS concluída com sucesso. Integração oficial com a API do Gmail via OAuth 2.0 e automações de e-mails em produção finalizadas. Ajuste de visualização pública de propostas sem autenticação corrigido com sucesso.
-- **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 02/07/2026 - 11:10
+- **Status Atual:** Módulo de Cadastro de Técnicos implementado. Sistema operacional em single-tenant com dossiê de comercialização SaaS criado.
+- **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
+- **Última Atualização:** 02/07/2026 - 15:00
 
 ## Histórico de Alterações
+
+### 02/07/2026 - 15:00
+- **Módulo Completo de Cadastro de Técnicos (Equipe Técnica):**
+  - **Schema Prisma enriquecido:** Adicionados campos `document` (CPF), `address`, `avatarUrl`, `bio`, `hourlyRate`, `hireDate` ao modelo `Technician`, todos com defaults seguros.
+  - **API CRUD completa:** Expandido `GET /api/technicians` com busca, paginação, filtro ativo/inativo e cálculo de rating médio. Criados endpoints `GET/PUT/DELETE /api/technicians/[id]` com whitelist de campos e soft delete.
+  - **API de Performance:** Endpoint `GET /api/technicians/[id]/performance` com timeline mensal de OS, breakdown de status, top clientes atendidos e sumário.
+  - **Hook React (`useTechnicians`):** SWR completo com `useTechnicians()`, `useTechnicianDetail(id)`, `useTechnicianPerformance(id)` e `useTechnicianActions()` (create/update/toggleActive/remove).
+  - **Página Dashboard com 3 abas:**
+    - *Equipe:* Grid de cards com avatar (iniciais coloridas), nome, especialidade, estrelas de avaliação, contagens de OS/avaliações/agendamentos, busca, filtro de inativos, botões de editar/desativar com hover reveal.
+    - *Performance:* Cards de destaque (Melhor Avaliado, Mais Produtivo, Visão Geral), gráfico comparativo de barras (Recharts), ranking por avaliação e ranking por OS.
+    - *Perfil Individual:* Cabeçalho completo com dados pessoais, 6 KPIs (Total OS, Concluídas, Em Execução, Receita Total, Ticket Médio, Tempo Médio), gráficos (Area Chart de timeline, Pie de status, Bar de distribuição de estrelas), top clientes, últimas avaliações com comentários, e próximos agendamentos.
+  - **Modal de cadastro/edição** com todos os campos (nome, especialidade, telefone, email, CPF, valor/hora, data contratação, endereço, bio).
+  - **Sidebar atualizada** com link "Técnicos" posicionado entre "Ordens de Serviço" e "Pagamentos".
+  - Arquivos modificados: `schema.prisma`, `api/technicians/route.ts`, `(dashboard)/layout.tsx`
+  - Arquivos criados: `api/technicians/[id]/route.ts`, `api/technicians/[id]/performance/route.ts`, `hooks/useTechnicians.ts`, `(dashboard)/technicians/page.tsx`
+  - Banco sincronizado via `prisma db push` e build de produção validado com sucesso.
+
+### 02/07/2026 - 14:15
+- **Dossiê de Comercialização SaaS:**
+  - Criado [DOSSIE_COMERCIALIZACAO.md](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/DOSSIE_COMERCIALIZACAO.md) — documento completo com análise de 3 modelos de comercialização (multi-tenant SaaS, single-tenant, híbrido).
+  - Schema proposto para tabelas `Tenant` e `TenantUser` com branding dinâmico, planos e limites.
+  - 4 planos de preço mapeados: Trial (grátis), Starter (R$149), Pro (R$349), Enterprise (sob consulta).
+  - Roadmap em 5 fases (~8-12 semanas): Estabilização → Multi-tenancy → Onboarding/Billing → White-label → Go-to-Market.
+  - Custo operacional estimado: ~R$330/mês com break-even em 2-3 clientes.
+  - Checklist de segurança, LGPD, aspectos jurídicos e adequação de integrações.
+  - 9 decisões estratégicas pendentes documentadas.
 
 ### 02/07/2026 - 11:10
 - **Acesso Público à Proposta Comercial:**
