@@ -9,6 +9,7 @@ import {
   TechnicianFormData,
   TechnicianListItem,
 } from '@/hooks/useTechnicians';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/Card';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -169,13 +170,21 @@ export default function TechniciansPage() {
   const [form, setForm] = useState<TechnicianFormData>({ ...INITIAL_FORM });
   const [saving, setSaving] = useState(false);
 
+  // Modal de Exclusão
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [techToDelete, setTechToDelete] = useState<TechnicianListItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEscapeToClose(showModal, () => setShowModal(false));
+  useEscapeToClose(showDeleteModal, () => setShowDeleteModal(false));
+
   const { technicians, isLoading, mutate } = useTechnicians({
     search,
     active: showInactive ? 'all' : undefined,
   });
   const { technician: selectedTech, isLoading: detailLoading } = useTechnicianDetail(selectedTechId);
   const { performance, isLoading: perfLoading } = useTechnicianPerformance(selectedTechId);
-  const { create, update, toggleActive } = useTechnicianActions();
+  const { create, update, toggleActive, remove } = useTechnicianActions();
 
   // ─── Handlers ───────────────────────────────────
 
@@ -225,6 +234,30 @@ export default function TechniciansPage() {
       mutate();
     } catch (e: any) {
       alert(e.message || 'Erro');
+    }
+  };
+
+  const confirmDelete = (tech: TechnicianListItem) => {
+    setTechToDelete(tech);
+    setShowDeleteModal(true);
+  };
+
+  const handleDelete = async () => {
+    if (!techToDelete) return;
+    setDeleting(true);
+    try {
+      await remove(techToDelete.id);
+      setShowDeleteModal(false);
+      setTechToDelete(null);
+      if (selectedTechId === techToDelete.id) {
+        setSelectedTechId(null);
+        setActiveTab('team');
+      }
+      mutate();
+    } catch (e: any) {
+      alert(e.message || 'Erro ao remover');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -451,6 +484,12 @@ export default function TechniciansPage() {
                         }`}
                       >
                         {tech.active ? 'Desativar' : 'Reativar'}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); confirmDelete(tech); }}
+                        className="flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-900/40"
+                      >
+                        Excluir
                       </button>
                     </div>
                   </CardContent>
@@ -979,6 +1018,35 @@ export default function TechniciansPage() {
             </Button>
             <Button onClick={handleSave} disabled={saving || !form.name.trim()}>
               {saving ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Cadastrar Técnico'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* MODAL DE EXCLUSÃO */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Excluir Técnico"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Tem certeza que deseja excluir o técnico <strong>{techToDelete?.name}</strong>?
+          </p>
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+              Atenção: A exclusão é irreversível.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              Caso o técnico possua Ordens de Serviço associadas, a exclusão poderá ser bloqueada para manter a integridade dos dados (considere Desativar).
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
+              Sim, Excluir
             </Button>
           </div>
         </div>
