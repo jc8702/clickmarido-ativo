@@ -1,17 +1,22 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Evolução do Módulo NPS concluída com sucesso (API pública segura, formulário interativo de múltipla escolha, convite Google Review e tags coloridas no Dashboard Admin). Deploy de melhorias de estoque e webhooks concluído. Estrutura de integração oficial e automação multicanal (Gmail API via OAuth 2.0 + WhatsApp) finalizada em produção.
+- **Status Atual:** Evolução do Módulo NPS concluída com sucesso. Integração oficial com a API do Gmail via OAuth 2.0 e automações de e-mails em produção finalizadas. Ajuste de visualização pública de propostas sem autenticação corrigido com sucesso.
 - **Objetivo Central:** Migrar o Módulo WhatsApp e adequar os relatórios financeiros para a operação "Solo". Reestruturação de Pré-Vendas/CRM e dashboard comercial.
-- **Última Atualização:** 02/07/2026 - 10:40
+- **Última Atualização:** 02/07/2026 - 11:10
 
 ## Histórico de Alterações
+
+### 02/07/2026 - 11:10
+- **Acesso Público à Proposta Comercial:**
+  - Correção na página de impressão/proposta [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/print/quotation/%5Bid%5D/page.tsx) para buscar dados através da API pública quando o usuário não estiver autenticado (cliente final acessando pelo link do e-mail).
+  - Mapeamento dinâmico dos dados para manter compatibilidade com o formato esperado pelo layout de renderização.
 
 ### 02/07/2026 - 10:40
 - **Automação Completa de Disparos de E-mail (Gmail API):**
   - Adaptação do helper [whatsapp.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/notifications/whatsapp.ts) para despachar e-mails automaticamente pelo Gmail sempre que houver e-mail cadastrado para o cliente.
   - Criação de templates de e-mail em HTML premium para NPS, Orçamentos, Cobranças e Garantias.
-  - Integração do envio automático de proposta na API de Orçamentos [route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/quotations/%5Bid%5D/route.ts) ao mudar o status para `'enviado'`.
+  - Integração do envio automático de proposta na API de Orçamentos [route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/quotations/%5Bid%5D/route.ts) ao mudar o status para `'enviado'` apontando para a rota de impressão pública.
   - Atualização dos crons (`nps-reminders`, `payment-reminders`, `warranty-expiry-check`, `quotation-expiry-check`) para passarem o e-mail do cliente.
   - Criação de validador de layouts de e-mail [test_notifications.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_notifications.js).
 
