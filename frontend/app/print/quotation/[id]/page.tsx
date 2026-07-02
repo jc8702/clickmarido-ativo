@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Script from 'next/script';
 export default function PrintQuotationPage() {
@@ -11,6 +11,8 @@ export default function PrintQuotationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [libLoaded, setLibLoaded] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   
   // States para aprovação digital
   const [showApprovalModal, setShowApprovalModal] = useState(false);
@@ -160,12 +162,18 @@ export default function PrintQuotationPage() {
       alert("Por favor, preencha seu nome e confirme o aceite dos termos.");
       return;
     }
+
+    let signatureImage = null;
+    if (canvasRef.current) {
+      signatureImage = canvasRef.current.toDataURL('image/png');
+    }
+
     setApprovalLoading(true);
     try {
       const res = await fetch(`/api/quotations/public/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatureName }),
+        body: JSON.stringify({ signatureName, signatureImage }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -173,12 +181,65 @@ export default function PrintQuotationPage() {
       }
       setApprovedSuccess(true);
       setShowApprovalModal(false);
-      setQuote({ ...quote, status: 'aprovado' });
+      setQuote({ ...quote, status: 'aceito', approvedBy: signatureName, signatureImage });
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Erro ao aprovar proposta. Tente novamente.');
     } finally {
       setApprovalLoading(false);
+    }
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.beginPath();
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    setIsDrawing(true);
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canvasRef.current) return;
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    ctx.lineTo(clientX - rect.left, clientY - rect.top);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignature = () => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   };
 
@@ -575,8 +636,17 @@ export default function PrintQuotationPage() {
                 <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
                   Assinatura do Técnico / Emissor
                 </div>
-                <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title">
-                  De Acordo do Cliente
+                <div className="w-[45%] border-t border-[#d1d5db] pt-2.5 text-[10px] text-[#9ca3af] font-semibold uppercase tracking-wider font-title flex flex-col items-center">
+                  {(quote.status === 'aprovado' || quote.status === 'aceito') && quote.signatureImage ? (
+                    <div className="mt-2 text-center text-xs text-neutral-800">
+                      <img src={quote.signatureImage} alt="Assinatura" className="h-16 object-contain mx-auto border border-neutral-200 rounded mb-1" />
+                      <p>Assinado digitalmente</p>
+                      <p className="font-bold">{quote.approvedBy}</p>
+                      <p className="text-[10px] text-neutral-500">{quote.approvedAt ? new Date(quote.approvedAt).toLocaleString('pt-BR') : ''}</p>
+                    </div>
+                  ) : (
+                    "De Acordo do Cliente"
+                  )}
                 </div>
               </div>
             </div>
@@ -606,6 +676,33 @@ export default function PrintQuotationPage() {
                   placeholder="Seu nome completo"
                   className="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                  Assinatura
+                </label>
+                <div className="border border-neutral-300 dark:border-neutral-700 rounded-xl bg-white overflow-hidden relative">
+                  <canvas 
+                    ref={canvasRef}
+                    width={400}
+                    height={150}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                    className="w-full touch-none cursor-crosshair"
+                  />
+                  <button 
+                    onClick={clearSignature}
+                    className="absolute top-2 right-2 text-xs bg-neutral-200 text-neutral-700 px-2 py-1 rounded hover:bg-neutral-300"
+                  >
+                    Limpar
+                  </button>
+                </div>
               </div>
 
               <label className="flex items-start gap-3 p-3 border border-neutral-200 dark:border-neutral-700 rounded-xl cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
