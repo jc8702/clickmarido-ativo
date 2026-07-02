@@ -32,6 +32,11 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
     );
   }, []);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       previousFocusRef.current = document.activeElement as HTMLElement;
@@ -49,7 +54,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-          onClose();
+          onCloseRef.current();
           return;
         }
 
@@ -86,7 +91,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
         }
       };
     }
-  }, [isOpen, onClose, getFocusableElements]);
+  }, [isOpen, getFocusableElements]);
 
   if (!isOpen) return null;
 
