@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 // Default icons
 const defaultIcons = {
@@ -196,15 +197,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="font-bold text-neutral-800 dark:text-neutral-200">Click Marido</span>
-        <div className="w-8" /> {/* Spacer */}
+        <div className="flex items-center gap-2">
+          <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full object-cover" />
+          <span className="font-bold text-neutral-800 dark:text-neutral-200">Click Marido</span>
+        </div>
+        <ThemeToggle />
       </div>
 
       <Sidebar
         isOpen={sidebarOpen}
         onToggle={handleToggleSidebar}
         links={navigationLinks}
-        logo="Click Marido"
         user={authUser ? { name: authUser.name || 'Admin', email: authUser.email } : undefined}
         onLogout={handleLogout}
       />

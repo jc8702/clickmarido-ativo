@@ -35,7 +35,12 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-gradient-animated opacity-10" />
 
       <div className="w-full max-w-md animate-fade-in">
-        <div className="text-center mb-8 animate-slide-down">
+        <div className="text-center mb-8 animate-slide-down flex flex-col items-center">
+          <img
+            src="/logo.jpg"
+            alt="Click Marido Logo"
+            className="w-24 h-24 rounded-full object-cover border-4 border-white/20 shadow-lg mb-4"
+          />
           <h1 className="text-4xl font-bold text-white tracking-tight">
             Click<span className="text-warning-400">Marido</span>
           </h1>

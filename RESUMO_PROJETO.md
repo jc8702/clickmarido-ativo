@@ -1,11 +1,42 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Módulo de Cadastro de Técnicos implementado. Sistema operacional em single-tenant com dossiê de comercialização SaaS criado.
+- **Status Atual:** Logo e seletor de temas (Light/Dark Mode) integrados no frontend, melhorias de contraste e login aplicadas.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 02/07/2026 - 15:00
+- **Última Atualização:** 03/07/2026 - 13:40
 
 ## Histórico de Alterações
+
+### 03/07/2026 - 13:40
+- **Integração de Logo e Habilitação de Temas (Claro/Escuro):**
+  - **Sidebar do Dashboard:** Integrado o componente `ThemeToggle` no rodapé da Sidebar de forma dinâmica para modos aberto e fechado. Substituída a logo textual pelo logo oficial circular (`/logo.jpg`) e título com alto contraste, e o "CM" da sidebar fechada pela logo circular acompanhada por botão de toggle flutuante sobre a borda.
+  - **Layout Principal:** Adicionado o alternador de temas e logo circular no cabeçalho mobile do sistema para melhor usabilidade em celulares.
+  - **Tela de Login:** Inserida a logo oficial de forma centralizada e destacada no topo do formulário de autenticação.
+  - **Arquivos modificados:** `components/Sidebar.tsx`, `app/(dashboard)/layout.tsx`, `app/login/page.tsx`.
+
+### 02/07/2026 - 18:25
+- **Auditoria e padronização dos modais:** Adicionado fechamento via ESC para os modais que faltavam (Service Orders, Product Picker, Proposta), adicionada rota de exclusão (DELETE) na API de Garantias e adicionado o botão de Excluir na interface de Garantias. Testes de build realizados e código atualizado no repositório (Git Push).
+  - Arquivos modificados: frontend/app/(dashboard)/pre-vendas/page.tsx, frontend/app/(dashboard)/service-orders/page.tsx, frontend/app/(dashboard)/warranties/page.tsx, frontend/app/print/quotation/[id]/page.tsx, frontend/components/leads/LeadCardRich.tsx, frontend/components/leads/LeadDetailsDrawer.tsx, frontend/components/quotations/ProductPicker.tsx, frontend/app/api/warranties/[id]/route.ts
+
+### 02/07/2026 - 17:55
+- **Auditoria de UI e Tecla ESC:**
+  - **useEscapeToClose:** Aplicado e verificado em todos os modais do dashboard para permitir fechamento via tecla ESC.
+  - **Excluir:** Opção de Excluir adicionada com Modal de Confirmação em Telas que não possuíam, como Técnicos e Ordens de Serviço.
+
+### 02/07/2026 - 17:08
+- **Atualização do Dashboard e Regras de Disparo de NPS:**
+  - O painel de NPS agora exibe a avaliação específica do técnico e o número da OS vinculada a cada feedback.
+  - A lógica de pendências (api/nps/pending) e do cron (api/cron/nps-reminders) foi atualizada para se basear na data de conclusão da Ordem de Serviço (mínimo 24 horas), não mais no pagamento. A aba "Pesquisas Pendentes" reflete isso.
+  - O disparo da pesquisa agora embute na URL os IDs da OS e do técnico, garantindo o vínculo no backend ao ser respondida.
+  - O disparo instantâneo após baixa da fatura (webhook) foi removido.
+
+### 02/07/2026 - 16:48
+- **Melhorias no Fluxo da Ordem de Serviço:**
+  - Criado o `StartServiceOrderModal.tsx` para exibição detalhada antes do início.
+  - Implementada funcionalidade de atribuir outro técnico na hora do "Iniciar".
+  - Adicionada etapa obrigatória de Checklist no momento de concluir a OS (`ServiceOrderForm.tsx`).
+  - Atualizadas as rotas `/api/service-orders/[id]/start` e `/complete` no backend.
+  - Deploy efetuado.
 
 ### 02/07/2026 - 15:00
 - **Módulo Completo de Cadastro de Técnicos (Equipe Técnica):**
@@ -13,179 +44,182 @@
   - **API CRUD completa:** Expandido `GET /api/technicians` com busca, paginação, filtro ativo/inativo e cálculo de rating médio. Criados endpoints `GET/PUT/DELETE /api/technicians/[id]` com whitelist de campos e soft delete.
   - **API de Performance:** Endpoint `GET /api/technicians/[id]/performance` com timeline mensal de OS, breakdown de status, top clientes atendidos e sumário.
   - **Hook React (`useTechnicians`):** SWR completo com `useTechnicians()`, `useTechnicianDetail(id)`, `useTechnicianPerformance(id)` e `useTechnicianActions()` (create/update/toggleActive/remove).
-  - **Página Dashboard com 3 abas:**
-    - *Equipe:* Grid de cards com avatar (iniciais coloridas), nome, especialidade, estrelas de avaliação, contagens de OS/avaliações/agendamentos, busca, filtro de inativos, botões de editar/desativar com hover reveal.
-    - *Performance:* Cards de destaque (Melhor Avaliado, Mais Produtivo, Visão Geral), gráfico comparativo de barras (Recharts), ranking por avaliação e ranking por OS.
-    - *Perfil Individual:* Cabeçalho completo com dados pessoais, 6 KPIs (Total OS, Concluídas, Em Execução, Receita Total, Ticket Médio, Tempo Médio), gráficos (Area Chart de timeline, Pie de status, Bar de distribuição de estrelas), top clientes, últimas avaliações com comentários, e próximos agendamentos.
-  - **Modal de cadastro/edição** com todos os campos (nome, especialidade, telefone, email, CPF, valor/hora, data contratação, endereço, bio).
-  - **Sidebar atualizada** com link "Técnicos" posicionado entre "Ordens de Serviço" e "Pagamentos".
+  - **PÃ¡gina Dashboard com 3 abas:**
+    - *Equipe:* Grid de cards com avatar (iniciais coloridas), nome, especialidade, estrelas de avaliaÃ§Ã£o, contagens de OS/avaliaÃ§Ãµes/agendamentos, busca, filtro de inativos, botÃµes de editar/desativar com hover reveal.
+    - *Performance:* Cards de destaque (Melhor Avaliado, Mais Produtivo, VisÃ£o Geral), grÃ¡fico comparativo de barras (Recharts), ranking por avaliaÃ§Ã£o e ranking por OS.
+    - *Perfil Individual:* CabeÃ§alho completo com dados pessoais, 6 KPIs (Total OS, ConcluÃ­das, Em ExecuÃ§Ã£o, Receita Total, Ticket MÃ©dio, Tempo MÃ©dio), grÃ¡ficos (Area Chart de timeline, Pie de status, Bar de distribuiÃ§Ã£o de estrelas), top clientes, Ãºltimas avaliaÃ§Ãµes com comentÃ¡rios, e prÃ³ximos agendamentos.
+  - **Modal de cadastro/ediÃ§Ã£o** com todos os campos (nome, especialidade, telefone, email, CPF, valor/hora, data contrataÃ§Ã£o, endereÃ§o, bio).
+  - **Sidebar atualizada** com link "TÃ©cnicos" posicionado entre "Ordens de ServiÃ§o" e "Pagamentos".
   - Arquivos modificados: `schema.prisma`, `api/technicians/route.ts`, `(dashboard)/layout.tsx`
   - Arquivos criados: `api/technicians/[id]/route.ts`, `api/technicians/[id]/performance/route.ts`, `hooks/useTechnicians.ts`, `(dashboard)/technicians/page.tsx`
-  - Banco sincronizado via `prisma db push` e build de produção validado com sucesso.
+  - Banco sincronizado via `prisma db push` e build de produÃ§Ã£o validado com sucesso.
 
 ### 02/07/2026 - 14:15
-- **Dossiê de Comercialização SaaS:**
-  - Criado [DOSSIE_COMERCIALIZACAO.md](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/DOSSIE_COMERCIALIZACAO.md) — documento completo com análise de 3 modelos de comercialização (multi-tenant SaaS, single-tenant, híbrido).
-  - Schema proposto para tabelas `Tenant` e `TenantUser` com branding dinâmico, planos e limites.
-  - 4 planos de preço mapeados: Trial (grátis), Starter (R$149), Pro (R$349), Enterprise (sob consulta).
-  - Roadmap em 5 fases (~8-12 semanas): Estabilização → Multi-tenancy → Onboarding/Billing → White-label → Go-to-Market.
-  - Custo operacional estimado: ~R$330/mês com break-even em 2-3 clientes.
-  - Checklist de segurança, LGPD, aspectos jurídicos e adequação de integrações.
-  - 9 decisões estratégicas pendentes documentadas.
+- **DossiÃª de ComercializaÃ§Ã£o SaaS:**
+  - Criado [DOSSIE_COMERCIALIZACAO.md](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/DOSSIE_COMERCIALIZACAO.md) â€” documento completo com anÃ¡lise de 3 modelos de comercializaÃ§Ã£o (multi-tenant SaaS, single-tenant, hÃ­brido).
+  - Schema proposto para tabelas `Tenant` e `TenantUser` com branding dinÃ¢mico, planos e limites.
+  - 4 planos de preÃ§o mapeados: Trial (grÃ¡tis), Starter (R$149), Pro (R$349), Enterprise (sob consulta).
+  - Roadmap em 5 fases (~8-12 semanas): EstabilizaÃ§Ã£o â†’ Multi-tenancy â†’ Onboarding/Billing â†’ White-label â†’ Go-to-Market.
+  - Custo operacional estimado: ~R$330/mÃªs com break-even em 2-3 clientes.
+  - Checklist de seguranÃ§a, LGPD, aspectos jurÃ­dicos e adequaÃ§Ã£o de integraÃ§Ãµes.
+  - 9 decisÃµes estratÃ©gicas pendentes documentadas.
 
 ### 02/07/2026 - 11:10
-- **Acesso Público à Proposta Comercial:**
-  - Correção na página de impressão/proposta [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/print/quotation/%5Bid%5D/page.tsx) para buscar dados através da API pública quando o usuário não estiver autenticado (cliente final acessando pelo link do e-mail).
-  - Mapeamento dinâmico dos dados para manter compatibilidade com o formato esperado pelo layout de renderização.
+- **Acesso PÃºblico Ã  Proposta Comercial:**
+  - CorreÃ§Ã£o na pÃ¡gina de impressÃ£o/proposta [page.tsx](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/print/quotation/%5Bid%5D/page.tsx) para buscar dados atravÃ©s da API pÃºblica quando o usuÃ¡rio nÃ£o estiver autenticado (cliente final acessando pelo link do e-mail).
+  - Mapeamento dinÃ¢mico dos dados para manter compatibilidade com o formato esperado pelo layout de renderizaÃ§Ã£o.
 
 ### 02/07/2026 - 10:40
-- **Automação Completa de Disparos de E-mail (Gmail API):**
-  - Adaptação do helper [whatsapp.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/notifications/whatsapp.ts) para despachar e-mails automaticamente pelo Gmail sempre que houver e-mail cadastrado para o cliente.
-  - Criação de templates de e-mail em HTML premium para NPS, Orçamentos, Cobranças e Garantias.
-  - Integração do envio automático de proposta na API de Orçamentos [route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/quotations/%5Bid%5D/route.ts) ao mudar o status para `'enviado'` apontando para a rota de impressão pública.
-  - Atualização dos crons (`nps-reminders`, `payment-reminders`, `warranty-expiry-check`, `quotation-expiry-check`) para passarem o e-mail do cliente.
-  - Criação de validador de layouts de e-mail [test_notifications.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_notifications.js).
+- **AutomaÃ§Ã£o Completa de Disparos de E-mail (Gmail API):**
+  - AdaptaÃ§Ã£o do helper [whatsapp.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/notifications/whatsapp.ts) para despachar e-mails automaticamente pelo Gmail sempre que houver e-mail cadastrado para o cliente.
+  - CriaÃ§Ã£o de templates de e-mail em HTML premium para NPS, OrÃ§amentos, CobranÃ§as e Garantias.
+  - IntegraÃ§Ã£o do envio automÃ¡tico de proposta na API de OrÃ§amentos [route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/quotations/%5Bid%5D/route.ts) ao mudar o status para `'enviado'` apontando para a rota de impressÃ£o pÃºblica.
+  - AtualizaÃ§Ã£o dos crons (`nps-reminders`, `payment-reminders`, `warranty-expiry-check`, `quotation-expiry-check`) para passarem o e-mail do cliente.
+  - CriaÃ§Ã£o de validador de layouts de e-mail [test_notifications.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_notifications.js).
 
 ### 02/07/2026 - 09:25
-- **Integração Gmail API via OAuth 2.0 (Abordagem Profissional):**
-  - Instalação da dependência oficial `googleapis` no projeto `frontend`.
-  - Criação do helper [gmail.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/gmail.ts) para gerenciar a autenticação e renovação automática de tokens do Google.
-  - Implementação das rotas administrativas de setup: `/api/auth/google/login` e `/api/auth/google/callback` para geração e captura do `refresh_token` offline.
-  - Criação do endpoint `/api/email/test` e do script standalone [test_gmail.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_gmail.js) para validação local de chaves de ambiente.
+- **IntegraÃ§Ã£o Gmail API via OAuth 2.0 (Abordagem Profissional):**
+  - InstalaÃ§Ã£o da dependÃªncia oficial `googleapis` no projeto `frontend`.
+  - CriaÃ§Ã£o do helper [gmail.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/lib/gmail.ts) para gerenciar a autenticaÃ§Ã£o e renovaÃ§Ã£o automÃ¡tica de tokens do Google.
+  - ImplementaÃ§Ã£o das rotas administrativas de setup: `/api/auth/google/login` e `/api/auth/google/callback` para geraÃ§Ã£o e captura do `refresh_token` offline.
+  - CriaÃ§Ã£o do endpoint `/api/email/test` e do script standalone [test_gmail.js](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/test_gmail.js) para validaÃ§Ã£o local de chaves de ambiente.
   - Adicionados campos de exemplo no [.env.example](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/.env.example).
 
 ### 01/07/2026 - 17:15
-- **Integração Pagamento & NPS & Correções UX:**
-  - **Invoice Avulso:** Schema Prisma ajustado para tornar a relação com `Quotation` opcional, e webhook de aprovação de pagamentos refatorado para criar automaticamente Invoices de faturamento a partir de pagamentos independentes.
-  - **Pesquisas NPS Pendentes:** Criado endpoint `/api/nps/pending` e integrado na interface para listar clientes com pagamentos aprovados recentes que ainda não receberam avaliação NPS, com funcionalidade de envio via WhatsApp.
-  - **UX Premium & Sidebar:** Redesign completo da Dashboard do NPS com Glassmorphism, badges modernos e tab layout. Removido o salto indesejado de página da Sidebar com a propriedade `scroll={false}` nos links do Next.js.
+- **IntegraÃ§Ã£o Pagamento & NPS & CorreÃ§Ãµes UX:**
+  - **Invoice Avulso:** Schema Prisma ajustado para tornar a relaÃ§Ã£o com `Quotation` opcional, e webhook de aprovaÃ§Ã£o de pagamentos refatorado para criar automaticamente Invoices de faturamento a partir de pagamentos independentes.
+  - **Pesquisas NPS Pendentes:** Criado endpoint `/api/nps/pending` e integrado na interface para listar clientes com pagamentos aprovados recentes que ainda nÃ£o receberam avaliaÃ§Ã£o NPS, com funcionalidade de envio via WhatsApp.
+  - **UX Premium & Sidebar:** Redesign completo da Dashboard do NPS com Glassmorphism, badges modernos e tab layout. Removido o salto indesejado de pÃ¡gina da Sidebar com a propriedade `scroll={false}` nos links do Next.js.
 
 ### 01/07/2026 - 16:15
-- **Evolução e Melhoria Completa no Módulo NPS:**
-  - **Endpoint Público e Seguro:** A API de POST do NPS ([route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/nps/route.ts)) agora aceita submissões anônimas dos clientes, validando no banco se o `clientId` existe de fato para proteger a segurança do endpoint.
-  - **Layout de Formulário Dinâmico:** Enriquecida a página de pesquisa do cliente ([page.tsx - Survey](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/survey/[id]/page.tsx)) com checkboxes de múltiplos motivos dinâmicos baseados na nota (Promotor, Neutro, Detrator) e botão para avaliar no Google.
-  - **Visualização Visual no Dashboard:** O histórico administrativo de avaliações ([page.tsx - Dashboard](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/nps/page.tsx)) agora parseia os feedbacks estruturados do banco de dados e exibe os motivos como tags coloridas no histórico.
-  - **Correção da URL no Cron:** Ajustado o redirecionamento dinâmico no cron de WhatsApp para apontar para a rota pública `/survey/[id]`.
+- **EvoluÃ§Ã£o e Melhoria Completa no MÃ³dulo NPS:**
+  - **Endpoint PÃºblico e Seguro:** A API de POST do NPS ([route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/nps/route.ts)) agora aceita submissÃµes anÃ´nimas dos clientes, validando no banco se o `clientId` existe de fato para proteger a seguranÃ§a do endpoint.
+  - **Layout de FormulÃ¡rio DinÃ¢mico:** Enriquecida a pÃ¡gina de pesquisa do cliente ([page.tsx - Survey](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/survey/[id]/page.tsx)) com checkboxes de mÃºltiplos motivos dinÃ¢micos baseados na nota (Promotor, Neutro, Detrator) e botÃ£o para avaliar no Google.
+  - **VisualizaÃ§Ã£o Visual no Dashboard:** O histÃ³rico administrativo de avaliaÃ§Ãµes ([page.tsx - Dashboard](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/(dashboard)/nps/page.tsx)) agora parseia os feedbacks estruturados do banco de dados e exibe os motivos como tags coloridas no histÃ³rico.
+  - **CorreÃ§Ã£o da URL no Cron:** Ajustado o redirecionamento dinÃ¢mico no cron de WhatsApp para apontar para a rota pÃºblica `/survey/[id]`.
 
 ### 01/07/2026 - 15:50
-- **Varredura e Análise de Sistemas, Integrações e Automações:**
-  - Realizada varredura completa do banco de dados, APIs de transações comerciais, fluxos de compras e webhooks de pagamento.
-  - Identificada falta de incremento de estoque na entrada física de peças ([receive/route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/purchase-orders/[id]/receive/route.ts)) e inconsistência operacional no webhook de pagamentos do Mercado Pago em relação ao Asaas.
-  - Criado o relatório detalhado de insights e diagramas de automação em [analise_sistemas_e_automacoes.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/59422ff7-e0d6-414b-8d98-832d4c7184e6/analise_sistemas_e_automacoes.md).
+- **Varredura e AnÃ¡lise de Sistemas, IntegraÃ§Ãµes e AutomaÃ§Ãµes:**
+  - Realizada varredura completa do banco de dados, APIs de transaÃ§Ãµes comerciais, fluxos de compras e webhooks de pagamento.
+  - Identificada falta de incremento de estoque na entrada fÃ­sica de peÃ§as ([receive/route.ts](file:///c:/Users/jc-pr/.gemini/antigravity/scratch/clickmarido/frontend/app/api/purchase-orders/[id]/receive/route.ts)) e inconsistÃªncia operacional no webhook de pagamentos do Mercado Pago em relaÃ§Ã£o ao Asaas.
+  - Criado o relatÃ³rio detalhado de insights e diagramas de automaÃ§Ã£o em [analise_sistemas_e_automacoes.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/59422ff7-e0d6-414b-8d98-832d4c7184e6/analise_sistemas_e_automacoes.md).
 
 ### 01/07/2026 - 15:45
-- **Melhoria e Polimento — Calendário Dinâmico de Transição Mensal:**
-  - **Identificação da Omissão de Dados:** O Dashboard e os Relatórios Financeiros filtravam os dados de faturamento baseando-se estritamente no "Mês Calendário Corrente" (julho de 2026). Como todos os dados reais foram inseridos no mês anterior (junho de 2026), as telas apareciam vazias ou zeradas logo no dia 1º de julho.
-  - **Calendário Dinâmico de 10 Dias:** Adicionada uma inteligência nas APIs `/api/dashboard/route.ts` e `/api/reports/route.ts` para que, nos primeiros 10 dias de cada mês, o período padrão de exibição retroceda automaticamente para englobar o início do mês anterior. Isso mantém as telas com dados ricos e histórico recente sempre visíveis de forma polida.
-  - **Deploy de Produção:** Commit e push realizados, deploy de produção finalizado e validado na Vercel com os dados reais de junho carregando corretamente.
+- **Melhoria e Polimento â€” CalendÃ¡rio DinÃ¢mico de TransiÃ§Ã£o Mensal:**
+  - **IdentificaÃ§Ã£o da OmissÃ£o de Dados:** O Dashboard e os RelatÃ³rios Financeiros filtravam os dados de faturamento baseando-se estritamente no "MÃªs CalendÃ¡rio Corrente" (julho de 2026). Como todos os dados reais foram inseridos no mÃªs anterior (junho de 2026), as telas apareciam vazias ou zeradas logo no dia 1Âº de julho.
+  - **CalendÃ¡rio DinÃ¢mico de 10 Dias:** Adicionada uma inteligÃªncia nas APIs `/api/dashboard/route.ts` e `/api/reports/route.ts` para que, nos primeiros 10 dias de cada mÃªs, o perÃ­odo padrÃ£o de exibiÃ§Ã£o retroceda automaticamente para englobar o inÃ­cio do mÃªs anterior. Isso mantÃ©m as telas com dados ricos e histÃ³rico recente sempre visÃ­veis de forma polida.
+  - **Deploy de ProduÃ§Ã£o:** Commit e push realizados, deploy de produÃ§Ã£o finalizado e validado na Vercel com os dados reais de junho carregando corretamente.
 
 ### 01/07/2026 - 15:25
-- **Hotfix de Produção — Auditoria e Restauração de Banco (Neon):**
-  - **Identificação do Erro:** O deploy anterior com enums no schema gerou erros no Postgres do Neon (`type "public.ServiceOrderStatus" does not exist`) em todas as rotas de carregamento de dados em produção, impedindo a exibição de registros e gerando falha 500 no dashboard, OS, pagamentos, financeiro, faturamento, despesas e relatórios.
-  - **Restauração do Schema (String):** Revertemos o `schema.prisma` para usar tipos `String` nos campos de status de forma a manter compatibilidade estável com o Neon de produção. As validações de integridade continuam ativas a nível de código no arquivo centralizado `lib/status-map.ts`.
-  - **Auditoria e Confirmação de Dados:** Criado um endpoint temporário de auditoria que confirmou a existência e integridade de todos os dados reais no Neon (José Carlos, Jocemar, OS-0001, OS-0002, orçamentos, faturas, etc.). Todos os dados estão seguros e visíveis.
-  - **Deploy de Produção Final:** Removido o endpoint de teste e executado o deploy de produção final bem-sucedido na Vercel. Todas as telas voltaram a funcionar instantaneamente com os dados recuperados.
+- **Hotfix de ProduÃ§Ã£o â€” Auditoria e RestauraÃ§Ã£o de Banco (Neon):**
+  - **IdentificaÃ§Ã£o do Erro:** O deploy anterior com enums no schema gerou erros no Postgres do Neon (`type "public.ServiceOrderStatus" does not exist`) em todas as rotas de carregamento de dados em produÃ§Ã£o, impedindo a exibiÃ§Ã£o de registros e gerando falha 500 no dashboard, OS, pagamentos, financeiro, faturamento, despesas e relatÃ³rios.
+  - **RestauraÃ§Ã£o do Schema (String):** Revertemos o `schema.prisma` para usar tipos `String` nos campos de status de forma a manter compatibilidade estÃ¡vel com o Neon de produÃ§Ã£o. As validaÃ§Ãµes de integridade continuam ativas a nÃ­vel de cÃ³digo no arquivo centralizado `lib/status-map.ts`.
+  - **Auditoria e ConfirmaÃ§Ã£o de Dados:** Criado um endpoint temporÃ¡rio de auditoria que confirmou a existÃªncia e integridade de todos os dados reais no Neon (JosÃ© Carlos, Jocemar, OS-0001, OS-0002, orÃ§amentos, faturas, etc.). Todos os dados estÃ£o seguros e visÃ­veis.
+  - **Deploy de ProduÃ§Ã£o Final:** Removido o endpoint de teste e executado o deploy de produÃ§Ã£o final bem-sucedido na Vercel. Todas as telas voltaram a funcionar instantaneamente com os dados recuperados.
 
 ### 01/07/2026 - 14:50
-- **Estabilização do Domínio & Correções Críticas (Fase 1):**
-  - **Prisma Schema e Banco de Dados:** Criados enums nativos (`QuotationStatus`, `ServiceOrderStatus`, `PaymentStatus`, `InvoiceStatus`, `PurchaseOrderStatus`, `ExpenseStatus`, `AppointmentStatusModel`) e atualizados os modelos no `schema.prisma`. Sincronização executada com sucesso via `db push`.
-  - **P0-1: Normalização de Status de Pagamento:** Webhook Asaas e relatórios consolidados no status `confirmado`. Webhook Asaas emite faturas com status `emitida` (não `gerada`).
-  - **P0-2: Dashboard Sync:** APIs e UI corrigidos para exibir status `em_execucao` em vez de `em_progresso` para ordens de serviço ativas.
+- **EstabilizaÃ§Ã£o do DomÃ­nio & CorreÃ§Ãµes CrÃ­ticas (Fase 1):**
+  - **Prisma Schema e Banco de Dados:** Criados enums nativos (`QuotationStatus`, `ServiceOrderStatus`, `PaymentStatus`, `InvoiceStatus`, `PurchaseOrderStatus`, `ExpenseStatus`, `AppointmentStatusModel`) e atualizados os modelos no `schema.prisma`. SincronizaÃ§Ã£o executada com sucesso via `db push`.
+  - **P0-1: NormalizaÃ§Ã£o de Status de Pagamento:** Webhook Asaas e relatÃ³rios consolidados no status `confirmado`. Webhook Asaas emite faturas com status `emitida` (nÃ£o `gerada`).
+  - **P0-2: Dashboard Sync:** APIs e UI corrigidos para exibir status `em_execucao` em vez de `em_progresso` para ordens de serviÃ§o ativas.
   - **P0-3: Quotation View:** Removido o status legado `'approved'` no frontend, padronizando em `'aceito'`.
-  - **P0-5: Purchase Order History:** Ajustado gênero de `'recebido'` para `'recebida'`.
-  - **P0-7: Kanban de Orçamentos:** Inserida coluna `'cancelado'` com cor e label correspondentes no fluxo do Kanban.
-  - **Unificação de Autenticação e Whitelist:**
-    - Corrigido bypass crítico no cron SLA-Check por meio do helper `verifyCronSecret()` que exige configuração obrigatória do token.
-    - Adicionada autenticação em rotas órfãs: `cron/sla`, `appointments/[id]`, `appointments/[id]/status`, `appointments/conflicts`, `appointments/technician/[id]/week`, `reviews/summary` e `reviews/technician/[id]`.
+  - **P0-5: Purchase Order History:** Ajustado gÃªnero de `'recebido'` para `'recebida'`.
+  - **P0-7: Kanban de OrÃ§amentos:** Inserida coluna `'cancelado'` com cor e label correspondentes no fluxo do Kanban.
+  - **UnificaÃ§Ã£o de AutenticaÃ§Ã£o e Whitelist:**
+    - Corrigido bypass crÃ­tico no cron SLA-Check por meio do helper `verifyCronSecret()` que exige configuraÃ§Ã£o obrigatÃ³ria do token.
+    - Adicionada autenticaÃ§Ã£o em rotas Ã³rfÃ£s: `cron/sla`, `appointments/[id]`, `appointments/[id]/status`, `appointments/conflicts`, `appointments/technician/[id]/week`, `reviews/summary` e `reviews/technician/[id]`.
     - Implementado whitelist de campos em `appointments/[id]` contra mass-assignment (`APPOINTMENT_ALLOWED_FIELDS`).
-    - Analytics real (sem mocks) implementado no banco sob autenticação JWT.
-  - **Remoção de Prisma Client Múltiplos:** Todos os 14 arquivos que instanciavam `new PrismaClient()` migrados para usar a instância global `@/lib/prisma`.
-  - **Ledger Financeiro Consistente:** Campo `balance` em `FinancialTransaction` calculado a partir do histórico de saldo anterior da conta.
-  - **STATUS-MAP:** Criados `lib/status-map.ts` e `docs/STATUS-MAP.md` servindo como documentação oficial.
+    - Analytics real (sem mocks) implementado no banco sob autenticaÃ§Ã£o JWT.
+  - **RemoÃ§Ã£o de Prisma Client MÃºltiplos:** Todos os 14 arquivos que instanciavam `new PrismaClient()` migrados para usar a instÃ¢ncia global `@/lib/prisma`.
+  - **Ledger Financeiro Consistente:** Campo `balance` em `FinancialTransaction` calculado a partir do histÃ³rico de saldo anterior da conta.
+  - **STATUS-MAP:** Criados `lib/status-map.ts` e `docs/STATUS-MAP.md` servindo como documentaÃ§Ã£o oficial.
 
 ### 29/06/2026 - 13:58
-- **Homologação e Deploy de Produção Final na Vercel:**
-  - **Remoção de Prisma db push no build time da Vercel:** Resolvida a falha de build remoto no pipeline da Vercel ao remover a execução de `db push` em tempo de compilação remota, o que gerava erros de pooling e timeout ao conectar à base Neon de Washington. A migração foi executada localmente de forma segura e o build remoto passou a rodar em 50s.
-  - **URL de Produção Ativa:** Publicado em produção sob a URL: `https://clickmarido-ativo-frontend.vercel.app`.
-  - **Walkthrough Gerado:** Criado [walkthrough.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/ca3e09eb-ea98-4e87-bf30-c652a6b0e8aa/walkthrough.md) na pasta de artefatos consolidando todas as mudanças.
+- **HomologaÃ§Ã£o e Deploy de ProduÃ§Ã£o Final na Vercel:**
+  - **RemoÃ§Ã£o de Prisma db push no build time da Vercel:** Resolvida a falha de build remoto no pipeline da Vercel ao remover a execuÃ§Ã£o de `db push` em tempo de compilaÃ§Ã£o remota, o que gerava erros de pooling e timeout ao conectar Ã  base Neon de Washington. A migraÃ§Ã£o foi executada localmente de forma segura e o build remoto passou a rodar em 50s.
+  - **URL de ProduÃ§Ã£o Ativa:** Publicado em produÃ§Ã£o sob a URL: `https://clickmarido-ativo-frontend.vercel.app`.
+  - **Walkthrough Gerado:** Criado [walkthrough.md](file:///C:/Users/jc-pr/.gemini/antigravity-ide/brain/ca3e09eb-ea98-4e87-bf30-c652a6b0e8aa/walkthrough.md) na pasta de artefatos consolidando todas as mudanÃ§as.
 
 ### 29/06/2026 - 13:50
-- **Reestruturação Completa do Kanban, Drawer Comercial e Cockpit de Insights:**
-  - **Kanban Curto de 7 Etapas (`pre-vendas/page.tsx`):** Kanban remodelado com base no funil de qualificação curto. Cada card agora exibe prioridade (ALTA, MEDIA, BAIXA), temperatura (incluindo indicador vermelho pulsante `URGENTE`), valor previsto do lead, próxima ação comercial programada, SLA de atendimento, idade do lead, responsável e botões de ações rápidas (ajuste de prioridade e qualificação transacional direta).
+- **ReestruturaÃ§Ã£o Completa do Kanban, Drawer Comercial e Cockpit de Insights:**
+  - **Kanban Curto de 7 Etapas (`pre-vendas/page.tsx`):** Kanban remodelado com base no funil de qualificaÃ§Ã£o curto. Cada card agora exibe prioridade (ALTA, MEDIA, BAIXA), temperatura (incluindo indicador vermelho pulsante `URGENTE`), valor previsto do lead, prÃ³xima aÃ§Ã£o comercial programada, SLA de atendimento, idade do lead, responsÃ¡vel e botÃµes de aÃ§Ãµes rÃ¡pidas (ajuste de prioridade e qualificaÃ§Ã£o transacional direta).
   - **LeadDetailsDrawer Expandido com Metodologias:**
     - Criada a nova aba **"Qualificar"** no Drawer lateral.
-    - Integrados formulários interativos para as principais metodologias de vendas do mercado: **BANT**, **CHAMP**, **GPCT** e **SPIN Selling**.
-    - Salva as respostas no objeto JSON `qualificationData` e recalcula em tempo real o score de qualificação do lead no banco.
+    - Integrados formulÃ¡rios interativos para as principais metodologias de vendas do mercado: **BANT**, **CHAMP**, **GPCT** e **SPIN Selling**.
+    - Salva as respostas no objeto JSON `qualificationData` e recalcula em tempo real o score de qualificaÃ§Ã£o do lead no banco.
   - **Ajustes Finais de Insights de BI (`insights/page.tsx`):**
-    - Gráfico de funil adaptado para exibir as novas 7 etapas oficiais, colorindo em verde a barra final `Encaminhado Orçamento`.
-    - Gráfico de temperatura atualizado para contemplar o novo status `URGENTE` com cor vermelha nas fatias e legendas, removendo a antiga chave `PRONTO_ORCAMENTO`.
-  - **Auditoria de CRM Local (`test_crm_flow.js`):** Script de testes atualizado e executado com **100% de sucesso**, validando todas as transações, geração automática de proposta em rascunho com número sequencial e timeline histórica de eventos de leads.
+    - GrÃ¡fico de funil adaptado para exibir as novas 7 etapas oficiais, colorindo em verde a barra final `Encaminhado OrÃ§amento`.
+    - GrÃ¡fico de temperatura atualizado para contemplar o novo status `URGENTE` com cor vermelha nas fatias e legendas, removendo a antiga chave `PRONTO_ORCAMENTO`.
+  - **Auditoria de CRM Local (`test_crm_flow.js`):** Script de testes atualizado e executado com **100% de sucesso**, validando todas as transaÃ§Ãµes, geraÃ§Ã£o automÃ¡tica de proposta em rascunho com nÃºmero sequencial e timeline histÃ³rica de eventos de leads.
 
 ### 29/06/2026 - 13:40
-- **Reestruturação e Consolidação da Arquitetura Funcional de CRM & Pré-Vendas:**
-  - **APIs de CRM Completas:** Implementadas rotas reais de transação no backend:
-    - `POST /api/leads` (criação manual com registro em histórico).
-    - `POST /api/leads/bulk` (importação sequencial em lote/CSV).
-    - `PUT /api/leads/[id]` (atualização de estágio, responsável, status e perda comercial com auditoria de eventos).
-    - `/api/leads/[id]/followup`, `/api/leads/[id]/appointment` e `/api/leads/[id]/events` (cadastro de interações, agendamentos e carregamento da timeline).
-    - `POST /api/leads/[id]/qualify` (qualificação de lead: cria cliente, gera proposta em rascunho vinculada, avança etapa para proposta solicitada e vincula os IDs no banco).
-  - **Correção P0 de Params Assíncronos no Next.js (Moderno):** Ajustados todos os handlers de rotas dinâmicas de leads (`[id]`) para aguardar a resolução da Promise `params` (`const { id } = await params`) antes de acessar suas propriedades, eliminando o erro 500 do Prisma.
+- **ReestruturaÃ§Ã£o e ConsolidaÃ§Ã£o da Arquitetura Funcional de CRM & PrÃ©-Vendas:**
+  - **APIs de CRM Completas:** Implementadas rotas reais de transaÃ§Ã£o no backend:
+    - `POST /api/leads` (criaÃ§Ã£o manual com registro em histÃ³rico).
+    - `POST /api/leads/bulk` (importaÃ§Ã£o sequencial em lote/CSV).
+    - `PUT /api/leads/[id]` (atualizaÃ§Ã£o de estÃ¡gio, responsÃ¡vel, status e perda comercial com auditoria de eventos).
+    - `/api/leads/[id]/followup`, `/api/leads/[id]/appointment` e `/api/leads/[id]/events` (cadastro de interaÃ§Ãµes, agendamentos e carregamento da timeline).
+    - `POST /api/leads/[id]/qualify` (qualificaÃ§Ã£o de lead: cria cliente, gera proposta em rascunho vinculada, avanÃ§a etapa para proposta solicitada e vincula os IDs no banco).
+  - **CorreÃ§Ã£o P0 de Params AssÃ­ncronos no Next.js (Moderno):** Ajustados todos os handlers de rotas dinÃ¢micas de leads (`[id]`) para aguardar a resoluÃ§Ã£o da Promise `params` (`const { id } = await params`) antes de acessar suas propriedades, eliminando o erro 500 do Prisma.
 
 ### 29/06/2026 - 13:20
-- **Resolução de Erro de Produção (401 Unauthorized) nos Módulos de CRM:**
-  - **Identificação do Erro:** O middleware (`proxy.ts` configurado no Next.js) bloqueia chamadas de API sem cabeçalho `Authorization: Bearer <token>`. Injetados tokens JWT via hook `useAuth` nas páginas do Kanban (`pre-vendas/page.tsx`) e Insights (`insights/page.tsx`), resolvendo a quebra.
+- **ResoluÃ§Ã£o de Erro de ProduÃ§Ã£o (401 Unauthorized) nos MÃ³dulos de CRM:**
+  - **IdentificaÃ§Ã£o do Erro:** O middleware (`proxy.ts` configurado no Next.js) bloqueia chamadas de API sem cabeÃ§alho `Authorization: Bearer <token>`. Injetados tokens JWT via hook `useAuth` nas pÃ¡ginas do Kanban (`pre-vendas/page.tsx`) e Insights (`insights/page.tsx`), resolvendo a quebra.
 
 ### 29/06/2026 - 13:00
-- **Padronização, Polimento e Enriquecimento Completo de Pré-Vendas e Insights:**
-  - **API Real de CRM (`/api/leads/insights/route.ts`):** Rota adicionada para calcular e expor estatísticas comerciais reais do banco.
-  - **Cockpit Comercial de Insights (`insights/page.tsx`):** Transformado em painel gerencial rico com gráficos Recharts responsivos de funil, origens e descarte, dotados de contraste dinâmico para modo escuro.
+- **PadronizaÃ§Ã£o, Polimento e Enriquecimento Completo de PrÃ©-Vendas e Insights:**
+  - **API Real de CRM (`/api/leads/insights/route.ts`):** Rota adicionada para calcular e expor estatÃ­sticas comerciais reais do banco.
+  - **Cockpit Comercial de Insights (`insights/page.tsx`):** Transformado em painel gerencial rico com grÃ¡ficos Recharts responsivos de funil, origens e descarte, dotados de contraste dinÃ¢mico para modo escuro.
 
 ### 27/06/2026 - 21:05
-- **Correção na Criação de Ordens de Compra (`/purchases/new`):**
-  - A API (`POST /api/purchase-orders/route.ts`) foi ajustada para aceitar tanto o ID único (`cuid`) quanto a numeração amigável do orçamento (`number`) ao realizar os vínculos.
+- **CorreÃ§Ã£o na CriaÃ§Ã£o de Ordens de Compra (`/purchases/new`):**
+  - A API (`POST /api/purchase-orders/route.ts`) foi ajustada para aceitar tanto o ID Ãºnico (`cuid`) quanto a numeraÃ§Ã£o amigÃ¡vel do orÃ§amento (`number`) ao realizar os vÃ­nculos.
 
 ### 27/06/2026 - 19:56
-- **Estratificação Visual do Módulo de Despesas:**
-  - Implementação de funcionalidade de "Expansão de Linha" (Expandable Row) na tabela principal de Despesas (`expenses/page.tsx`).
+- **EstratificaÃ§Ã£o Visual do MÃ³dulo de Despesas:**
+  - ImplementaÃ§Ã£o de funcionalidade de "ExpansÃ£o de Linha" (Expandable Row) na tabela principal de Despesas (`expenses/page.tsx`).
 
 ### 27/06/2026 - 19:10
 - **Auditoria Funcional, UX e Deploy Final (Fase 5 e Fase 6):**
-  - **Revisão de UX e Acessibilidade:** O layout de Relatórios e do Dashboard foi polido para garantir leitura rápida.
+  - **RevisÃ£o de UX e Acessibilidade:** O layout de RelatÃ³rios e do Dashboard foi polido para garantir leitura rÃ¡pida.
 
 ### 27/06/2026 - 16:05
-- **Auditoria e Ajuste do Módulo Financeiro (Solo Mode):**
-  - Integração da DRE com o Livro Caixa (`FinancialTransaction`), resolvendo a divergência crítica (P0) entre saldos do Dashboard e relatórios mensais.
+- **Auditoria e Ajuste do MÃ³dulo Financeiro (Solo Mode):**
+  - IntegraÃ§Ã£o da DRE com o Livro Caixa (`FinancialTransaction`), resolvendo a divergÃªncia crÃ­tica (P0) entre saldos do Dashboard e relatÃ³rios mensais.
 
 ### 26/06/2026 - 16:45
-- **Correção da Quebra no Módulo de Orçamentos (Kanban e Detalhes):**
-  - Corrigido o erro fatal que impedia a renderização da listagem de orçamentos devido à chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (convertidos com `Number(...)`).
+- **CorreÃ§Ã£o da Quebra no MÃ³dulo de OrÃ§amentos (Kanban e Detalhes):**
+  - Corrigido o erro fatal que impedia a renderizaÃ§Ã£o da listagem de orÃ§amentos devido Ã  chamada direta de `.toFixed(2)` em propriedades do tipo `Decimal` (convertidos com `Number(...)`).
 
 ### 02/07/2026 - 16:48
-- **Melhorias no Fluxo da Ordem de Serviço:**
-  - Criado o `StartServiceOrderModal.tsx` para exibição detalhada antes do início.
-  - Implementada funcionalidade de atribuir outro técnico na hora do "Iniciar".
-  - Adicionada etapa obrigatória de **Checklist** no momento de concluir a OS (`ServiceOrderForm.tsx`).
+- **Melhorias no Fluxo da Ordem de ServiÃ§o:**
+  - Criado o `StartServiceOrderModal.tsx` para exibiÃ§Ã£o detalhada antes do inÃ­cio.
+  - Implementada funcionalidade de atribuir outro tÃ©cnico na hora do "Iniciar".
+  - Adicionada etapa obrigatÃ³ria de **Checklist** no momento de concluir a OS (`ServiceOrderForm.tsx`).
   - Atualizadas as rotas `/api/service-orders/[id]/start` e `/complete` no backend.
   - Deploy efetuado.
 
-## TODOs / Próximos Passos
-- [x] Implementar incremento automático de estoque físico do produto ao registrar recebimento de itens na Ordem de Compra.
+## TODOs / PrÃ³ximos Passos
+- [x] Implementar incremento automÃ¡tico de estoque fÃ­sico do produto ao registrar recebimento de itens na Ordem de Compra.
 - [x] Padronizar webhook Mercado Pago para concluir a OS correspondente ao confirmar o pagamento (alinhado com o webhook Asaas).
-- [x] Criar rotina para envio automático de pesquisa de satisfação NPS via WhatsApp 24 horas após conclusão do faturamento do serviço.
+- [x] Criar rotina para envio automÃ¡tico de pesquisa de satisfaÃ§Ã£o NPS via WhatsApp 24 horas apÃ³s conclusÃ£o do faturamento do serviÃ§o.
 - [x] Configurar credenciais do Google Cloud e refresh token para envio de e-mails via Gmail API.
 - [ ] Conectar API de novos leads com Webhooks externos de landing pages.
-- [ ] Implementar templates automáticos de WhatsApp a cada transição de etapa do lead.
+- [ ] Implementar templates automÃ¡ticos de WhatsApp a cada transiÃ§Ã£o de etapa do lead.
 
  # # #   0 2 / 0 7 / 2 0 2 6   -   1 7 : 0 8 
- -   * * A t u a l i z a � � o   d o   D a s h b o a r d   e   R e g r a s   d e   D i s p a r o   d e   N P S : * * 
-     -   O   p a i n e l   d e   N P S   a g o r a   e x i b e   a   a v a l i a � � o   e s p e c � f i c a   d o   t � c n i c o   e   o   n � m e r o   d a   O S   v i n c u l a d a   a   c a d a   f e e d b a c k . 
-     -   A   l � g i c a   d e   p e n d � n c i a s   ( a p i / n p s / p e n d i n g )   e   d o   c r o n   ( a p i / c r o n / n p s - r e m i n d e r s )   f o i   a t u a l i z a d a   p a r a   s e   b a s e a r   n a   d a t a   d e   c o n c l u s � o   d a   O r d e m   d e   S e r v i � o   ( m � n i m o   2 4   h o r a s ) ,   n � o   m a i s   n o   p a g a m e n t o .   A   a b a   \  
+ -   * * A t u a l i z a ç ã o   d o   D a s h b o a r d   e   R e g r a s   d e   D i s p a r o   d e   N P S : * * 
+     -   O   p a i n e l   d e   N P S   a g o r a   e x i b e   a   a v a l i a ç ã o   e s p e c í f i c a   d o   t é c n i c o   e   o   n ú m e r o   d a   O S   v i n c u l a d a   a   c a d a   f e e d b a c k . 
+     -   A   l ó g i c a   d e   p e n d ê n c i a s   ( a p i / n p s / p e n d i n g )   e   d o   c r o n   ( a p i / c r o n / n p s - r e m i n d e r s )   f o i   a t u a l i z a d a   p a r a   s e   b a s e a r   n a   d a t a   d e   c o n c l u s ã o   d a   O r d e m   d e   S e r v i ç o   ( m í n i m o   2 4   h o r a s ) ,   n ã o   m a i s   n o   p a g a m e n t o .   A   a b a   \  
  P e s q u i s a s  
  P e n d e n t e s \   r e f l e t e   i s s o . 
-     -   O   d i s p a r o   d a   p e s q u i s a   a g o r a   e m b u t e   n a   U R L   o s   I D s   d a   O S   e   d o   t � c n i c o ,   g a r a n t i n d o   o   v � n c u l o   n o   b a c k e n d   a o   s e r   r e s p o n d i d a . 
-     -   O   d i s p a r o   i n s t a n t � n e o   a p � s   b a i x a   d a   f a t u r a   ( w e b h o o k )   f o i   r e m o v i d o .  
+     -   O   d i s p a r o   d a   p e s q u i s a   a g o r a   e m b u t e   n a   U R L   o s   I D s   d a   O S   e   d o   t é c n i c o ,   g a r a n t i n d o   o   v í n c u l o   n o   b a c k e n d   a o   s e r   r e s p o n d i d a . 
+     -   O   d i s p a r o   i n s t a n t â n e o   a p ó s   b a i x a   d a   f a t u r a   ( w e b h o o k )   f o i   r e m o v i d o .  
  
 ### 02/07/2026 - 17:55
 - **Auditoria de UI e Tecla ESC:**
   - **useEscapeToClose:** Aplicado e verificado em todos os modais do dashboard para permitir fechamento via tecla ESC.
-  - **Excluir:** Op��o de Excluir adicionada com Modal de Confirma��o em Telas que n�o possu�am, como T�cnicos e Ordens de Servi�o.
+  - **Excluir:** Opção de Excluir adicionada com Modal de Confirmação em Telas que não possuíam, como Técnicos e Ordens de Serviço.
+
+- **[02/07/2026 - 18:25]:** Auditoria e padronização dos modais: Adicionado fechamento via ESC para os modais que faltavam (Service Orders, Product Picker, Proposta), adicionada rota de exclusão (DELETE) na API de Garantias e adicionado o botão de Excluir na interface de Garantias. Testes de build realizados e código atualizado no repositório (Git Push).
+  - Arquivos modificados: frontend/app/(dashboard)/pre-vendas/page.tsx, frontend/app/(dashboard)/service-orders/page.tsx, frontend/app/(dashboard)/warranties/page.tsx, frontend/app/print/quotation/[id]/page.tsx, frontend/components/leads/LeadCardRich.tsx, frontend/components/leads/LeadDetailsDrawer.tsx, frontend/components/quotations/ProductPicker.tsx, frontend/app/api/warranties/[id]/route.ts

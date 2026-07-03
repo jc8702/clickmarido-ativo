@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavLink {
   href: string;
@@ -69,35 +70,69 @@ export function Sidebar({
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-6 border-b border-neutral-200 dark:border-neutral-700">
-          {isOpen && logo && (
-            <div className="text-lg font-bold bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
-              {logo}
-            </div>
-          )}
-          {!isOpen && logo && (
-            <div className="text-sm font-bold text-center w-full">CM</div>
-          )}
-          
-          <button
-            onClick={onToggle}
-            className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-            title="Toggle sidebar"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d={isOpen ? 'M15 19l-7-7 7-7' : 'M9 5l7 7-7 7'}
+        <div className={`flex items-center px-4 py-6 border-b border-neutral-200 dark:border-neutral-700 ${isOpen ? 'justify-between' : 'justify-center relative'}`}>
+          {isOpen ? (
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.jpg"
+                alt="Click Marido Logo"
+                className="w-10 h-10 rounded-full object-cover border border-neutral-200 dark:border-neutral-700"
               />
-            </svg>
-          </button>
+              <span className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
+                Click Marido
+              </span>
+            </div>
+          ) : (
+            <img
+              src="/logo.jpg"
+              alt="Click Marido Logo"
+              onClick={onToggle}
+              className="w-10 h-10 rounded-full object-cover border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:opacity-80 transition-opacity"
+              title="Abrir menu"
+            />
+          )}
+
+          {isOpen ? (
+            <button
+              onClick={onToggle}
+              className="p-1 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+              title="Fechar menu"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={onToggle}
+              className="absolute -right-3 top-1/2 -translate-y-1/2 bg-neutral-900 dark:bg-neutral-850 dark:bg-neutral-800 text-white rounded-full p-1 border border-neutral-200 dark:border-neutral-700 shadow-md hover:bg-neutral-800 dark:hover:bg-neutral-700 transition-colors z-50 flex items-center justify-center"
+              title="Abrir menu"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Navigation Links */}
@@ -139,12 +174,17 @@ export function Sidebar({
           <div className="border-t border-neutral-200 dark:border-neutral-700 px-3 py-4 space-y-3">
             {isOpen ? (
               <>
-                <div className="px-2 py-1">
-                  <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                    {user.name}
+                <div className="flex items-center justify-between px-2 py-1 gap-2">
+                  <div className="truncate flex-1">
+                    <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                      {user.name}
+                    </div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                      {user.email}
+                    </div>
                   </div>
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                    {user.email}
+                  <div className="flex-shrink-0">
+                    <ThemeToggle />
                   </div>
                 </div>
                 {onLogout && (
@@ -161,26 +201,31 @@ export function Sidebar({
                 )}
               </>
             ) : (
-              <button
-                onClick={onLogout}
-                className="w-full p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800
-                  transition-colors text-neutral-600 dark:text-neutral-400"
-                title="Logout"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <ThemeToggle />
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="w-full p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800
+                      transition-colors text-neutral-600 dark:text-neutral-400 flex justify-center"
+                    title="Sair"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
