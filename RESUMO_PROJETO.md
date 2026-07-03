@@ -1,9 +1,12 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Integração com Google Agenda e seleção de técnicos em compromissos de pré-vendas concluídas e prontas para deploy.
+- **Status Atual:** Integração de compromissos com o Google Agenda incluindo e-mail de técnicos concluída e deploy realizado.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 03/07/2026 - 16:25
+- **Última Atualização:** 03/07/2026 - 16:45
+
+- **[03/07/2026 - 16:45]:** Correção e melhoria na integração da agenda do técnico. Adicionado o e-mail do técnico como participante (attendee) nas chamadas do Google Calendar e configurado `sendUpdates: 'all'` para disparar convites automáticos nas agendas individuais.
+  - Arquivos modificados: `frontend/lib/google-calendar.ts`, `frontend/app/api/leads/[id]/appointment/route.ts`.
 
 - **[03/07/2026 - 16:25]:** Implementação da integração de agendamentos de leads com o Google Calendar e inclusão da atribuição do técnico responsável para visitas comerciais de pré-vendas.
   - Arquivos modificados: `frontend/prisma/schema.prisma`, `frontend/lib/google-calendar.ts`, `frontend/app/api/auth/google/login/route.ts`, `frontend/app/api/leads/[id]/appointment/route.ts`, `frontend/app/api/leads/[id]/route.ts`, `frontend/components/leads/LeadScheduleForm.tsx`, `frontend/components/leads/LeadDetailsDrawer.tsx`.

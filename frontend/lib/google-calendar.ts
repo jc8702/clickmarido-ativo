@@ -25,6 +25,7 @@ export interface CalendarEventData {
   location?: string;
   startDateTime: Date;
   endDateTime: Date;
+  attendees?: { email: string }[];
 }
 
 /**
@@ -40,6 +41,7 @@ export async function createCalendarEvent(eventData: CalendarEventData): Promise
   try {
     const response = await calendar.events.insert({
       calendarId: 'primary',
+      sendUpdates: 'all', // Notifica os convidados (técnicos)
       requestBody: {
         summary: eventData.summary,
         description: eventData.description,
@@ -52,6 +54,7 @@ export async function createCalendarEvent(eventData: CalendarEventData): Promise
           dateTime: eventData.endDateTime.toISOString(),
           timeZone: 'America/Sao_Paulo',
         },
+        attendees: eventData.attendees || [],
       },
     });
 
@@ -74,6 +77,7 @@ export async function updateCalendarEvent(eventId: string, eventData: CalendarEv
     const response = await calendar.events.update({
       calendarId: 'primary',
       eventId,
+      sendUpdates: 'all', // Notifica os convidados (técnicos) de alterações
       requestBody: {
         summary: eventData.summary,
         description: eventData.description,
@@ -86,6 +90,7 @@ export async function updateCalendarEvent(eventId: string, eventData: CalendarEv
           dateTime: eventData.endDateTime.toISOString(),
           timeZone: 'America/Sao_Paulo',
         },
+        attendees: eventData.attendees || [],
       },
     });
 
@@ -108,6 +113,7 @@ export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
     await calendar.events.delete({
       calendarId: 'primary',
       eventId,
+      sendUpdates: 'all', // Notifica os convidados de que o evento foi cancelado
     });
     return true;
   } catch (error: any) {

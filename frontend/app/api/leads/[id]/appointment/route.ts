@@ -38,12 +38,14 @@ export async function POST(
 
     // 2. Buscar técnico se fornecido
     let technicianName = '';
+    let technicianEmail = '';
     if (technicianId) {
       const technician = await prisma.technician.findUnique({
         where: { id: technicianId },
       });
       if (technician) {
         technicianName = technician.name;
+        technicianEmail = technician.email;
       }
     }
 
@@ -70,11 +72,17 @@ export async function POST(
         notes ? `Observações: ${notes}` : null,
       ].filter(Boolean);
 
+      const attendees = [];
+      if (technicianEmail && technicianEmail.includes('@')) {
+        attendees.push({ email: technicianEmail });
+      }
+
       googleEventId = await createCalendarEvent({
         summary: `Visita Técnica (Click Marido) - Lead: ${lead.name}`,
         description: descriptionParts.join('\n'),
         startDateTime: scheduledDate,
         endDateTime,
+        attendees,
       });
 
       if (googleEventId) {
@@ -163,6 +171,7 @@ export async function PUT(
 
     // 3. Buscar técnico se fornecido
     let technicianName = '';
+    let technicianEmail = '';
     const activeTechId = technicianId !== undefined ? technicianId : appointment.technicianId;
     if (activeTechId) {
       const technician = await prisma.technician.findUnique({
@@ -170,6 +179,7 @@ export async function PUT(
       });
       if (technician) {
         technicianName = technician.name;
+        technicianEmail = technician.email;
       }
     }
 
@@ -195,11 +205,17 @@ export async function PUT(
         notes !== undefined ? (notes ? `Observações: ${notes}` : null) : (appointment.notes ? `Observações: ${appointment.notes}` : null),
       ].filter(Boolean);
 
+      const attendees = [];
+      if (technicianEmail && technicianEmail.includes('@')) {
+        attendees.push({ email: technicianEmail });
+      }
+
       const eventData = {
         summary: `Visita Técnica (Click Marido) - Lead: ${lead.name}`,
         description: descriptionParts.join('\n'),
         startDateTime: scheduledDate,
         endDateTime,
+        attendees,
       };
 
       if (googleEventId) {
