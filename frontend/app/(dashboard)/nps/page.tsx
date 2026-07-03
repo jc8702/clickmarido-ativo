@@ -78,20 +78,20 @@ export default function NPSPage() {
             Acompanhe a satisfação (NPS) e envie pesquisas para serviços concluídos.
           </p>
         </div>
-        <div className="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg">
+        <div className="flex bg-neutral-100/70 dark:bg-neutral-800/70 backdrop-blur-md p-1.5 rounded-full border border-neutral-200/50 dark:border-neutral-700/50 shadow-sm">
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${activeTab === 'dashboard' ? 'bg-white dark:bg-neutral-700 shadow-sm text-primary-600 dark:text-primary-400' : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}`}
+            className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 ${activeTab === 'dashboard' ? 'bg-white dark:bg-neutral-700 shadow-md text-primary-600 dark:text-primary-400 scale-105' : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
           >
             Dashboard
           </button>
           <button 
             onClick={() => setActiveTab('pending')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-all flex items-center gap-2 ${activeTab === 'pending' ? 'bg-white dark:bg-neutral-700 shadow-sm text-primary-600 dark:text-primary-400' : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'}`}
+            className={`px-5 py-2.5 text-sm font-semibold rounded-full transition-all duration-300 flex items-center gap-2 ${activeTab === 'pending' ? 'bg-white dark:bg-neutral-700 shadow-md text-primary-600 dark:text-primary-400 scale-105' : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50'}`}
           >
             Pesquisas Pendentes
             {pending && pending.length > 0 && (
-              <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+              <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                 {pending.length}
               </span>
             )}
@@ -103,18 +103,19 @@ export default function NPSPage() {
         <div className="space-y-6">
           {/* Grid de Métricas Principais */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-1 overflow-hidden relative border-0 shadow-lg group">
-              <div className={`absolute inset-0 opacity-10 ${classification.bg}`} />
-              <CardContent className="flex flex-col items-center justify-center p-8 h-full relative z-10">
+            <Card className="md:col-span-1 overflow-hidden relative border border-white/20 dark:border-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-3xl group hover:-translate-y-1 transition-all duration-300">
+              <div className={`absolute inset-0 opacity-15 dark:opacity-20 ${classification.bg} group-hover:opacity-25 transition-opacity duration-500`} />
+              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/20 dark:bg-white/5 blur-3xl rounded-full pointer-events-none" />
+              <CardContent className="flex flex-col items-center justify-center p-10 h-full relative z-10">
                 {isLoading ? (
-                  <div className="h-20 w-32 bg-neutral-200 dark:bg-neutral-800 rounded-lg animate-pulse" />
+                  <div className="h-24 w-32 bg-neutral-200/50 dark:bg-neutral-800/50 rounded-2xl animate-pulse" />
                 ) : (
                   <>
-                    <p className="text-sm font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">NPS Global</p>
-                    <span className={`text-7xl font-black tracking-tighter drop-shadow-sm ${classification.color.split(' ')[0]}`}>
+                    <p className="text-xs font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400 mb-4">NPS Global</p>
+                    <span className={`text-8xl font-black tracking-tighter drop-shadow-sm ${classification.color.split(' ')[0]} group-hover:scale-105 transition-transform duration-500`}>
                       {npsScore > 0 ? `+${npsScore}` : npsScore}
                     </span>
-                    <div className={`mt-4 px-4 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wider ${classification.color}`}>
+                    <div className={`mt-6 px-5 py-2 rounded-full border backdrop-blur-sm text-xs font-bold uppercase tracking-wider shadow-sm transition-colors ${classification.color}`}>
                       {classification.label}
                     </div>
                   </>
@@ -123,19 +124,19 @@ export default function NPSPage() {
             </Card>
 
             <div className="md:col-span-2 grid grid-cols-2 gap-6">
-              <Card className="border-0 shadow-md">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-neutral-500">Total de Respostas</CardTitle>
+              <Card className="border border-neutral-100 dark:border-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                <CardHeader className="pb-2 pt-6 px-6">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-neutral-500">Total de Respostas</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-4xl font-extrabold text-neutral-900 dark:text-neutral-100">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-5xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
                     {isLoading ? '...' : metrics?.totalResponses ?? 0}
                   </div>
-                  <p className="text-xs text-neutral-400 mt-1">respostas recebidas até hoje</p>
+                  <p className="text-sm text-neutral-500 mt-2 font-medium">respostas recebidas até hoje</p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-md row-span-2 flex flex-col justify-center">
+              <Card className="border border-neutral-100 dark:border-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl row-span-2 flex flex-col justify-center overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
                 <CardHeader className="pb-0 text-center">
                   <CardTitle className="text-sm font-medium text-neutral-500">Distribuição Visual</CardTitle>
                 </CardHeader>
@@ -177,25 +178,25 @@ export default function NPSPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-md">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-neutral-500">Engajamento (Taxa de Resposta)</CardTitle>
+              <Card className="border border-neutral-100 dark:border-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300">
+                <CardHeader className="pb-2 pt-6 px-6">
+                  <CardTitle className="text-xs font-bold uppercase tracking-wider text-neutral-500">Taxa de Resposta</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-extrabold text-neutral-900 dark:text-neutral-100">
+                <CardContent className="px-6 pb-6">
+                  <div className="text-5xl font-black tracking-tight text-neutral-900 dark:text-neutral-100">
                     {isLoading ? '...' : metrics?.totalResponses ? Math.round((metrics.totalResponses / Math.max(metrics.totalResponses + pending.length, 1)) * 100) : 0}%
                   </div>
-                  <p className="text-xs text-neutral-400 mt-1">dos clientes enviados respondem</p>
+                  <p className="text-sm text-neutral-500 mt-2 font-medium">dos clientes enviados respondem</p>
                 </CardContent>
               </Card>
             </div>
           </div>
 
           {/* Histórico e Feedbacks */}
-          <Card className="border-0 shadow-lg overflow-hidden rounded-2xl">
-            <CardHeader className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-100 dark:border-neutral-800 px-6 py-5">
-              <CardTitle className="text-xl">Feedbacks Recentes</CardTitle>
-              <CardDescription>O que os clientes estão dizendo sobre seus serviços</CardDescription>
+          <Card className="border border-neutral-100 dark:border-neutral-800 shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden rounded-3xl">
+            <CardHeader className="bg-neutral-50/50 dark:bg-neutral-900/50 border-b border-neutral-100 dark:border-neutral-800 px-8 py-6 backdrop-blur-sm">
+              <CardTitle className="text-xl font-bold">Feedbacks Recentes</CardTitle>
+              <CardDescription className="text-neutral-500 mt-1">O que os clientes estão dizendo sobre seus serviços</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -318,15 +319,15 @@ export default function NPSPage() {
       )}
 
       {activeTab === 'pending' && (
-        <Card className="border-0 shadow-lg rounded-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
-          <CardHeader className="bg-rose-50 dark:bg-rose-950/20 border-b border-rose-100 dark:border-rose-900/30 px-6 py-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-rose-100 dark:bg-rose-900/50 rounded-lg">
-                <svg className="w-6 h-6 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+        <Card className="border border-rose-100/50 dark:border-rose-900/30 shadow-[0_8px_30px_rgb(225,29,72,0.08)] rounded-3xl overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
+          <CardHeader className="bg-gradient-to-r from-rose-50/80 to-transparent dark:from-rose-950/30 dark:to-transparent border-b border-rose-100/50 dark:border-rose-900/30 px-8 py-8 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-rose-100 dark:bg-rose-900/50 rounded-2xl shadow-sm text-rose-600 dark:text-rose-400">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
               </div>
               <div>
-                <CardTitle className="text-xl text-rose-900 dark:text-rose-100">Pesquisas Prontas para Disparo</CardTitle>
-                <CardDescription className="text-rose-700/70 dark:text-rose-200/50">
+                <CardTitle className="text-2xl font-bold text-rose-900 dark:text-rose-100">Pesquisas Prontas para Disparo</CardTitle>
+                <CardDescription className="text-rose-700/80 dark:text-rose-200/60 mt-1 font-medium">
                   Clientes com serviço recentemente concluído que devem receber a avaliação de NPS.
                 </CardDescription>
               </div>

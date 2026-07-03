@@ -310,3 +310,36 @@ export async function GET(
     return NextResponse.json({ error: 'Erro ao buscar lead' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const decoded = validateToken(request);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const { id: leadId } = await params;
+
+    // Verificar se o lead existe
+    const currentLead = await prisma.lead.findUnique({
+      where: { id: leadId },
+    });
+
+    if (!currentLead) {
+      return NextResponse.json({ error: 'Lead não encontrado' }, { status: 404 });
+    }
+
+    // Excluir o lead (o prisma cuidará das dependências em cascata graças ao onDelete: Cascade)
+    await prisma.lead.delete({
+      where: { id: leadId },
+    });
+
+    return NextResponse.json({ message: 'Lead excluído com sucesso' });
+  } catch (error) {
+    console.error('Error deleting lead:', error);
+    return NextResponse.json({ error: 'Erro ao excluir lead' }, { status: 500 });
+  }
+}

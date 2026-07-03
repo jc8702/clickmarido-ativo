@@ -24,11 +24,50 @@ export async function GET(request: Request) {
         }
       }
       
-      // Se for uma URL externa (ex: Google Drive), faz o redirect
+      if (settings.logoUrl.startsWith('http')) {
+        // Ao invés de redirect, baixar e servir a imagem diretamente (Proxy)
+        // Isso previne que o browser bloqueie o carregamento do favicon por CORS ou redirect
+        try {
+          const response = await fetch(settings.logoUrl);
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = response.headers.get('content-type') || 'image/jpeg';
+            
+            return new NextResponse(buffer, {
+              headers: {
+                'Content-Type': contentType,
+                'Cache-Control': 'public, max-age=86400'
+              }
+            });
+          }
+        } catch (fetchError) {
+          console.error('Error fetching external logo:', fetchError);
+        }
+      }
+      
+      // Fallback redirect case
       return NextResponse.redirect(settings.logoUrl, { status: 302 });
     }
 
     // Fallback: redirecionar para um ícone padrão no public
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const fallbackPath = path.join(process.cwd(), 'public', 'logo.jpg');
+      if (fs.existsSync(fallbackPath)) {
+        const buffer = fs.readFileSync(fallbackPath);
+        return new NextResponse(buffer, {
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'public, max-age=86400'
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Error reading fallback logo:', e);
+    }
+    
     const fallbackUrl = new URL('/logo.jpg', request.url);
     return NextResponse.redirect(fallbackUrl, { status: 302 });
   } catch (error) {

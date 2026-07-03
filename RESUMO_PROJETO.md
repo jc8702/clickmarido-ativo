@@ -6,6 +6,14 @@
 - **Última Atualização:** 03/07/2026 - 13:40
 
 ## Histórico de Alterações
+- **[03/07/2026 - 17:36]:** Melhoria na API de Favicon (`/api/favicon`) para atuar como proxy das imagens hospedadas externamente. Isso garante que o navegador renderize o ícone corretamente na aba sem os bloqueios típicos de redirecionamentos (302) de CORS.
+  - Arquivos modificados: `frontend/app/api/favicon/route.ts`
+
+- **[03/07/2026 - 17:28]:** Implementação do método `DELETE` na API de Leads para corrigir problema em que o modal de exclusão de lead travava aberto. A deleção utiliza `onDelete: Cascade` do Prisma para limpeza segura dos vínculos.
+  - Arquivos modificados: `frontend/app/api/leads/[id]/route.ts`
+
+- **[03/07/2026 - 17:21]:** Melhoria na interface do módulo de NPS (Dashboard e Pendentes) para torná-la mais moderna e fluida, com bordas arredondadas e glassmorphism.
+  - Arquivos modificados: `frontend/app/(dashboard)/nps/page.tsx`
 
 ### 03/07/2026 - 16:59
 - **Identidade Visual e Logo Dinâmica:**
