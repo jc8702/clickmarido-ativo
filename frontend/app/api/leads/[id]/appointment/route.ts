@@ -62,6 +62,7 @@ export async function POST(
 
     // 4. Integrar com o Google Calendar
     let googleEventId: string | null = null;
+    let calendarErrorMsg = '';
     try {
       const endDateTime = new Date(scheduledDate.getTime() + 60 * 60 * 1000); // +1 hora por padrão
       const descriptionParts = [
@@ -77,7 +78,7 @@ export async function POST(
         attendees.push({ email: technicianEmail });
       }
 
-      googleEventId = await createCalendarEvent({
+      const calResult = await createCalendarEvent({
         summary: `Visita Técnica (Click Marido) - Lead: ${lead.name}`,
         description: descriptionParts.join('\n'),
         startDateTime: scheduledDate,
@@ -85,21 +86,28 @@ export async function POST(
         attendees,
       });
 
-      if (googleEventId) {
+      if (calResult.success && calResult.eventId) {
+        googleEventId = calResult.eventId;
         // Salva o googleEventId no agendamento
         await prisma.leadAppointment.update({
           where: { id: appointment.id },
           data: { googleEventId },
         });
         appointment.googleEventId = googleEventId;
+      } else {
+        calendarErrorMsg = calResult.error || 'Erro ao criar evento no Calendar';
       }
-    } catch (calErr) {
+    } catch (calErr: any) {
       console.error('[Google Calendar] Falha na integração ao criar evento:', calErr);
+      calendarErrorMsg = calErr.message || 'Erro inesperado na integração';
     }
 
     // 5. Registrar o evento de histórico
     const techText = technicianName ? `com o técnico ${technicianName}` : 'sem técnico atribuído';
-    const calText = googleEventId ? ' (Integrado ao Google Agenda)' : '';
+    const calText = googleEventId 
+      ? ' (Integrado ao Google Agenda)' 
+      : ` (Falha ao sincronizar com Google Agenda: ${calendarErrorMsg || 'credenciais inválidas'})`;
+      
     await prisma.leadEvent.create({
       data: {
         leadId,
@@ -195,6 +203,7 @@ export async function PUT(
 
     // 5. Atualizar no Google Calendar
     let googleEventId = updatedAppointment.googleEventId;
+    let calendarErrorMsg = '';
     try {
       const endDateTime = new Date(scheduledDate.getTime() + 60 * 60 * 1000); // +1 hora
       const descriptionParts = [
@@ -219,24 +228,34 @@ export async function PUT(
       };
 
       if (googleEventId) {
-        await updateCalendarEvent(googleEventId, eventData);
+        const calResult = await updateCalendarEvent(googleEventId, eventData);
+        if (!calResult.success) {
+          calendarErrorMsg = calResult.error || 'Erro ao atualizar evento no Calendar';
+        }
       } else {
-        googleEventId = await createCalendarEvent(eventData);
-        if (googleEventId) {
+        const calResult = await createCalendarEvent(eventData);
+        if (calResult.success && calResult.eventId) {
+          googleEventId = calResult.eventId;
           await prisma.leadAppointment.update({
             where: { id: updatedAppointment.id },
             data: { googleEventId },
           });
           updatedAppointment.googleEventId = googleEventId;
+        } else {
+          calendarErrorMsg = calResult.error || 'Erro ao criar evento no Calendar';
         }
       }
-    } catch (calErr) {
+    } catch (calErr: any) {
       console.error('[Google Calendar] Falha na integração ao atualizar evento:', calErr);
+      calendarErrorMsg = calErr.message || 'Erro inesperado na atualização';
     }
 
     // 6. Registrar evento de histórico do lead
     const techText = technicianName ? `com o técnico ${technicianName}` : 'sem técnico atribuído';
-    const calText = googleEventId ? ' (Sincronizado no Google Agenda)' : '';
+    const calText = googleEventId 
+      ? ' (Sincronizado no Google Agenda)' 
+      : ` (Falha ao sincronizar com Google Agenda: ${calendarErrorMsg || 'credenciais inválidas'})`;
+      
     await prisma.leadEvent.create({
       data: {
         leadId,

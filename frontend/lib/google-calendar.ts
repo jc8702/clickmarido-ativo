@@ -28,20 +28,27 @@ export interface CalendarEventData {
   attendees?: { email: string }[];
 }
 
+export interface CalendarResult {
+  success: boolean;
+  eventId?: string;
+  error?: string;
+}
+
 /**
  * Cria um evento no Google Calendar.
- * Retorna o ID do evento criado ou null em caso de falha.
  */
-export async function createCalendarEvent(eventData: CalendarEventData): Promise<string | null> {
+export async function createCalendarEvent(eventData: CalendarEventData): Promise<CalendarResult> {
   if (!clientID || !clientSecret || !refreshToken) {
-    console.warn('[Google Calendar] Integração não configurada no .env.');
-    return null;
+    return {
+      success: false,
+      error: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou GOOGLE_GMAIL_REFRESH_TOKEN ausentes no .env.',
+    };
   }
 
   try {
     const response = await calendar.events.insert({
       calendarId: 'primary',
-      sendUpdates: 'all', // Notifica os convidados (técnicos)
+      sendUpdates: 'all',
       requestBody: {
         summary: eventData.summary,
         description: eventData.description,
@@ -58,26 +65,36 @@ export async function createCalendarEvent(eventData: CalendarEventData): Promise
       },
     });
 
-    return response.data.id || null;
+    if (response.data.id) {
+      return { success: true, eventId: response.data.id };
+    }
+    return { success: false, error: 'O Google não retornou um ID de evento.' };
   } catch (error: any) {
     console.error('[Google Calendar] Erro ao criar evento:', error.message || error);
-    return null;
+    let errMsg = error.message || 'Erro desconhecido';
+    if (error.response?.data?.error?.message) {
+      errMsg = `${error.response.data.error.message} (${error.response.data.error.status || '403'})`;
+    }
+    return { success: false, error: errMsg };
   }
 }
 
 /**
  * Atualiza um evento existente no Google Calendar.
  */
-export async function updateCalendarEvent(eventId: string, eventData: CalendarEventData): Promise<string | null> {
+export async function updateCalendarEvent(eventId: string, eventData: CalendarEventData): Promise<CalendarResult> {
   if (!clientID || !clientSecret || !refreshToken) {
-    return null;
+    return {
+      success: false,
+      error: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou GOOGLE_GMAIL_REFRESH_TOKEN ausentes no .env.',
+    };
   }
 
   try {
     const response = await calendar.events.update({
       calendarId: 'primary',
       eventId,
-      sendUpdates: 'all', // Notifica os convidados (técnicos) de alterações
+      sendUpdates: 'all',
       requestBody: {
         summary: eventData.summary,
         description: eventData.description,
@@ -94,30 +111,44 @@ export async function updateCalendarEvent(eventId: string, eventData: CalendarEv
       },
     });
 
-    return response.data.id || null;
+    if (response.data.id) {
+      return { success: true, eventId: response.data.id };
+    }
+    return { success: false, error: 'O Google não retornou o ID do evento atualizado.' };
   } catch (error: any) {
     console.error('[Google Calendar] Erro ao atualizar evento:', error.message || error);
-    return null;
+    let errMsg = error.message || 'Erro desconhecido';
+    if (error.response?.data?.error?.message) {
+      errMsg = `${error.response.data.error.message} (${error.response.data.error.status || '403'})`;
+    }
+    return { success: false, error: errMsg };
   }
 }
 
 /**
  * Remove um evento do Google Calendar.
  */
-export async function deleteCalendarEvent(eventId: string): Promise<boolean> {
+export async function deleteCalendarEvent(eventId: string): Promise<CalendarResult> {
   if (!clientID || !clientSecret || !refreshToken) {
-    return false;
+    return {
+      success: false,
+      error: 'GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou GOOGLE_GMAIL_REFRESH_TOKEN ausentes no .env.',
+    };
   }
 
   try {
     await calendar.events.delete({
       calendarId: 'primary',
       eventId,
-      sendUpdates: 'all', // Notifica os convidados de que o evento foi cancelado
+      sendUpdates: 'all',
     });
-    return true;
+    return { success: true };
   } catch (error: any) {
     console.error('[Google Calendar] Erro ao deletar evento:', error.message || error);
-    return false;
+    let errMsg = error.message || 'Erro desconhecido';
+    if (error.response?.data?.error?.message) {
+      errMsg = `${error.response.data.error.message} (${error.response.data.error.status || '403'})`;
+    }
+    return { success: false, error: errMsg };
   }
 }
