@@ -54,16 +54,8 @@ export async function POST(request: NextRequest) {
     if (driveResult.success && driveResult.url) {
       url = driveResult.url;
     } else {
-      // Em produção, falhar se Google Drive não estiver configurado
-      if (process.env.NODE_ENV === 'production') {
-        console.error('[UPLOAD] Falha no upload para Google Drive em produção:', driveResult.error);
-        return NextResponse.json(
-          { error: 'Falha no upload da logo. Tente novamente mais tarde.' },
-          { status: 500 }
-        );
-      }
-      // Em desenvolvimento, usar base64 como fallback
-      console.warn('[UPLOAD] Fallback para Base64 local (desenvolvimento):', driveResult.error);
+      // Em caso de falha no Google Drive, faz o fallback para Base64 (mesmo em produção) para garantir o funcionamento
+      console.warn('[UPLOAD] Fallback para Base64:', driveResult.error);
       const base64 = buffer.toString('base64');
       url = `data:${file.type};base64,${base64}`;
     }
