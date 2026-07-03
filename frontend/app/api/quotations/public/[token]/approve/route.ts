@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ token: string }> | { token: string } }
 ) {
   try {
     const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const id = resolvedParams.token;
     if (!id) {
       return NextResponse.json({ error: 'ID da cotação não fornecido' }, { status: 400 });
     }

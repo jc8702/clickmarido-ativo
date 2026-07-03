@@ -10,7 +10,8 @@ export function proxy(request: NextRequest) {
     '/api/auth/google',
     '/api/email/test',
     '/api/quotations/public',
-    '/api/nps'
+    '/api/nps',
+    '/api/favicon'
   ];
 
   const isPublicRoute = publicRoutes.some(route =>
