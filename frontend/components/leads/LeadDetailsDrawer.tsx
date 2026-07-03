@@ -468,6 +468,7 @@ export function LeadDetailsDrawer({ leadId, onClose, onLeadUpdated, token }: Lea
                   leadId={lead.id} 
                   token={token} 
                   onSuccess={fetchLeadData} 
+                  currentAppointment={lead.appointments?.[0]}
                 />
               )}
             </div>

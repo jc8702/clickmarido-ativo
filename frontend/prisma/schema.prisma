@@ -46,6 +46,7 @@ model Technician {
   appointments  Appointment[]
   reviews       Review[]
   nps           NPS[]
+  leadAppointments LeadAppointment[]
 
   @@map("technicians")
 }
@@ -1084,16 +1085,20 @@ model LeadEvent {
 }
 
 model LeadAppointment {
-  id          String            @id @default(cuid())
-  leadId      String
-  lead        Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  scheduledAt DateTime
-  status      AppointmentStatus @default(AGENDADO)
-  notes       String?           @db.Text
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  leadId       String
+  lead         Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  scheduledAt  DateTime
+  status       AppointmentStatus @default(AGENDADO)
+  notes        String?           @db.Text
+  technicianId String?
+  technician   Technician?       @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  googleEventId String?           @db.VarChar(255)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([leadId])
+  @@index([technicianId])
   @@map("lead_appointments")
 }
 

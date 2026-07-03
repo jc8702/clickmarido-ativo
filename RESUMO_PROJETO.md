@@ -1,9 +1,12 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Logo e seletor de temas (Light/Dark Mode) integrados no frontend, melhorias de contraste e login aplicadas.
+- **Status Atual:** Integração com Google Agenda e seleção de técnicos em compromissos de pré-vendas concluídas e prontas para deploy.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 03/07/2026 - 13:40
+- **Última Atualização:** 03/07/2026 - 16:25
+
+- **[03/07/2026 - 16:25]:** Implementação da integração de agendamentos de leads com o Google Calendar e inclusão da atribuição do técnico responsável para visitas comerciais de pré-vendas.
+  - Arquivos modificados: `frontend/prisma/schema.prisma`, `frontend/lib/google-calendar.ts`, `frontend/app/api/auth/google/login/route.ts`, `frontend/app/api/leads/[id]/appointment/route.ts`, `frontend/app/api/leads/[id]/route.ts`, `frontend/components/leads/LeadScheduleForm.tsx`, `frontend/components/leads/LeadDetailsDrawer.tsx`.
 
 - **[03/07/2026 - 18:10]:** Correção de conflito de rotas dinâmicas no Next.js (unificação sob o slug `[token]` de orçamento público) e liberação da rota `/api/favicon` no middleware de segurança (`proxy.ts`), permitindo o carregamento público do favicon.
   - Arquivos modificados: `frontend/proxy.ts`, `frontend/app/api/quotations/public/[token]/approve/route.ts` (renomeado de `[id]/approve/route.ts`).

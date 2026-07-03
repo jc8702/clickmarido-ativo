@@ -26,7 +26,10 @@ export async function GET() {
     // Gera a URL do consentimento Google
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline', // Solicita refresh_token offline
-      scope: ['https://www.googleapis.com/auth/gmail.send'], // Escopo restrito apenas para envio de e-mails
+      scope: [
+        'https://www.googleapis.com/auth/gmail.send',
+        'https://www.googleapis.com/auth/calendar'
+      ], // Escopos para envio de e-mail e gerenciamento de agenda
       prompt: 'consent', // Força a exibição da tela de consentimento para garantir o refresh_token
     });
 

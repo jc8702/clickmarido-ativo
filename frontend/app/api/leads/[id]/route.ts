@@ -295,6 +295,9 @@ export async function GET(
         source: true,
         responsavel: true,
         appointments: {
+          include: {
+            technician: true,
+          },
           orderBy: { createdAt: 'desc' },
         },
       },
