@@ -163,7 +163,10 @@ export async function POST(request: NextRequest): Promise<Response> {
       if (pendingOS.length > 0) {
         await prisma.serviceOrder.updateMany({
           where: { quotationId: payment.quotationId },
-          data: { status: 'concluida' },
+          data: { 
+            status: 'concluida',
+            completedAt: new Date()
+          },
         });
 
         for (const os of pendingOS) {

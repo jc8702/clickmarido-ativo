@@ -10,6 +10,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
+    // --- AUTOCORREÇÃO E SANEAMENTO DO BANCO DE DADOS ---
+    // 1. Garantir que todas as OSs marcadas como concluídas tenham o completedAt preenchido (usa a data do updatedAt se null)
+    const nullCompletedAtOS = await prisma.serviceOrder.findMany({
+      where: {
+        status: 'concluida',
+        completedAt: null
+      },
+      select: { id: true, updatedAt: true }
+    });
+
+    for (const os of nullCompletedAtOS) {
+      await prisma.serviceOrder.update({
+        where: { id: os.id },
+        data: { completedAt: os.updatedAt || new Date() }
+      });
+    }
+
+    // 2. Garantir que qualquer OS vinculada a orçamento pago esteja marcada como concluída e com data de conclusão
+    const confirmedPayments = await prisma.payment.findMany({
+      where: {
+        status: 'confirmado',
+        quotationId: { not: null }
+      },
+      select: { quotationId: true, confirmedAt: true }
+    });
+
+    const quotationIds = confirmedPayments
+      .map(p => p.quotationId)
+      .filter((id): id is string => id !== null);
+
+    if (quotationIds.length > 0) {
+      const pendingOS = await prisma.serviceOrder.findMany({
+        where: {
+          quotationId: { in: quotationIds },
+          status: { in: ['agendada', 'em_andamento'] }
+        },
+        select: { id: true }
+      });
+
+      for (const os of pendingOS) {
+        await prisma.serviceOrder.update({
+          where: { id: os.id },
+          data: {
+            status: 'concluida',
+            completedAt: new Date()
+          }
+        });
+      }
+    }
+    // ----------------------------------------------------
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

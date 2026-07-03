@@ -1,9 +1,12 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Integração de materiais da OS com o estoque e soma automática dos materiais no valor total da OS concluídas e deploy realizado.
+- **Status Atual:** Saneamento de NPS e conclusão de OS corrigidos em todos os fluxos de pagamento (manual e webhooks); deploy concluído.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 03/07/2026 - 17:35
+- **Última Atualização:** 03/07/2026 - 17:42
+
+- **[03/07/2026 - 17:42]:** Correção na lógica de pendências de NPS e na conclusão de Ordens de Serviço (OS) vinculadas. Agora, a aprovação manual de pagamento atualiza o status da OS correspondente para 'concluida'. Adicionamos 'completedAt' em todas as conclusões automáticas de OS (Mercado Pago, Asaas e Aprovação manual) e implementamos um saneamento/autocorreção automático e resiliente diretamente no endpoint de NPS pendentes para corrigir dados legados retroativamente.
+  - Arquivos modificados: `frontend/app/api/payments/[id]/approve/route.ts`, `frontend/app/api/payments/webhook-mp/route.ts`, `frontend/app/api/webhooks/asaas/route.ts`, `frontend/app/api/nps/pending/route.ts`.
 
 - **[03/07/2026 - 17:35]:** Integração de estoque com a criação de Ordens de Serviço (abate automático de peças previstas no orçamento) e correção no cálculo de materiais usados. Agora os materiais inseridos durante a execução da OS são somados automaticamente ao valor total final e atualizados no formulário de conclusão do frontend.
   - Arquivos modificados: `frontend/lib/stock-integration.ts`, `frontend/app/api/service-orders/[id]/materials/route.ts`, `frontend/app/api/service-orders/route.ts`, `frontend/app/api/quotations/[id]/route.ts`, `frontend/app/api/quotations/public/[token]/approve/route.ts`, `frontend/components/ServiceOrderForm.tsx`.
