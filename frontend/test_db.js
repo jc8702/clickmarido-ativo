@@ -2,8 +2,8 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Quotation:', await prisma.quotation.findFirst({where:{number:'2000017024851866'}}));
-  console.log('ServiceOrder:', await prisma.serviceOrder.findFirst({where:{number:'2000017024851866'}}));
+  const settings = await prisma.companySettings.findFirst();
+  console.log('CompanySettings:', settings);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
