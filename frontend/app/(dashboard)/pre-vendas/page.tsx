@@ -1022,6 +1022,36 @@ export default function PreVendasPage() {
         </div>
       )}
 
+      {/* Modal Excluir Lead */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-neutral-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 pb-3">
+              <h3 className="font-extrabold text-lg text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-red-500" />
+                Excluir Lead
+              </h3>
+              <button onClick={() => { setShowDeleteModal(false); setDeleteLeadId(null); }} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Tem certeza que deseja excluir permanentemente este lead? Esta ação não pode ser desfeita.
+            </p>
+
+            <div className="flex justify-end gap-2 border-t border-neutral-100 dark:border-neutral-800 pt-3">
+              <Button variant="outline" size="sm" type="button" onClick={() => { setShowDeleteModal(false); setDeleteLeadId(null); }}>
+                Cancelar
+              </Button>
+              <Button variant="primary" size="sm" type="button" onClick={handleDeleteLead} className="font-bold px-6 bg-red-600 hover:bg-red-700 text-white">
+                Excluir
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Estilos CSS Inline de Animação para o Drawer e Modals */}
       <style jsx global>{`
         @keyframes slideIn {
