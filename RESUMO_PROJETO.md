@@ -1,9 +1,12 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Integração de compromissos com o Google Agenda incluindo e-mail de técnicos concluída e deploy realizado.
+- **Status Atual:** Integração de materiais da OS com o estoque e soma automática dos materiais no valor total da OS concluídas e deploy realizado.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 03/07/2026 - 16:45
+- **Última Atualização:** 03/07/2026 - 17:35
+
+- **[03/07/2026 - 17:35]:** Integração de estoque com a criação de Ordens de Serviço (abate automático de peças previstas no orçamento) e correção no cálculo de materiais usados. Agora os materiais inseridos durante a execução da OS são somados automaticamente ao valor total final e atualizados no formulário de conclusão do frontend.
+  - Arquivos modificados: `frontend/lib/stock-integration.ts`, `frontend/app/api/service-orders/[id]/materials/route.ts`, `frontend/app/api/service-orders/route.ts`, `frontend/app/api/quotations/[id]/route.ts`, `frontend/app/api/quotations/public/[token]/approve/route.ts`, `frontend/components/ServiceOrderForm.tsx`.
 
 - **[03/07/2026 - 16:45]:** Correção e melhoria na integração da agenda do técnico. Adicionado o e-mail do técnico como participante (attendee) nas chamadas do Google Calendar e configurado `sendUpdates: 'all'` para disparar convites automáticos nas agendas individuais.
   - Arquivos modificados: `frontend/lib/google-calendar.ts`, `frontend/app/api/leads/[id]/appointment/route.ts`.

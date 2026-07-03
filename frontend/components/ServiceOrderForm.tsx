@@ -113,6 +113,14 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
         quantityUsed: quantityToAdd
       });
       
+      // Atualizar o valor final total no form se retornado do backend
+      if (res.data?.data?.newFinalTotal !== undefined) {
+        setFormData(prev => ({
+          ...prev,
+          final_total: Number(res.data.data.newFinalTotal)
+        }));
+      }
+
       // Recarregar os materiais utilizados
       const usagesRes = await api.get(`/service-orders/${so.id}/materials`);
       setUsedMaterials(usagesRes.data.data || []);
@@ -333,19 +341,25 @@ export function ServiceOrderForm({ so, onSuccess, onCancel }: ServiceOrderFormPr
               <div className="text-center py-4 text-xs text-neutral-500">Buscando consumo de materiais...</div>
             ) : usedMaterials.length > 0 ? (
               <div className="border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden bg-white dark:bg-neutral-800 divide-y divide-neutral-100 dark:divide-neutral-700">
-                {usedMaterials.map(item => (
-                  <div key={item.id} className="flex justify-between items-center p-3 text-sm">
-                    <div>
-                      <p className="font-bold text-neutral-950 dark:text-neutral-50">{item.product?.name}</p>
-                      <p className="text-xs text-neutral-400 font-mono">SKU: {item.product?.sku}</p>
+                {usedMaterials.map(item => {
+                  const unitPrice = Number(item.product?.price || 0);
+                  const qty = Number(item.quantityUsed || 0);
+                  const totalCost = unitPrice * qty;
+                  return (
+                    <div key={item.id} className="flex justify-between items-center p-3 text-sm">
+                      <div>
+                        <p className="font-bold text-neutral-950 dark:text-neutral-50">{item.product?.name}</p>
+                        <p className="text-xs text-neutral-400 font-mono">SKU: {item.product?.sku} • Unitário: R$ {unitPrice.toFixed(2)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-neutral-900 dark:text-neutral-100">
+                          {qty} {item.product?.unit || 'un'}
+                        </p>
+                        <p className="text-xs text-neutral-500">R$ {totalCost.toFixed(2)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-bold text-neutral-900 dark:text-neutral-100">
-                        {item.quantityUsed} {item.product?.unit}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-6 text-xs text-neutral-500 border border-dashed border-neutral-200 dark:border-neutral-700 rounded-xl">

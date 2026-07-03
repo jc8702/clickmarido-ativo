@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
+import { integrateQuotationItemsToStock } from '@/lib/stock-integration';
 
 async function generateOSNumber(): Promise<string> {
   const last = await prisma.serviceOrder.findFirst({
@@ -125,6 +126,9 @@ export async function POST(request: NextRequest): Promise<Response> {
       },
       include: { customer: true, technician: true, quotation: true },
     });
+
+    // Integrar os itens do orçamento com estoque
+    await integrateQuotationItemsToStock(order.id, quotationId);
 
     // Registrar log de auditoria
     const { logAudit } = await import('@/lib/audit');

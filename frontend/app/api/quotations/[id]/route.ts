@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
+import { integrateQuotationItemsToStock } from '@/lib/stock-integration';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -184,7 +185,7 @@ export async function PUT(
           }
         }
 
-        await prisma.serviceOrder.create({
+        const order = await prisma.serviceOrder.create({
           data: {
             number: osNumber,
             quotationId: id,
@@ -195,6 +196,7 @@ export async function PUT(
             notes: `Orçamento ${id.slice(-6).toUpperCase()} aprovado`,
           },
         });
+        await integrateQuotationItemsToStock(order.id, id);
       }
     }
 

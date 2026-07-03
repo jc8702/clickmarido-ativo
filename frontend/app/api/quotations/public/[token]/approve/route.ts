@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { integrateQuotationItemsToStock } from '@/lib/stock-integration';
 
 export async function POST(
   request: Request,
@@ -131,9 +132,10 @@ export async function POST(
         osData.technicianId = technicianId;
       }
 
-      await prisma.serviceOrder.create({
+      const order = await prisma.serviceOrder.create({
         data: osData,
       });
+      await integrateQuotationItemsToStock(order.id, id);
     }
 
     return NextResponse.json({ success: true, message: 'Proposta aprovada com sucesso!' });

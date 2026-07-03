@@ -79,12 +79,24 @@ export async function POST(
       }
     }
 
+    // Atualizar o finalTotal da Ordem de Serviço somando o custo do material
+    const materialCost = Number(product.price) * Number(quantityUsed);
+    const updatedOS = await prisma.serviceOrder.update({
+      where: { id: serviceOrderId },
+      data: {
+        finalTotal: {
+          increment: materialCost
+        }
+      }
+    });
+
     return NextResponse.json({
       success: true,
       data: {
         usage,
         newQuantity: updatedQuantity,
-        isLowStock
+        isLowStock,
+        newFinalTotal: Number(updatedOS.finalTotal)
       }
     }, { status: 201 });
 
