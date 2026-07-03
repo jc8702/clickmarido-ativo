@@ -5,7 +5,9 @@
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
 - **Última Atualização:** 03/07/2026 - 13:40
 
-## Histórico de Alterações
+- **[03/07/2026 - 18:10]:** Correção de conflito de rotas dinâmicas no Next.js (unificação sob o slug `[token]` de orçamento público) e liberação da rota `/api/favicon` no middleware de segurança (`proxy.ts`), permitindo o carregamento público do favicon.
+  - Arquivos modificados: `frontend/proxy.ts`, `frontend/app/api/quotations/public/[token]/approve/route.ts` (renomeado de `[id]/approve/route.ts`).
+
 - **[03/07/2026 - 17:36]:** Melhoria na API de Favicon (`/api/favicon`) para atuar como proxy das imagens hospedadas externamente. Isso garante que o navegador renderize o ícone corretamente na aba sem os bloqueios típicos de redirecionamentos (302) de CORS.
   - Arquivos modificados: `frontend/app/api/favicon/route.ts`
 
