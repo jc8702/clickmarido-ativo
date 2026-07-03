@@ -13,6 +13,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Click Marido CRM",
   description: "Sistema de Gestão para Serviços Residenciais",
+  icons: {
+    icon: '/api/favicon',
+    shortcut: '/api/favicon',
+    apple: '/api/favicon',
+  }
 };
 
 export default function RootLayout({

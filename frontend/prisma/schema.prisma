@@ -824,6 +824,7 @@ model CompanySettings {
   defaultHourlyRate     Decimal  @default(80.0) @db.Decimal(10, 2)
   defaultWarranty       String   @default("90 dias nos termos do art. 26, II do CDC.") @db.Text
   defaultCommissionRate Decimal  @default(40.0) @db.Decimal(10, 2)
+  logoUrl               String?  @db.Text
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

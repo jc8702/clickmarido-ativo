@@ -7,7 +7,14 @@
 
 ## Histórico de Alterações
 
-### 03/07/2026 - 16:42
+### 03/07/2026 - 16:59
+- **Identidade Visual e Logo Dinâmica:**
+  - Criação do campo `logoUrl` no banco de dados (`CompanySettings`).
+  - Adição de upload de logo no Google Drive via painel de Configurações.
+  - Implementação do endpoint `/api/favicon` para servir o logo (ou fallback) de forma nativa e sem delay de cliente.
+  - Integração do logo na aba do navegador (Favicon), Sidebar, e tela de Login.
+  - Verificação e garantia de funcionamento do botão de tema Dark/Light.
+
 - **Deploy Completo da Aplicação:**
   - Build testado localmente (`npm run build`).
   - Código commitado e enviado (`git push`) para a branch `main`.

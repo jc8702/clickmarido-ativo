@@ -12,6 +12,7 @@ interface SettingsData {
   defaultHourlyRate: number;
   defaultWarranty: string;
   defaultCommissionRate: number;
+  logoUrl?: string | null;
 }
 
 export default function SettingsPage() {
@@ -27,7 +28,9 @@ export default function SettingsPage() {
     defaultHourlyRate: 80.0,
     defaultWarranty: '90 dias nos termos do art. 26, II do CDC.',
     defaultCommissionRate: 40.0,
+    logoUrl: null,
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -58,6 +61,39 @@ export default function SettingsPage() {
       ...prev,
       [name]: name === 'defaultHourlyRate' || name === 'defaultCommissionRate' ? parseFloat(value) || 0 : value
     }));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const token = getToken();
+      const response = await fetch('/api/upload/settings', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.url) {
+          setData(prev => ({ ...prev, logoUrl: result.url }));
+          alert('Logo enviada com sucesso! Lembre-se de salvar as alterações da página.');
+        }
+      } else {
+        const err = await response.json().catch(() => ({}));
+        alert('Erro ao enviar logo: ' + (err.error || 'Erro desconhecido'));
+      }
+    } catch (err: any) {
+      alert('Erro ao enviar logo: ' + err.message);
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,6 +145,28 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSubmit} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 shadow-xl space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Logo da Empresa</label>
+              <div className="flex items-center space-x-4">
+                {data.logoUrl ? (
+                  <img src={data.logoUrl} alt="Logo da Empresa" className="h-16 w-auto object-contain rounded-lg border border-neutral-200 dark:border-neutral-700 p-1 bg-white dark:bg-neutral-800" />
+                ) : (
+                  <div className="h-16 w-16 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg flex items-center justify-center text-neutral-400 text-xs">Sem Logo</div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    disabled={uploadingLogo}
+                    className="block w-full text-sm text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900/20 dark:file:text-primary-400"
+                  />
+                  {uploadingLogo && <p className="text-xs text-primary-500 mt-2">Enviando logo...</p>}
+                  <p className="text-xs text-neutral-500 mt-1">Recomendado: fundo transparente (PNG/SVG) e formato horizontal.</p>
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">Nome da Empresa</label>
               <input

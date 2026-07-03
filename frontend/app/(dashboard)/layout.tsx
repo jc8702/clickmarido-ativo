@@ -198,7 +198,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </svg>
         </button>
         <div className="flex items-center gap-2">
-          <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-full object-cover" />
+          <img src="/api/favicon" alt="Logo" className="w-8 h-8 rounded-full object-cover" onError={(e) => { e.currentTarget.src = '/logo.jpg' }} />
           <span className="font-bold text-neutral-800 dark:text-neutral-200">Click Marido</span>
         </div>
         <ThemeToggle />

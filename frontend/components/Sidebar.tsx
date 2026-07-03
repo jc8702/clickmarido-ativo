@@ -74,9 +74,10 @@ export function Sidebar({
           {isOpen ? (
             <div className="flex items-center gap-3">
               <img
-                src="/logo.jpg"
+                src="/api/favicon"
                 alt="Click Marido Logo"
                 className="w-10 h-10 rounded-full object-cover border border-neutral-200 dark:border-neutral-700"
+                onError={(e) => { e.currentTarget.src = '/logo.jpg' }}
               />
               <span className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
                 Click Marido
@@ -84,11 +85,12 @@ export function Sidebar({
             </div>
           ) : (
             <img
-              src="/logo.jpg"
+              src="/api/favicon"
               alt="Click Marido Logo"
               onClick={onToggle}
               className="w-10 h-10 rounded-full object-cover border border-neutral-200 dark:border-neutral-700 cursor-pointer hover:opacity-80 transition-opacity"
               title="Abrir menu"
+              onError={(e) => { e.currentTarget.src = '/logo.jpg' }}
             />
           )}
 

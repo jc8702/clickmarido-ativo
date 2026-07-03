@@ -58,6 +58,7 @@ export async function PUT(request: NextRequest) {
           defaultHourlyRate: body.defaultHourlyRate !== undefined ? parseFloat(body.defaultHourlyRate) : existing.defaultHourlyRate,
           defaultWarranty: body.defaultWarranty !== undefined ? body.defaultWarranty : existing.defaultWarranty,
           defaultCommissionRate: body.defaultCommissionRate !== undefined ? parseFloat(body.defaultCommissionRate) : existing.defaultCommissionRate,
+          logoUrl: body.logoUrl !== undefined ? body.logoUrl : existing.logoUrl,
         },
       });
     } else {
@@ -71,6 +72,7 @@ export async function PUT(request: NextRequest) {
           defaultHourlyRate: body.defaultHourlyRate !== undefined ? parseFloat(body.defaultHourlyRate) : 80.0,
           defaultWarranty: body.defaultWarranty ?? '90 dias nos termos do art. 26, II do CDC.',
           defaultCommissionRate: body.defaultCommissionRate !== undefined ? parseFloat(body.defaultCommissionRate) : 40.0,
+          logoUrl: body.logoUrl ?? null,
         },
       });
     }
