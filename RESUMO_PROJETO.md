@@ -7,6 +7,12 @@
 
 ## Histórico de Alterações
 
+### 03/07/2026 - 16:42
+- **Deploy Completo da Aplicação:**
+  - Build testado localmente (`npm run build`).
+  - Código commitado e enviado (`git push`) para a branch `main`.
+  - Deploy automático acionado na Vercel conforme configurado no projeto.
+
 ### 03/07/2026 - 13:40
 - **Integração de Logo e Habilitação de Temas (Claro/Escuro):**
   - **Sidebar do Dashboard:** Integrado o componente `ThemeToggle` no rodapé da Sidebar de forma dinâmica para modos aberto e fechado. Substituída a logo textual pelo logo oficial circular (`/logo.jpg`) e título com alto contraste, e o "CM" da sidebar fechada pela logo circular acompanhada por botão de toggle flutuante sobre a borda.
