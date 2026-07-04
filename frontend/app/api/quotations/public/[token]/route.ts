@@ -26,6 +26,8 @@ export async function GET(
     // Mapear dados para o formato esperado pelo frontend público
     const items = quotation.items.map((item: any) => ({
       name: item.product?.name || '',
+      sku: item.product?.sku || '',
+      description: item.product?.description || '',
       quantity: Number(item.quantity),
       unit_price: Number(item.unitPrice),
     }));

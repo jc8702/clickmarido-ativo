@@ -1,11 +1,14 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Sincronização de múltiplos agendamentos de leads e Google Calendar implementada; deploy em andamento.
+- **Status Atual:** Correção na exibição de SKU e Descrição em propostas comerciais e orçamentos públicos concluída; deploy em andamento.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 11:35
+- **Última Atualização:** 04/07/2026 - 11:39
 
 ## Histórico de Alterações
+- **[04/07/2026 - 11:39]:** Correção no mapeamento de itens de orçamentos (quotation) que impedia a exibição do SKU e da Descrição do item nas propostas públicas e na página de impressão. Adicionado o mapeamento do SKU e Descrição na API pública de orçamentos e na tela de impressão.
+  - Arquivos modificados: `frontend/app/api/quotations/public/[token]/route.ts`, `frontend/app/print/quotation/[id]/page.tsx`
+
 - **[04/07/2026 - 11:35]:** Implementação de múltiplos agendamentos por lead e sincronização automática com a agenda do técnico. Ao alterar o horário no mesmo dia, o sistema atualiza o agendamento atual; ao alterar a data para um dia diferente, é dada a opção de criar um novo compromisso (mantendo o anterior no histórico). Adicionado o método DELETE na API de agendamento de leads para cancelamento de agendamentos físicos e no Google Calendar.
   - Arquivos modificados: `frontend/app/api/leads/[id]/appointment/route.ts`, `frontend/components/leads/LeadDetailsDrawer.tsx`, `frontend/components/leads/LeadScheduleForm.tsx`
 

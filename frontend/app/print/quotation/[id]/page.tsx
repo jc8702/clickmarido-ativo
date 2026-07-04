@@ -59,7 +59,11 @@ export default function PrintQuotationPage() {
               email: rawData.customer_email || 'Não informado',
             },
             items: rawData.items ? rawData.items.map((item: any) => ({
-              product: { name: item.name || item.product?.name || '' },
+              product: { 
+                name: item.name || item.product?.name || '',
+                sku: item.sku || item.product?.sku || '',
+                description: item.description || item.product?.description || '',
+              },
               quantity: item.quantity,
               unitPrice: item.unit_price || item.unitPrice,
             })) : []
