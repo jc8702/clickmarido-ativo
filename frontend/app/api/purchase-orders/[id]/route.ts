@@ -180,19 +180,64 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData.subtotal = subtotal;
       updateData.totalAmount = totalAmount;
 
-      // Se houver despesa vinculada, atualizar valor e descrição para manter integridade financeira
-      if (existingOrder.expenseId) {
-        const vendorForDesc = vendorId && vendorId !== existingOrder.vendorId
-          ? await tx.vendor.findUnique({ where: { id: vendorId }, select: { name: true } })
-          : null;
-        const vendorName = vendorForDesc?.name || null;
-        await tx.expense.update({
-          where: { id: existingOrder.expenseId },
-          data: {
-            amount: totalAmount,
-            description: `Ordem de Compra ${existingOrder.number}${vendorName ? ` - ${vendorName}` : ''} (Atualizada)`,
-          }
-        });
+      // Integração financeira: criar ou atualizar despesa vinculada
+      // Determinar o fornecedor atual (pode ter mudado)
+      const currentVendorId = vendorId !== undefined ? vendorId : existingOrder.vendorId;
+      const currentVendor = await tx.vendor.findUnique({
+        where: { id: currentVendorId },
+        select: { name: true, category: true },
+      });
+
+      // Status que devem ter despesa vinculada no financeiro
+      const statusesWithExpense = ['aprovada', 'parcialmente_recebida', 'recebida'];
+      const shouldHaveExpense = statusesWithExpense.includes(existingOrder.status);
+
+      if (shouldHaveExpense) {
+        let currentExpenseId = existingOrder.expenseId;
+
+        // Verificar se a despesa ainda existe no banco (pode ter sido deletada manualmente)
+        let expenseStillExists = false;
+        if (currentExpenseId) {
+          const existingExpense = await tx.expense.findUnique({ where: { id: currentExpenseId } });
+          expenseStillExists = !!existingExpense;
+        }
+
+        if (expenseStillExists && currentExpenseId) {
+          // ATUALIZAR despesa existente
+          await tx.expense.update({
+            where: { id: currentExpenseId },
+            data: {
+              amount: totalAmount,
+              vendorId: currentVendorId,
+              vendorName: currentVendor?.name || null,
+              description: `Ordem de Compra ${existingOrder.number}${currentVendor?.name ? ` - ${currentVendor.name}` : ''} (Atualizada)`,
+            },
+          });
+        } else {
+          // CRIAR nova despesa (foi deletada ou nunca criada)
+          const allowedCategories = ['MATERIAL', 'SERVICO', 'TRANSPORTE', 'OUTROS'];
+          const expenseCategory = currentVendor?.category && allowedCategories.includes(currentVendor.category)
+            ? currentVendor.category
+            : 'MATERIAL';
+
+          const newExpense = await tx.expense.create({
+            data: {
+              category: expenseCategory,
+              description: `Ordem de Compra ${existingOrder.number}${currentVendor?.name ? ` - ${currentVendor.name}` : ''} (Recriada na Edição)`,
+              amount: totalAmount,
+              vendorId: currentVendorId,
+              vendorName: currentVendor?.name || null,
+              expenseDate: new Date(),
+              dueDate: existingOrder.expectedDeliveryDate || new Date(),
+              status: 'pendente',
+              serviceOrderId: existingOrder.serviceOrderId || null,
+              notes: `Despesa recriada automaticamente na edição da Ordem de Compra ${existingOrder.number}.`,
+            },
+          });
+          currentExpenseId = newExpense.id;
+          // Vincular nova despesa à OC
+          updateData.expenseId = currentExpenseId;
+        }
       }
 
       // Registrar evento de alteração no histórico de auditoria
@@ -290,9 +335,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         where: { id }
       });
 
-      // 5. Deletar despesa vinculada não paga (se houver)
+      // 5. Deletar despesa vinculada (se houver e ainda existir no banco)
       if (order.expenseId) {
-        await tx.expense.delete({
+        await tx.expense.deleteMany({
           where: { id: order.expenseId }
         });
       }
