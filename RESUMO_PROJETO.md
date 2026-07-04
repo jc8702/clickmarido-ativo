@@ -1,11 +1,22 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Correção de fuso horário em salvamento de agendamento de leads concluída; deploy em andamento.
+- **Status Atual:** Correção da baseURL dinâmica do Axios implantada, restabelecendo o funcionamento de todas as telas em produção. Edição/Exclusão de Compras e busca de CNPJ validadas com sucesso.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 11:57
+- **Última Atualização:** 04/07/2026 - 14:35
 
 ## Histórico de Alterações
+- **[04/07/2026 - 14:35]:** Correção crítica no carregamento de telas em produção da Vercel. Identificado que a baseURL do Axios estava compilando fixamente como `http://localhost:3000` devido à leitura do arquivo `.env` local no build step. Refatorada a inicialização em `frontend/lib/api.js` para determinar a URL dinamicamente em tempo de execução (usando `/api` relativo sempre que rodar no navegador fora de localhost). Validada a restauração completa das telas de Dashboard, Ordens de Serviço e Compras em produção por meio de agente autônomo com sucesso.
+  - Arquivos modificados: `frontend/lib/api.js`
+
+- **[04/07/2026 - 13:38]:** Implementação de botões de Editar e Excluir diretamente na listagem geral de Ordens de Compra (OC). Flexibilizadas as regras de edição e exclusão no backend e frontend para abranger ordens em status "aprovada" (desde que a despesa correspondente não tenha sido paga). Implementada a integridade financeira síncrona: ao editar uma OC aprovada, a despesa associada é recalculada e atualizada; ao excluir, a despesa pendente vinculada é deletada para manter o financeiro limpo.
+  - Arquivos criados: `frontend/test_edit_purchase.js`
+  - Arquivos modificados: `frontend/app/api/purchase-orders/route.ts`, `frontend/app/api/purchase-orders/[id]/route.ts`, `frontend/app/(dashboard)/purchases/page.tsx`, `frontend/app/(dashboard)/purchases/[id]/page.tsx`, `frontend/app/(dashboard)/purchases/[id]/edit/page.tsx`
+
+- **[04/07/2026 - 13:28]:** Integração com a Receita Federal (via BrasilAPI) para busca automática de dados de CNPJ no cadastro de fornecedores. Adicionado botão "Busca por CNPJ" no formulário completo e no modal de cadastro rápido de fornecedores. Criado proxy seguro de API no backend Next.js que trata autenticação JWT, sanitização de entrada, tratamento de rate limits/bloqueios de User-Agent e formatação/mapeamento de campos (razão social, nome fantasia, e-mail, telefone formatado e endereço estruturado).
+  - Arquivos criados: `frontend/app/api/vendors/cnpj/[cnpj]/route.ts`, `frontend/test_cnpj.js`
+  - Arquivos modificados: `frontend/components/vendors/VendorForm.tsx`, `frontend/components/products/ProductForm.tsx`
+
 - **[04/07/2026 - 11:57]:** Correção no salvamento de horários de agendamentos de leads (timezone). O servidor na Vercel (em UTC) interpretava a data local enviada pelo frontend (`datetime-local`) sob o fuso UTC, gerando uma defasagem e salvando sempre como 12:00 (meio-dia) local em GMT-3. Ajustada a API para processar a data aplicando o offset correspondente do Brasil (`-03:00`) se não vier fuso no payload. Também formatados os horários de log do histórico do lead com fuso horário `America/Sao_Paulo`.
   - Arquivos modificados: `frontend/app/api/leads/[id]/appointment/route.ts`
 

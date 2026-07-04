@@ -47,12 +47,14 @@ export default function EditPurchaseOrderPage({ params }: Props) {
     );
   }
 
-  // Bloquear acesso se não estiver em rascunho ou emitida
-  if (order.status !== 'rascunho' && order.status !== 'emitida') {
+  // Bloquear acesso se não estiver nos status permitidos
+  const editableStatuses = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'];
+  const canEdit = editableStatuses.includes(order.status) && order.expense?.status !== 'paga';
+  if (!canEdit) {
     return (
       <div className="p-6 min-h-screen bg-neutral-50 dark:bg-neutral-950">
         <div className="p-4 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded">
-          Não é possível editar uma ordem de compra que já foi aprovada, recebida ou cancelada.
+          Não é possível editar esta ordem de compra. Ordens totalmente recebidas, canceladas ou cuja despesa no financeiro já foi paga estão bloqueadas para alteração.
         </div>
         <Link href={`/purchases/${order.id}`} className="mt-4 inline-block text-primary-600 dark:text-primary-400 font-semibold hover:underline">
           Voltar para Detalhes do Pedido
@@ -61,9 +63,12 @@ export default function EditPurchaseOrderPage({ params }: Props) {
     );
   }
 
-  // Formatar dados iniciais dos itens
+  // Formatar dados iniciais de todos os campos editáveis
   const formattedOrder = {
     ...order,
+    vendorId: order.vendorId || order.vendor?.id || '',
+    quotationId: order.quotationId || '',
+    serviceOrderId: order.serviceOrderId || '',
     expectedDeliveryDate: order.expectedDeliveryDate 
       ? new Date(order.expectedDeliveryDate).toISOString().split('T')[0] 
       : '',
@@ -101,7 +106,7 @@ export default function EditPurchaseOrderPage({ params }: Props) {
         </div>
       )}
 
-      <PurchaseOrderForm initialData={formattedOrder} onSubmit={handleSubmit} isLoading={isPending} />
+      <PurchaseOrderForm initialData={formattedOrder} onSubmit={handleSubmit} isLoading={isPending} isEdit={true} />
     </div>
   );
 }

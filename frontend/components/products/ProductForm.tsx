@@ -59,6 +59,51 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
   const [vendorEmail, setVendorEmail] = useState('');
   const [vendorCategory, setVendorCategory] = useState('MATERIAL');
   const [isCreatingVendor, setIsCreatingVendor] = useState(false);
+  const [isSearchingCNPJInline, setIsSearchingCNPJInline] = useState(false);
+
+  const handleSearchCNPJInline = async () => {
+    if (!vendorCnpj) {
+      alert('Por favor, digite o CNPJ que deseja consultar.');
+      return;
+    }
+
+    const cleanCnpj = vendorCnpj.replace(/\D/g, '');
+    if (cleanCnpj.length !== 14) {
+      alert('Por favor, insira um CNPJ válido com 14 dígitos.');
+      return;
+    }
+
+    setIsSearchingCNPJInline(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/vendors/cnpj/${cleanCnpj}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao buscar dados do CNPJ');
+      }
+
+      const data = await res.json();
+
+      if (data.name) setVendorName(data.name);
+      if (data.tradeName) {
+        setVendorName(data.tradeName || data.name);
+      }
+      if (data.email) setVendorEmail(data.email);
+      if (data.phone) setVendorPhone(data.phone);
+
+      alert('Dados do CNPJ preenchidos automaticamente com sucesso!');
+    } catch (error: any) {
+      console.error('Error fetching CNPJ:', error);
+      alert(error.message || 'Ocorreu um erro ao consultar o CNPJ. Verifique a conexão ou se o CNPJ está correto.');
+    } finally {
+      setIsSearchingCNPJInline(false);
+    }
+  };
 
   const handleCreateVendorInline = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -360,13 +405,23 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">CNPJ / CPF</label>
-                <input
-                  type="text"
-                  value={vendorCnpj}
-                  onChange={(e) => setVendorCnpj(e.target.value)}
-                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
-                  placeholder="Apenas números ou formato"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={vendorCnpj}
+                    onChange={(e) => setVendorCnpj(e.target.value)}
+                    className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm"
+                    placeholder="Apenas números ou formato"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSearchCNPJInline}
+                    disabled={isSearchingCNPJInline}
+                    className="px-3 py-2 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-600 rounded text-xs font-semibold disabled:opacity-50 transition-colors"
+                  >
+                    {isSearchingCNPJInline ? 'Buscando...' : 'Buscar'}
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>

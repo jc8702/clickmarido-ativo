@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { purchaseOrderSchema, PurchaseOrderFormValues } from '../../lib/validations/purchase-order.schema';
@@ -12,9 +12,10 @@ type Props = {
   initialData?: any;
   onSubmit: (data: PurchaseOrderFormValues) => void;
   isLoading: boolean;
+  isEdit?: boolean;
 };
 
-export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: Props) {
+export function PurchaseOrderForm({ initialData, onSubmit, isLoading, isEdit = false }: Props) {
   // Carregar fornecedores ativos (para o select)
   const { data: vendorsData } = useVendors(1, '', '', '', 'true', 'false');
   const vendors = (vendorsData?.data as any[]) || [];
@@ -55,9 +56,16 @@ export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: Props) {
   const freightAmount = watch('freightAmount') || 0;
   const taxAmount = watch('taxAmount') || 0;
 
-  // Monitorar fornecedor selecionado para sugerir termos padrão
+  // Monitorar fornecedor selecionado para sugerir termos padrão (apenas em modo de criação)
   const watchedVendorId = watch('vendorId');
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    // Na edição, não sobrescrever campos na primeira renderização
+    if (isEdit && isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    isFirstRender.current = false;
     if (watchedVendorId && vendors.length > 0) {
       const selected = vendors.find((v: any) => v.id === watchedVendorId);
       if (selected) {
@@ -65,7 +73,7 @@ export function PurchaseOrderForm({ initialData, onSubmit, isLoading }: Props) {
         if (selected.address) setValue('deliveryAddress', selected.address);
       }
     }
-  }, [watchedVendorId, vendors, setValue]);
+  }, [watchedVendorId, vendors, setValue, isEdit]);
 
   // Recalcular subtotal e total estimado para exibição
   let calculatedSubtotal = 0;

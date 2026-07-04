@@ -85,6 +85,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           vendor: { select: { id: true, name: true, classification: true } },
+          expense: { select: { status: true } },
           _count: { select: { items: true } },
         },
         skip,

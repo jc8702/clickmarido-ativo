@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { vendorSchema, VendorFormValues } from '../../lib/validations/vendor.schema';
+import { useAuth } from '../../hooks/useAuth';
 
 type Props = {
   initialData?: any;
@@ -10,7 +11,7 @@ type Props = {
 };
 
 export function VendorForm({ initialData, onSubmit, isLoading }: Props) {
-  const { register, handleSubmit, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<any>({
     resolver: zodResolver(vendorSchema),
     defaultValues: initialData || {
       name: '',
@@ -32,6 +33,56 @@ export function VendorForm({ initialData, onSubmit, isLoading }: Props) {
       notes: ''
     }
   });
+
+  const [isSearchingCNPJ, setIsSearchingCNPJ] = useState(false);
+  const { getToken } = useAuth();
+
+  const handleSearchCNPJ = async () => {
+    const cnpjCpfValue = getValues('cnpjCpf');
+    if (!cnpjCpfValue) {
+      alert('Por favor, digite o CNPJ que deseja consultar.');
+      return;
+    }
+
+    const cleanCnpj = cnpjCpfValue.replace(/\D/g, '');
+    if (cleanCnpj.length !== 14) {
+      alert('Por favor, insira um CNPJ válido com 14 dígitos (apenas números ou no formato padrão).');
+      return;
+    }
+
+    setIsSearchingCNPJ(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/vendors/cnpj/${cleanCnpj}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Erro ao buscar dados do CNPJ');
+      }
+
+      const data = await res.json();
+
+      if (data.name) setValue('name', data.name);
+      if (data.tradeName) setValue('tradeName', data.tradeName);
+      if (data.email) setValue('email', data.email);
+      if (data.phone) {
+        setValue('phone', data.phone);
+        setValue('whatsapp', data.phone);
+      }
+      if (data.address) setValue('address', data.address);
+
+      alert('Dados do CNPJ preenchidos automaticamente com sucesso!');
+    } catch (error: any) {
+      console.error('Error fetching CNPJ:', error);
+      alert(error.message || 'Ocorreu um erro ao consultar o CNPJ. Verifique a conexão ou se o CNPJ está correto.');
+    } finally {
+      setIsSearchingCNPJ(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
@@ -62,11 +113,29 @@ export function VendorForm({ initialData, onSubmit, isLoading }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">CNPJ / CPF</label>
-          <input 
-            {...register('cnpjCpf')} 
-            className="mt-1 block w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" 
-            placeholder="Apenas números ou formato padrão" 
-          />
+          <div className="flex gap-2 mt-1">
+            <input 
+              {...register('cnpjCpf')} 
+              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100" 
+              placeholder="Apenas números ou formato padrão" 
+            />
+            <button
+              type="button"
+              onClick={handleSearchCNPJ}
+              disabled={isSearchingCNPJ}
+              className="px-4 py-2 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 rounded font-medium disabled:opacity-50 text-sm transition-colors border border-neutral-300 dark:border-neutral-600 flex items-center justify-center min-w-[140px] shadow-sm"
+            >
+              {isSearchingCNPJ ? (
+                <span className="flex items-center space-x-1">
+                  <svg className="animate-spin h-4 w-4 text-neutral-500" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  <span>Buscando...</span>
+                </span>
+              ) : 'Busca por CNPJ'}
+            </button>
+          </div>
           {errors.cnpjCpf && <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors.cnpjCpf.message?.toString()}</p>}
         </div>
 

@@ -1,8 +1,18 @@
 import axios from 'axios';
 
-// Na Vercel e chamadas client-side Next.js, basta /api (caminho relativo)
-// Se for gerar via static props etc e precisar de abs, NEXT_PUBLIC_API_URL seria útil.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Resolve a baseURL dinamicamente em tempo de execução para evitar que valores embutidos
+// no build (.env no git com localhost:3000) quebrem as chamadas de produção na Vercel.
+let API_URL = '/api';
+
+if (typeof window !== 'undefined') {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+  } else {
+    API_URL = '/api';
+  }
+} else {
+  API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+}
 
 const api = axios.create({
   baseURL: API_URL,

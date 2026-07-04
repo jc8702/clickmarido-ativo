@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePurchaseOrders } from '@/hooks/usePurchaseOrders';
 import { useVendors } from '@/hooks/useVendors';
+import { useAuth } from '@/hooks/useAuth';
 import { PurchaseOrderStatusBadge } from '@/components/purchases/PurchaseOrderStatusBadge';
 import { Shimmer } from '@/components/Shimmer';
 
@@ -18,7 +19,7 @@ export default function PurchasesPage() {
   const { data: vendorsData } = useVendors(1, '', '', '', 'true');
   const vendors = vendorsData?.data || [];
 
-  const { data, isLoading, error } = usePurchaseOrders({
+  const { data, isLoading, error, mutate } = usePurchaseOrders({
     page,
     search,
     status,
@@ -26,6 +27,34 @@ export default function PurchasesPage() {
     dateFrom,
     dateTo
   });
+
+  const { getToken } = useAuth();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string, number: string) => {
+    if (!confirm(`Tem certeza absoluta que deseja EXCLUIR a ordem de compra ${number}? Esta ação não pode ser desfeita e removerá eventuais despesas vinculadas no financeiro.`)) return;
+
+    setDeletingId(id);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/purchase-orders/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao excluir ordem de compra');
+      }
+
+      alert('Ordem de compra excluída com sucesso!');
+      mutate();
+    } catch (err: any) {
+      alert(err.message || 'Erro ao excluir ordem de compra');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const orders = data?.data || [];
   const meta = data?.meta || { total: 0, page: 1, limit: 20, totalPages: 1 };
@@ -158,41 +187,65 @@ export default function PurchasesPage() {
                     </td>
                   </tr>
                 ) : (
-                  orders.map((order: any) => (
-                    <tr key={order.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
-                      <td className="px-6 py-4 font-semibold text-primary-600 dark:text-primary-400">
-                        <Link href={`/purchases/${order.id}`}>
-                          {order.number}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 font-medium">
-                        {order.vendor?.name}
-                      </td>
-                      <td className="px-6 py-4">
-                        {new Date(order.issueDate).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="px-6 py-4">
-                        <PurchaseOrderStatusBadge status={order.status} />
-                      </td>
-                      <td className="px-6 py-4 text-neutral-600 dark:text-neutral-400">
-                        {order.requestedBy || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium">
-                        {order._count?.items || 0}
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-neutral-900 dark:text-neutral-100">
-                        {formatCurrency(order.totalAmount)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link 
-                          href={`/purchases/${order.id}`} 
-                          className="text-primary-600 dark:text-primary-400 hover:text-primary-800 font-semibold"
-                        >
-                          Gerenciar
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  orders.map((order: any) => {
+                    const isEditable = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'].includes(order.status) && order.expense?.status !== 'paga';
+                    const isDeletable = ['rascunho', 'emitida', 'cancelada', 'aprovada'].includes(order.status) && order.expense?.status !== 'paga';
+
+                    return (
+                      <tr key={order.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+                        <td className="px-6 py-4 font-semibold text-primary-600 dark:text-primary-400">
+                          <Link href={`/purchases/${order.id}`}>
+                            {order.number}
+                          </Link>
+                        </td>
+                        <td className="px-6 py-4 font-medium">
+                          {order.vendor?.name}
+                        </td>
+                        <td className="px-6 py-4">
+                          {new Date(order.issueDate).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <PurchaseOrderStatusBadge status={order.status} />
+                        </td>
+                        <td className="px-6 py-4 text-neutral-600 dark:text-neutral-400">
+                          {order.requestedBy || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium">
+                          {order._count?.items || 0}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-neutral-900 dark:text-neutral-100">
+                          {formatCurrency(order.totalAmount)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <Link 
+                              href={`/purchases/${order.id}`} 
+                              className="px-2 py-1 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 rounded font-semibold text-xs shadow-sm hover:bg-neutral-200 dark:hover:bg-neutral-750 transition-colors"
+                            >
+                              Ver
+                            </Link>
+                            {isEditable && (
+                              <Link 
+                                href={`/purchases/${order.id}/edit`} 
+                                className="px-2 py-1 bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-900/60 text-primary-600 dark:text-primary-400 rounded font-semibold text-xs shadow-sm hover:bg-primary-100 dark:hover:bg-primary-950/40 transition-colors"
+                              >
+                                Editar
+                              </Link>
+                            )}
+                            {isDeletable && (
+                              <button 
+                                onClick={() => handleDelete(order.id, order.number)}
+                                disabled={deletingId === order.id}
+                                className="px-2 py-1 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-950 text-red-600 dark:text-red-400 rounded font-semibold text-xs shadow-sm hover:bg-red-100 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
+                              >
+                                {deletingId === order.id ? 'Excluindo...' : 'Excluir'}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

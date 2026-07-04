@@ -106,8 +106,8 @@ export default function PurchaseOrderDetailsPage({ params }: Props) {
     );
   }
 
-  const isEditable = order.status === 'rascunho' || order.status === 'emitida';
-  const isDeletable = order.status === 'rascunho' || order.status === 'cancelada';
+  const isEditable = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'].includes(order.status) && order.expense?.status !== 'paga';
+  const isDeletable = ['rascunho', 'emitida', 'cancelada', 'aprovada'].includes(order.status) && order.expense?.status !== 'paga';
 
   return (
     <div className="p-6 space-y-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen">
