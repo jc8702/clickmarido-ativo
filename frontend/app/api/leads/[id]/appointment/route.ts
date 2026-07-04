@@ -22,7 +22,12 @@ export async function POST(
       return NextResponse.json({ error: 'Data de agendamento é obrigatória' }, { status: 400 });
     }
 
-    const scheduledDate = new Date(scheduledAt);
+    let scheduledDate;
+    if (scheduledAt.includes('Z') || scheduledAt.includes('+') || (scheduledAt.lastIndexOf('-') > 10)) {
+      scheduledDate = new Date(scheduledAt);
+    } else {
+      scheduledDate = new Date(`${scheduledAt}-03:00`);
+    }
     if (isNaN(scheduledDate.getTime())) {
       return NextResponse.json({ error: 'Data de agendamento inválida' }, { status: 400 });
     }
@@ -114,7 +119,7 @@ export async function POST(
         type: LeadEventType.APPOINTMENT_SCHEDULED,
         newValue: scheduledDate.toISOString(),
         userId: decoded.userId,
-        notes: `Reunião comercial/visita agendada para ${scheduledDate.toLocaleDateString('pt-BR')} às ${scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${techText}.${calText} Obs: ${notes || 'Sem observações'}`,
+        notes: `Reunião comercial/visita agendada para ${scheduledDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às ${scheduledDate.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })} ${techText}.${calText} Obs: ${notes || 'Sem observações'}`,
       },
     });
 
@@ -172,7 +177,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Nenhum agendamento ativo encontrado para atualizar' }, { status: 404 });
     }
 
-    const scheduledDate = scheduledAt ? new Date(scheduledAt) : appointment.scheduledAt;
+    let scheduledDate = appointment.scheduledAt;
+    if (scheduledAt) {
+      if (scheduledAt.includes('Z') || scheduledAt.includes('+') || (scheduledAt.lastIndexOf('-') > 10)) {
+        scheduledDate = new Date(scheduledAt);
+      } else {
+        scheduledDate = new Date(`${scheduledAt}-03:00`);
+      }
+    }
     if (scheduledAt && isNaN(scheduledDate.getTime())) {
       return NextResponse.json({ error: 'Data de agendamento inválida' }, { status: 400 });
     }
@@ -262,7 +274,7 @@ export async function PUT(
         type: LeadEventType.APPOINTMENT_RESCHEDULED,
         newValue: scheduledDate.toISOString(),
         userId: decoded.userId,
-        notes: `Agendamento comercial atualizado para ${scheduledDate.toLocaleDateString('pt-BR')} às ${scheduledDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${techText}.${calText}`,
+        notes: `Agendamento comercial atualizado para ${scheduledDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às ${scheduledDate.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' })} ${techText}.${calText}`,
       },
     });
 

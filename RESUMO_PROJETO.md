@@ -1,11 +1,14 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Resolução de conflito de fluxo de remarcação e novo compromisso de leads concluída; deploy em andamento.
+- **Status Atual:** Correção de fuso horário em salvamento de agendamento de leads concluída; deploy em andamento.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 11:45
+- **Última Atualização:** 04/07/2026 - 11:57
 
 ## Histórico de Alterações
+- **[04/07/2026 - 11:57]:** Correção no salvamento de horários de agendamentos de leads (timezone). O servidor na Vercel (em UTC) interpretava a data local enviada pelo frontend (`datetime-local`) sob o fuso UTC, gerando uma defasagem e salvando sempre como 12:00 (meio-dia) local em GMT-3. Ajustada a API para processar a data aplicando o offset correspondente do Brasil (`-03:00`) se não vier fuso no payload. Também formatados os horários de log do histórico do lead com fuso horário `America/Sao_Paulo`.
+  - Arquivos modificados: `frontend/app/api/leads/[id]/appointment/route.ts`
+
 - **[04/07/2026 - 11:45]:** Correção no fluxo de edição de agendamentos no card do lead. Agora o usuário pode escolher explicitamente entre "Remarcar Compromisso" (chama o PUT, atualizando o compromisso ativo no banco de dados e no Google Calendar do técnico, mesmo que a data mude para outro dia) ou "Salvar como Novo" (chama o POST, criando um compromisso adicional e preservando o anterior intacto). Removida a conversão automática para novo modo que ocorria de forma invisível.
   - Arquivos modificados: `frontend/components/leads/LeadScheduleForm.tsx`
 
