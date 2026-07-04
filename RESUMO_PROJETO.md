@@ -1,9 +1,9 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Correção da baseURL dinâmica do Axios implantada, restabelecendo o funcionamento de todas as telas em produção. Edição/Exclusão de Compras e busca de CNPJ validadas com sucesso.
+- **Status Atual:** Módulo de Compras aprimorado — edição e exclusão de OC habilitadas para mais status, todos os campos incluindo fornecedor editáveis, integrações financeiras atualizadas em cascata. Deploy realizado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 14:35
+- **Última Atualização:** 04/07/2026 - 17:41
 
 ## Histórico de Alterações
 - **[04/07/2026 - 14:35]:** Correção crítica no carregamento de telas em produção da Vercel. Identificado que a baseURL do Axios estava compilando fixamente como `http://localhost:3000` devido à leitura do arquivo `.env` local no build step. Refatorada a inicialização em `frontend/lib/api.js` para determinar a URL dinamicamente em tempo de execução (usando `/api` relativo sempre que rodar no navegador fora de localhost). Validada a restauração completa das telas de Dashboard, Ordens de Serviço e Compras em produção por meio de agente autônomo com sucesso.

@@ -188,8 +188,10 @@ export default function PurchasesPage() {
                   </tr>
                 ) : (
                   orders.map((order: any) => {
-                    const isEditable = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'].includes(order.status) && order.expense?.status !== 'paga';
-                    const isDeletable = ['rascunho', 'emitida', 'cancelada', 'aprovada'].includes(order.status) && order.expense?.status !== 'paga';
+                    // Editável: qualquer status exceto cancelada, e despesa não pode estar paga
+                    const isEditable = order.status !== 'cancelada' && order.expense?.status !== 'paga';
+                    // Deletável: qualquer status exceto cancelada, e despesa não pode estar paga
+                    const isDeletable = order.expense?.status !== 'paga';
 
                     return (
                       <tr key={order.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">

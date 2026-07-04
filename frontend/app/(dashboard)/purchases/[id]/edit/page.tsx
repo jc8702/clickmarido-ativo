@@ -47,8 +47,8 @@ export default function EditPurchaseOrderPage({ params }: Props) {
     );
   }
 
-  // Bloquear acesso se não estiver nos status permitidos
-  const editableStatuses = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'];
+  // Bloquear acesso apenas se cancelada ou se despesa já foi paga
+  const editableStatuses = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida', 'recebida'];
   const canEdit = editableStatuses.includes(order.status) && order.expense?.status !== 'paga';
   if (!canEdit) {
     return (

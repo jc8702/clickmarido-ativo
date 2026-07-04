@@ -77,17 +77,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Ordem de compra não encontrada' }, { status: 404 });
     }
 
-    // Permitir edição se estiver em rascunho, emitida, aprovada ou parcialmente_recebida
-    const editableStatuses = ['rascunho', 'emitida', 'aprovada', 'parcialmente_recebida'];
-    if (!editableStatuses.includes(existingOrder.status)) {
+    // Permitir edição em qualquer status exceto 'cancelada'
+    if (existingOrder.status === 'cancelada') {
       return NextResponse.json(
-        { error: 'Não é possível editar ordem de compra que já foi totalmente recebida ou cancelada' },
+        { error: 'Não é possível editar uma ordem de compra cancelada' },
         { status: 400 }
       );
     }
 
-    // Se for aprovada, verificar se a despesa correspondente não está paga
-    if (existingOrder.status === 'aprovada' && existingOrder.expenseId) {
+    // Verificar se a despesa correspondente não está paga (bloqueia edição apenas se paga)
+    if (existingOrder.expenseId) {
       const associatedExpense = await prisma.expense.findUnique({
         where: { id: existingOrder.expenseId }
       });
@@ -99,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Validar e atualizar fornecedor se fornecido
+    // Validar fornecedor se fornecido e diferente do atual
     if (vendorId !== undefined && vendorId !== existingOrder.vendorId) {
       const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
       if (!vendor) {
@@ -181,7 +180,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData.subtotal = subtotal;
       updateData.totalAmount = totalAmount;
 
-      // Se houver despesa vinculada, atualizar o valor e descrição para manter a integridade
+      // Se houver despesa vinculada, atualizar valor e descrição para manter integridade financeira
       if (existingOrder.expenseId) {
         const vendorForDesc = vendorId && vendorId !== existingOrder.vendorId
           ? await tx.vendor.findUnique({ where: { id: vendorId }, select: { name: true } })
@@ -196,13 +195,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         });
       }
 
-      // Registrar evento de alteração
+      // Registrar evento de alteração no histórico de auditoria
       await tx.purchaseOrderEvent.create({
         data: {
           purchaseOrderId: id,
           type: 'edicao',
-          description: `Ordem de compra atualizada. Novo total: R$ ${Number(totalAmount).toFixed(2)}.`,
-          oldValue: { totalAmount: existingOrder.totalAmount },
+          description: `Ordem de compra editada. Novo total: R$ ${Number(totalAmount).toFixed(2)}.`,
+          oldValue: { totalAmount: existingOrder.totalAmount, status: existingOrder.status },
           newValue: { totalAmount },
         },
       });
@@ -231,52 +230,67 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const order = await prisma.purchaseOrder.findUnique({
       where: { id },
+      include: {
+        items: {
+          include: {
+            product: { select: { id: true, type: true } },
+          },
+        },
+      },
     });
 
     if (!order) {
       return NextResponse.json({ error: 'Ordem de compra não encontrada' }, { status: 404 });
     }
 
-    // Permitir exclusão de rascunho, emitida, cancelada e aprovada (desde que a despesa não esteja paga)
-    const deletableStatuses = ['rascunho', 'emitida', 'cancelada', 'aprovada'];
-    if (!deletableStatuses.includes(order.status)) {
-      return NextResponse.json(
-        { error: 'Não é possível excluir ordens de compra que já foram total ou parcialmente recebidas' },
-        { status: 400 }
-      );
-    }
-
-    // Se for aprovada, verificar se a despesa correspondente está paga
-    if (order.status === 'aprovada' && order.expenseId) {
+    // Verificar se a despesa correspondente está paga (único bloqueio absoluto)
+    if (order.expenseId) {
       const associatedExpense = await prisma.expense.findUnique({
         where: { id: order.expenseId }
       });
       if (associatedExpense && associatedExpense.status === 'paga') {
         return NextResponse.json(
-          { error: 'Não é possível excluir uma ordem de compra aprovada cujo faturamento financeiro já foi pago' },
+          { error: 'Não é possível excluir uma ordem de compra cujo faturamento financeiro já foi pago' },
           { status: 400 }
         );
       }
     }
 
-    // Excluir em transação (deleta itens, eventos e despesa vinculada se houver)
+    // Excluir em transação com estorno de estoque se necessário
     await prisma.$transaction(async (tx) => {
-      // 1. Deletar os itens da OC
+      // 1. Estornar estoque dos itens que foram recebidos (para ordens recebidas ou parcialmente recebidas)
+      if (order.status === 'recebida' || order.status === 'parcialmente_recebida') {
+        for (const item of order.items) {
+          const receivedQty = Math.round(Number(item.receivedQuantity)) || 0;
+          if (receivedQty > 0 && item.productId && item.product?.type === 'PECA') {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                quantity: {
+                  decrement: receivedQty,
+                },
+              },
+            });
+          }
+        }
+      }
+
+      // 2. Deletar os itens da OC
       await tx.purchaseOrderItem.deleteMany({
         where: { purchaseOrderId: id }
       });
 
-      // 2. Deletar os eventos da OC
+      // 3. Deletar os eventos da OC
       await tx.purchaseOrderEvent.deleteMany({
         where: { purchaseOrderId: id }
       });
 
-      // 3. Deletar a OC
+      // 4. Deletar a OC
       await tx.purchaseOrder.delete({
         where: { id }
       });
 
-      // 4. Deletar despesa vinculada pendente (se houver)
+      // 5. Deletar despesa vinculada não paga (se houver)
       if (order.expenseId) {
         await tx.expense.delete({
           where: { id: order.expenseId }
@@ -284,7 +298,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       }
     });
 
-    return NextResponse.json({ success: true, message: 'Ordem de compra excluída' });
+    return NextResponse.json({ success: true, message: 'Ordem de compra excluída com sucesso' });
   } catch (error) {
     console.error('DELETE /api/purchase-orders/[id] error:', error);
     return NextResponse.json({ error: 'Erro ao excluir ordem de compra' }, { status: 500 });
