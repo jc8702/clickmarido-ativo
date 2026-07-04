@@ -32,6 +32,7 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
 
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [isNewMode, setIsNewMode] = useState<boolean>(true);
+  const [submitType, setSubmitType] = useState<'PUT' | 'POST'>('POST');
   
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentNotes, setAppointmentNotes] = useState('');
@@ -77,25 +78,6 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
 
   const handleDateChange = (val: string) => {
     setAppointmentDate(val);
-    
-    // Detecção automática de dia diferente para sugerir criação de novo agendamento
-    if (selectedAppointment && val) {
-      const newDate = new Date(val);
-      const currentDate = new Date(selectedAppointment.scheduledAt);
-      
-      const isSameDay = 
-        newDate.getFullYear() === currentDate.getFullYear() &&
-        newDate.getMonth() === currentDate.getMonth() &&
-        newDate.getDate() === currentDate.getDate();
-      
-      if (!isSameDay && !isNewMode) {
-        setIsNewMode(true);
-        setSelectedAppointment(null);
-        toast.success('Nova data em dia diferente. Alterado para modo de "Novo Agendamento".', {
-          duration: 4000
-        });
-      }
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,7 +86,7 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
 
     setSubmitting(true);
     try {
-      const isEditing = !isNewMode && !!selectedAppointment;
+      const isEditing = submitType === 'PUT' && !!selectedAppointment;
       const url = `/api/leads/${leadId}/appointment`;
       const method = isEditing ? 'PUT' : 'POST';
 
@@ -126,9 +108,7 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
 
       if (res.ok) {
         toast.success(isEditing ? 'Agendamento comercial atualizado!' : 'Agendamento comercial criado!');
-        if (!isEditing) {
-          handleSetNewMode();
-        }
+        handleSetNewMode();
         onSuccess();
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -178,16 +158,16 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
       <form onSubmit={handleSubmit} className="space-y-4 bg-neutral-50/50 dark:bg-neutral-950/20 p-4 rounded-xl border border-neutral-200/50 dark:border-neutral-800/30">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            {isNewMode ? 'Agendar Novo Compromisso' : 'Editar Compromisso'}
+            {selectedAppointment ? 'Editar Compromisso Selecionado' : 'Agendar Novo Compromisso'}
           </h4>
-          {!isNewMode && (
+          {selectedAppointment && (
             <button
               type="button"
               onClick={handleSetNewMode}
               className="text-[10px] font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-all"
             >
               <Plus className="w-3.5 h-3.5" />
-              Novo Compromisso
+              Limpar / Novo
             </button>
           )}
         </div>
@@ -231,16 +211,42 @@ export function LeadScheduleForm({ leadId, token, onSuccess, currentAppointment,
           />
         </div>
 
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            variant="primary" 
-            size="sm"
-            className="font-bold px-4 shadow"
-            isLoading={submitting}
-          >
-            {isNewMode ? 'Criar Compromisso' : 'Salvar Alterações'}
-          </Button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {selectedAppointment ? (
+            <>
+              <Button 
+                type="submit" 
+                variant="outline" 
+                size="sm"
+                className="font-bold px-3 border-neutral-300 text-neutral-700 dark:text-neutral-300 dark:border-neutral-700"
+                onClick={() => setSubmitType('POST')}
+                isLoading={submitting && submitType === 'POST'}
+              >
+                Salvar como Novo
+              </Button>
+              <Button 
+                type="submit" 
+                variant="primary" 
+                size="sm"
+                className="font-bold px-3"
+                onClick={() => setSubmitType('PUT')}
+                isLoading={submitting && submitType === 'PUT'}
+              >
+                Remarcar Compromisso
+              </Button>
+            </>
+          ) : (
+            <Button 
+              type="submit" 
+              variant="primary" 
+              size="sm"
+              className="font-bold px-4 shadow"
+              onClick={() => setSubmitType('POST')}
+              isLoading={submitting && submitType === 'POST'}
+            >
+              Criar Compromisso
+            </Button>
+          )}
         </div>
       </form>
 

@@ -1,11 +1,14 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Correção na exibição de SKU e Descrição em propostas comerciais e orçamentos públicos concluída; deploy em andamento.
+- **Status Atual:** Resolução de conflito de fluxo de remarcação e novo compromisso de leads concluída; deploy em andamento.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 11:39
+- **Última Atualização:** 04/07/2026 - 11:45
 
 ## Histórico de Alterações
+- **[04/07/2026 - 11:45]:** Correção no fluxo de edição de agendamentos no card do lead. Agora o usuário pode escolher explicitamente entre "Remarcar Compromisso" (chama o PUT, atualizando o compromisso ativo no banco de dados e no Google Calendar do técnico, mesmo que a data mude para outro dia) ou "Salvar como Novo" (chama o POST, criando um compromisso adicional e preservando o anterior intacto). Removida a conversão automática para novo modo que ocorria de forma invisível.
+  - Arquivos modificados: `frontend/components/leads/LeadScheduleForm.tsx`
+
 - **[04/07/2026 - 11:39]:** Correção no mapeamento de itens de orçamentos (quotation) que impedia a exibição do SKU e da Descrição do item nas propostas públicas e na página de impressão. Adicionado o mapeamento do SKU e Descrição na API pública de orçamentos e na tela de impressão.
   - Arquivos modificados: `frontend/app/api/quotations/public/[token]/route.ts`, `frontend/app/print/quotation/[id]/page.tsx`
 
