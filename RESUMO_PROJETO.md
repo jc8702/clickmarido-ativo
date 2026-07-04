@@ -1,9 +1,12 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Saneamento de NPS e conclusão de OS corrigidos em todos os fluxos de pagamento (manual e webhooks); deploy concluído.
+- **Status Atual:** Unidade de medida KM adicionada no cadastro de serviços e peças; deploy em andamento.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 03/07/2026 - 17:42
+- **Última Atualização:** 04/07/2026 - 11:30
+
+- **[04/07/2026 - 11:30]:** Adicionada a unidade de medida KM (quilômetro) no select de opções de unidades do cadastro/edição de serviços e peças.
+  - Arquivos modificados: `frontend/components/products/ProductForm.tsx`
 
 - **[03/07/2026 - 17:42]:** Correção na lógica de pendências de NPS e na conclusão de Ordens de Serviço (OS) vinculadas. Agora, a aprovação manual de pagamento atualiza o status da OS correspondente para 'concluida'. Adicionamos 'completedAt' em todas as conclusões automáticas de OS (Mercado Pago, Asaas e Aprovação manual) e implementamos um saneamento/autocorreção automático e resiliente diretamente no endpoint de NPS pendentes para corrigir dados legados retroativamente.
   - Arquivos modificados: `frontend/app/api/payments/[id]/approve/route.ts`, `frontend/app/api/payments/webhook-mp/route.ts`, `frontend/app/api/webhooks/asaas/route.ts`, `frontend/app/api/nps/pending/route.ts`.

@@ -211,6 +211,7 @@ export function ProductForm({ initialData, onSubmit, isLoading }: Props) {
             <option value="un">Unidade (un)</option>
             <option value="m²">Metro quadrado (m²)</option>
             <option value="m">Metro (m)</option>
+            <option value="km">Quilômetro (km)</option>
             <option value="h">Hora (h)</option>
             <option value="kg">Quilograma (kg)</option>
             <option value="l">Litro (l)</option>
