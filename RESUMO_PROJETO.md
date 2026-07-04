@@ -1,9 +1,13 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Unidade de medida KM adicionada no cadastro de serviços e peças; deploy em andamento.
+- **Status Atual:** Sincronização de múltiplos agendamentos de leads e Google Calendar implementada; deploy em andamento.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 11:30
+- **Última Atualização:** 04/07/2026 - 11:35
+
+## Histórico de Alterações
+- **[04/07/2026 - 11:35]:** Implementação de múltiplos agendamentos por lead e sincronização automática com a agenda do técnico. Ao alterar o horário no mesmo dia, o sistema atualiza o agendamento atual; ao alterar a data para um dia diferente, é dada a opção de criar um novo compromisso (mantendo o anterior no histórico). Adicionado o método DELETE na API de agendamento de leads para cancelamento de agendamentos físicos e no Google Calendar.
+  - Arquivos modificados: `frontend/app/api/leads/[id]/appointment/route.ts`, `frontend/components/leads/LeadDetailsDrawer.tsx`, `frontend/components/leads/LeadScheduleForm.tsx`
 
 - **[04/07/2026 - 11:30]:** Adicionada a unidade de medida KM (quilômetro) no select de opções de unidades do cadastro/edição de serviços e peças.
   - Arquivos modificados: `frontend/components/products/ProductForm.tsx`

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
 import { LeadEventType, AppointmentStatus } from '@prisma/client';
-import { createCalendarEvent, updateCalendarEvent } from '@/lib/google-calendar';
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from '@/lib/google-calendar';
 
 export async function POST(
   request: NextRequest,
@@ -276,5 +276,71 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating lead appointment:', error);
     return NextResponse.json({ error: 'Erro ao atualizar agendamento' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const decoded = validateToken(request);
+    if (!decoded) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    const { id: leadId } = await params;
+    const { searchParams } = new URL(request.url);
+    const appointmentId = searchParams.get('appointmentId');
+
+    if (!appointmentId) {
+      return NextResponse.json({ error: 'ID do agendamento é obrigatório' }, { status: 400 });
+    }
+
+    // 1. Verificar se o agendamento existe e pertence a este lead
+    const appointment = await prisma.leadAppointment.findFirst({
+      where: { id: appointmentId, leadId },
+    });
+
+    if (!appointment) {
+      return NextResponse.json({ error: 'Agendamento não encontrado' }, { status: 404 });
+    }
+
+    // 2. Se houver integração com o Google Calendar, deletar o evento
+    const googleEventId = appointment.googleEventId;
+    if (googleEventId) {
+      try {
+        await deleteCalendarEvent(googleEventId);
+      } catch (calErr) {
+        console.error('[Google Calendar] Falha ao deletar evento:', calErr);
+      }
+    }
+
+    // 3. Deletar do banco de dados
+    await prisma.leadAppointment.delete({
+      where: { id: appointmentId },
+    });
+
+    // 4. Registrar evento de histórico do lead
+    await prisma.leadEvent.create({
+      data: {
+        leadId,
+        type: LeadEventType.LEAD_UPDATED,
+        newValue: 'Cancelado',
+        userId: decoded.userId,
+        notes: `Agendamento comercial do dia ${appointment.scheduledAt.toLocaleDateString('pt-BR')} foi cancelado/excluído.`,
+      },
+    });
+
+    // 5. Atualizar timestamp do lead
+    await prisma.lead.update({
+      where: { id: leadId },
+      data: { updatedAt: new Date() },
+    });
+
+    return NextResponse.json({ success: true, message: 'Agendamento cancelado com sucesso' });
+  } catch (error) {
+    console.error('Error deleting lead appointment:', error);
+    return NextResponse.json({ error: 'Erro ao cancelar agendamento' }, { status: 500 });
   }
 }
