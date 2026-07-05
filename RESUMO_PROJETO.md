@@ -1,12 +1,15 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Módulo de Compras corrigido — botões Editar e Excluir agora visíveis para TODOS os status de OC (exceto cancelada para edição, e despesa paga como único bloqueio). Estorno de estoque automático na exclusão de OC recebida. Deploy na Vercel realizado.
+- **Status Atual:** Integração de Ordens de Compra e baixa automática de despesas concluída e testada. Correção na gravação de saldos do livro caixa efetuada. Deploy na Vercel realizado e validado.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 17:53
+- **Última Atualização:** 04/07/2026 - 22:15
 
 ## Histórico de Alterações
-- **[04/07/2026 - 14:35]:** Correção crítica no carregamento de telas em produção da Vercel. Identificado que a baseURL do Axios estava compilando fixamente como `http://localhost:3000` devido à leitura do arquivo `.env` local no build step. Refatorada a inicialização em `frontend/lib/api.js` para determinar a URL dinamicamente em tempo de execução (usando `/api` relativo sempre que rodar no navegador fora de localhost). Validada a restauração completa das telas de Dashboard, Ordens de Serviço e Compras em produção por meio de agente autônomo com sucesso.
+- **[04/07/2026 - 22:15]:** Correção na integração financeira das Ordens de Compra com o módulo de Despesas. Implementada a baixa automática (para o status 'paga' e preenchimento de 'paidAt') da despesa associada à Ordem de Compra assim que a OC é totalmente recebida ("dar entrada completa"). Também corrigido o cálculo do saldo acumulado (campo 'balance') da tabela de transações do livro caixa (`FinancialTransaction`) ao marcar uma despesa como paga.
+  - Arquivos modificados: `frontend/app/api/expenses/[id]/mark-paid/route.ts`, `frontend/app/api/purchase-orders/[id]/receive/route.ts`
+
+- **[04/07/2026 - 14:35]:** Correção crítica no carregamento de telas em produção da Vercel. Identificado que a baseURL do Axios estava compilando fixamente como `http://localhost:3000` devido à leitura do arquivo `.env` local no build step. Refatorada a inicialização em `frontend/lib/api.js` para determinar a URL dinamicamente em tempo de execução (usando `/api` relativo sempre que rodar no navegador fora de localhost). Validada a restoration completa das telas de Dashboard, Ordens de Serviço e Compras em produção por meio de agente autônomo com sucesso.
   - Arquivos modificados: `frontend/lib/api.js`
 
 - **[04/07/2026 - 13:38]:** Implementação de botões de Editar e Excluir diretamente na listagem geral de Ordens de Compra (OC). Flexibilizadas as regras de edição e exclusão no backend e frontend para abranger ordens em status "aprovada" (desde que a despesa correspondente não tenha sido paga). Implementada a integridade financeira síncrona: ao editar uma OC aprovada, a despesa associada é recalculada e atualizada; ao excluir, a despesa pendente vinculada é deletada para manter o financeiro limpo.
