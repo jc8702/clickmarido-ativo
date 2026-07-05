@@ -310,7 +310,29 @@ export async function DELETE(
       select: { id: true, customerId: true, total: true, status: true, notes: true },
     });
 
-    await prisma.quotation.delete({ where: { id } });
+    // Usar transação para garantir integridade referencial ao excluir Orçamento
+    await prisma.$transaction(async (tx) => {
+      // 1. Desvincular pagamentos
+      await tx.payment.updateMany({
+        where: { quotationId: id },
+        data: { quotationId: null },
+      });
+
+      // 2. Desvincular ordens de compra
+      await tx.purchaseOrder.updateMany({
+        where: { quotationId: id },
+        data: { quotationId: null },
+      });
+
+      // 3. Desvincular leads
+      await tx.lead.updateMany({
+        where: { quotationId: id },
+        data: { quotationId: null },
+      });
+
+      // 4. Excluir o orçamento
+      await tx.quotation.delete({ where: { id } });
+    });
 
     // Registrar log de auditoria
     const { logAudit } = await import('@/lib/audit');

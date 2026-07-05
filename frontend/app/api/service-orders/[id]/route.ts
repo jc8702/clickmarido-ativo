@@ -223,7 +223,33 @@ export async function DELETE(
       where: { id },
     });
 
-    await prisma.serviceOrder.delete({ where: { id } });
+    // Usar transação para garantir integridade referencial ao excluir OS
+    await prisma.$transaction(async (tx) => {
+      // 1. Desvincular despesas
+      await tx.expense.updateMany({
+        where: { serviceOrderId: id },
+        data: { serviceOrderId: null },
+      });
+
+      // 2. Desvincular ordens de compra
+      await tx.purchaseOrder.updateMany({
+        where: { serviceOrderId: id },
+        data: { serviceOrderId: null },
+      });
+
+      // 3. Deletar agendamentos vinculados (campo serviceOrderId em Appointment é obrigatório)
+      await tx.appointment.deleteMany({
+        where: { serviceOrderId: id },
+      });
+
+      // 4. Deletar avaliações vinculadas (campo serviceOrderId em Review é obrigatório)
+      await tx.review.deleteMany({
+        where: { serviceOrderId: id },
+      });
+
+      // 5. Excluir a ordem de serviço
+      await tx.serviceOrder.delete({ where: { id } });
+    });
 
     // Registrar log de auditoria
     const { logAudit } = await import('@/lib/audit');

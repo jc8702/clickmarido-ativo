@@ -147,8 +147,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { id } = await params;
 
-    await prisma.product.delete({
-      where: { id },
+    // Usar transação para garantir integridade referencial ao excluir Produto
+    await prisma.$transaction(async (tx) => {
+      // 1. Desvincular itens de ordem de compra (PurchaseOrderItem)
+      await tx.purchaseOrderItem.updateMany({
+        where: { productId: id },
+        data: { productId: null },
+      });
+
+      // 2. Excluir o produto
+      await tx.product.delete({
+        where: { id },
+      });
     });
 
     return NextResponse.json({ message: 'Produto excluído com sucesso' });

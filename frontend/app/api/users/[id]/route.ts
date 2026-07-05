@@ -110,7 +110,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
     }
 
-    await prisma.user.delete({ where: { id } });
+    // Usar transação para garantir integridade referencial ao excluir Usuário
+    await prisma.$transaction(async (tx) => {
+      // 1. Desvincular leads (responsável)
+      await tx.lead.updateMany({
+        where: { responsavelId: id },
+        data: { responsavelId: null },
+      });
+
+      // 2. Desvincular eventos de lead
+      await tx.leadEvent.updateMany({
+        where: { userId: id },
+        data: { userId: null },
+      });
+
+      // 3. Excluir o usuário
+      await tx.user.delete({ where: { id } });
+    });
 
     // Registrar auditoria
     try {
