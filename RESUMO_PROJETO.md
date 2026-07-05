@@ -1,11 +1,14 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Integração de Ordens de Compra e baixa automática de despesas concluída e testada. Correção na gravação de saldos do livro caixa efetuada. Deploy na Vercel realizado e validado.
+- **Status Atual:** Integração de Ordens de Compra, baixa automática de despesas e integridade referencial na exclusão de lançamentos finalizadas. Deploy na Vercel realizado e validado.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 22:15
+- **Última Atualização:** 04/07/2026 - 22:40
 
 ## Histórico de Alterações
+- **[04/07/2026 - 22:40]:** Correção de integridade referencial e recriação de despesas de compras. Configurado para que, ao excluir uma despesa no módulo financeiro, as Ordens de Compra que a apontavam tenham o campo `expenseId` desvinculado (definido como `null`) para evitar chaves órfãs/fantasmas. Adicionalmente, caso uma OC com status `'recebida'` (já entregue) seja editada e precise ter sua despesa recriada (por ter sido deletada anteriormente), o sistema agora a recria já com status `'paga'` e gera a respectiva transação de débito e cálculo de saldo no Livro Caixa automaticamente.
+  - Arquivos modificados: `frontend/app/api/expenses/[id]/route.ts`, `frontend/app/api/purchase-orders/[id]/route.ts`
+
 - **[04/07/2026 - 22:15]:** Correção na integração financeira das Ordens de Compra com o módulo de Despesas. Implementada a baixa automática (para o status 'paga' e preenchimento de 'paidAt') da despesa associada à Ordem de Compra assim que a OC é totalmente recebida ("dar entrada completa"). Também corrigido o cálculo do saldo acumulado (campo 'balance') da tabela de transações do livro caixa (`FinancialTransaction`) ao marcar uma despesa como paga.
   - Arquivos modificados: `frontend/app/api/expenses/[id]/mark-paid/route.ts`, `frontend/app/api/purchase-orders/[id]/receive/route.ts`
 
