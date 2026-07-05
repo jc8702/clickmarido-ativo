@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Integração de Ordens de Compra, baixa automática de despesas e integridade referencial na exclusão de lançamentos finalizadas. Deploy na Vercel realizado e validado.
+- **Status Atual:** Auditoria geral de integridade referencial em deleções finalizada. Rotinas de desvinculação síncronas implementadas em múltiplos módulos (OS, Orçamentos, Produtos, Usuários) e validadas com sucesso. Deploy na Vercel realizado.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 22:40
+- **Última Atualização:** 04/07/2026 - 22:50
 
 ## Histórico de Alterações
+- **[04/07/2026 - 22:50]:** Auditoria geral de deleções e integridade referencial de banco de dados. Implementadas rotinas de desvinculação síncrona dentro de transações `$transaction` do Prisma no endpoint `DELETE` de múltiplos módulos:
+  - **Ordens de Serviço (`ServiceOrder`):** Desvinculação de despesas, ordens de compra e avaliações (`Review`), e exclusão em cascata de agendamentos (`Appointment`).
+  - **Orçamentos (`Quotation`):** Desvinculação de pagamentos, ordens de compra e leads.
+  - **Produtos (`Product`):** Desvinculação de itens de ordem de compra (`PurchaseOrderItem`).
+  - **Usuários (`User`):** Desvinculação de responsabilidades sobre Leads e autoria em eventos de lead (`LeadEvent`).
+  - Criado e executado com sucesso script de testes unificado local de integridade para simular todos esses cenários.
+  - Arquivos modificados: `frontend/app/api/service-orders/[id]/route.ts`, `frontend/app/api/quotations/[id]/route.ts`, `frontend/app/api/products/[id]/route.ts`, `frontend/app/api/users/[id]/route.ts`
+
 - **[04/07/2026 - 22:40]:** Correção de integridade referencial e recriação de despesas de compras. Configurado para que, ao excluir uma despesa no módulo financeiro, as Ordens de Compra que a apontavam tenham o campo `expenseId` desvinculado (definido como `null`) para evitar chaves órfãs/fantasmas. Adicionalmente, caso uma OC com status `'recebida'` (já entregue) seja editada e precise ter sua despesa recriada (por ter sido deletada anteriormente), o sistema agora a recria já com status `'paga'` e gera a respectiva transação de débito e cálculo de saldo no Livro Caixa automaticamente.
   - Arquivos modificados: `frontend/app/api/expenses/[id]/route.ts`, `frontend/app/api/purchase-orders/[id]/route.ts`
 
