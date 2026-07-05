@@ -170,9 +170,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Usar transação para garantir consistência
     await prisma.$transaction(async (tx) => {
-      // Remover audit logs vinculados
+      // 1. Remover audit logs vinculados
       await tx.auditLog.deleteMany({ where: { entityId: id } });
-      // Excluir despesa
+
+      // 2. Desvincular das ordens de compra correspondentes
+      await tx.purchaseOrder.updateMany({
+        where: { expenseId: id },
+        data: { expenseId: null },
+      });
+
+      // 3. Excluir despesa
       await tx.expense.delete({ where: { id } });
     });
 

@@ -220,6 +220,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             ? currentVendor.category
             : 'MATERIAL';
 
+          const isReceived = existingOrder.status === 'recebida';
+          const payDate = new Date();
+
           const newExpense = await tx.expense.create({
             data: {
               category: expenseCategory,
@@ -229,7 +232,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
               vendorName: currentVendor?.name || null,
               expenseDate: new Date(),
               dueDate: existingOrder.expectedDeliveryDate || new Date(),
-              status: 'pendente',
+              status: isReceived ? 'paga' : 'pendente',
+              paidAt: isReceived ? payDate : null,
               serviceOrderId: existingOrder.serviceOrderId || null,
               notes: `Despesa recriada automaticamente na edição da Ordem de Compra ${existingOrder.number}.`,
             },
@@ -237,6 +241,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           currentExpenseId = newExpense.id;
           // Vincular nova despesa à OC
           updateData.expenseId = currentExpenseId;
+
+          // Se a despesa foi recriada diretamente como paga (porque a OC já estava recebida), registrar no Livro Caixa
+          if (isReceived) {
+            const lastTransaction = await tx.financialTransaction.findFirst({
+              orderBy: { createdAt: 'desc' },
+              select: { balance: true },
+            });
+
+            const prevBalance = lastTransaction?.balance ? Number(lastTransaction.balance) : 0;
+            const newBalance = prevBalance - Number(totalAmount);
+
+            await tx.financialTransaction.create({
+              data: {
+                type: 'EXPENSE_PAID',
+                expenseId: currentExpenseId,
+                credit: 0,
+                debit: totalAmount,
+                balance: newBalance,
+                description: `Pagamento de Despesa (Automático via Recriação de OC Recebida): ${newExpense.description}`,
+                notes: `Categoria: ${newExpense.category}`,
+                transactionDate: payDate,
+              },
+            });
+          }
         }
       }
 
