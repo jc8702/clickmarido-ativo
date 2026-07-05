@@ -35,12 +35,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       });
 
+      // Buscar a última transação anterior do livro caixa para calcular o saldo acumulado (balance)
+      const lastTransaction = await tx.financialTransaction.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { balance: true },
+      });
+
+      const prevBalance = lastTransaction?.balance ? Number(lastTransaction.balance) : 0;
+      const newBalance = prevBalance - Number(existingExpense.amount);
+
       await tx.financialTransaction.create({
         data: {
           type: 'EXPENSE_PAID',
           expenseId: id,
           credit: 0,
           debit: existingExpense.amount,
+          balance: newBalance,
           description: `Pagamento de Despesa: ${existingExpense.description}`,
           notes: `Categoria: ${existingExpense.category}${existingExpense.costCenter ? ` | Centro de Custo: ${existingExpense.costCenter}` : ''}`,
           transactionDate: payDate

@@ -90,6 +90,59 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         newOrderStatus = 'parcialmente_recebida';
       }
 
+      // Se a OC foi recebida totalmente e tem uma despesa vinculada que ainda não foi paga, baixá-la
+      if (newOrderStatus === 'recebida' && purchaseOrder.expenseId) {
+        const existingExpense = await tx.expense.findUnique({
+          where: { id: purchaseOrder.expenseId },
+        });
+
+        if (existingExpense && existingExpense.status !== 'paga') {
+          const payDate = new Date();
+
+          // 1. Atualizar o status da despesa para 'paga'
+          const updatedExpense = await tx.expense.update({
+            where: { id: purchaseOrder.expenseId },
+            data: {
+              status: 'paga',
+              paidAt: payDate,
+            },
+          });
+
+          // 2. Registrar transação de pagamento no Livro Caixa (FinancialTransaction)
+          const lastTransaction = await tx.financialTransaction.findFirst({
+            orderBy: { createdAt: 'desc' },
+            select: { balance: true },
+          });
+
+          const prevBalance = lastTransaction?.balance ? Number(lastTransaction.balance) : 0;
+          const newBalance = prevBalance - Number(updatedExpense.amount);
+
+          await tx.financialTransaction.create({
+            data: {
+              type: 'EXPENSE_PAID',
+              expenseId: purchaseOrder.expenseId,
+              credit: 0,
+              debit: updatedExpense.amount,
+              balance: newBalance,
+              description: `Pagamento de Despesa (Automático via Recebimento OC): ${updatedExpense.description}`,
+              notes: `Categoria: ${updatedExpense.category}${updatedExpense.costCenter ? ` | Centro de Custo: ${updatedExpense.costCenter}` : ''}`,
+              transactionDate: payDate,
+            },
+          });
+
+          // 3. Registrar no log de auditoria
+          await tx.auditLog.create({
+            data: {
+              entity: 'expense',
+              entityId: purchaseOrder.expenseId,
+              action: 'status_changed',
+              oldValue: { status: existingExpense.status },
+              newValue: { status: 'paga', paidAt: payDate },
+            },
+          });
+        }
+      }
+
       // 3. Registrar evento de histórico
       await tx.purchaseOrderEvent.create({
         data: {
