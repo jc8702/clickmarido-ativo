@@ -1,11 +1,17 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Auditoria geral de integridade referencial em deleções finalizada. Rotinas de desvinculação síncronas implementadas em múltiplos módulos (OS, Orçamentos, Produtos, Usuários) e validadas com sucesso. Deploy na Vercel realizado.
+- **Status Atual:** Adicionada coluna Ganho no Kanban de Pré-Vendas e corrigidos os filtros de leads estagnados e SLA em produção. Deploy na Vercel realizado e validado com sucesso.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 04/07/2026 - 22:50
+- **Última Atualização:** 05/07/2026 - 02:40
 
 ## Histórico de Alterações
+- **[05/07/2026 - 02:40]:** Adicionada coluna "Ganho" e corrigidos filtros de estagnação de leads:
+  - **Kanban de Pré-Vendas:** Adicionada a coluna do estágio `GANHO` imediatamente antes de "Descartado". Refatorado o filtro de leads por coluna para agrupar enums menores e intermediários (como `PROPOSTA_ENVIADA`, `SEM_CONTATO`, etc.) em colunas lógicas correspondentes, eliminando leads "fantasmas" invisíveis.
+  - **Histórico Comercial:** Adicionado o registro automático dos eventos comerciais de CRM `DEAL_WON` e `DEAL_LOST` ao mover leads para os estágios `GANHO` ou `PERDIDO`.
+  - **Ajustes de SLA e Estagnação:** Corrigida a API de Insights Comerciais (`leadsHotAndStale` e `slaBreachedLeads`) e o cron job `sla-check` para desconsiderar leads nos estágios de fechamento comercial (`GANHO` e `PERDIDO`).
+  - Arquivos modificados: `frontend/app/(dashboard)/pre-vendas/page.tsx`, `frontend/app/api/leads/[id]/route.ts`, `frontend/app/api/leads/insights/route.ts`, `frontend/app/api/cron/sla-check/route.ts`
+
 - **[04/07/2026 - 22:50]:** Auditoria geral de deleções e integridade referencial de banco de dados. Implementadas rotinas de desvinculação síncrona dentro de transações `$transaction` do Prisma no endpoint `DELETE` de múltiplos módulos:
   - **Ordens de Serviço (`ServiceOrder`):** Desvinculação de despesas, ordens de compra e avaliações (`Review`), e exclusão em cascata de agendamentos (`Appointment`).
   - **Orçamentos (`Quotation`):** Desvinculação de pagamentos, ordens de compra e leads.
