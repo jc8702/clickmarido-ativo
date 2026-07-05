@@ -90,6 +90,7 @@ type Lead = {
   lossNotes?: string | null;
 };
 
+
 const STAGES = [
   { id: 'NOVO_LEAD', title: 'Novo Lead', icon: Users, color: 'text-primary-500 bg-primary-50 dark:bg-primary-950/30' },
   { id: 'EM_TRIAGEM', title: 'Em Triagem', icon: Clock, color: 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800' },
@@ -97,6 +98,7 @@ const STAGES = [
   { id: 'EM_FOLLOWUP', title: 'Em Follow-up', icon: MessageSquare, color: 'text-warning-600 bg-warning-50 dark:bg-warning-950/20' },
   { id: 'AGENDADO', title: 'Agendado', icon: Calendar, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/20' },
   { id: 'ENCAMINHADO_ORCAMENTO', title: 'Encaminhado', icon: ThumbsUp, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' },
+  { id: 'GANHO', title: 'Ganho', icon: Sparkles, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/20' },
   { id: 'DESCARTADO', title: 'Descartado', icon: XCircle, color: 'text-red-600 bg-red-50 dark:bg-red-950/20' }
 ];
 
@@ -591,7 +593,36 @@ export default function PreVendasPage() {
       ) : (
         <div className="flex-1 flex gap-4 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
           {STAGES.map((stage) => {
-            const stageLeads = leads.filter(l => l.funnelStage === stage.id);
+            const stageLeads = leads.filter(l => {
+              const stageId = stage.id;
+              const fs = l.funnelStage;
+
+              if (stageId === 'NOVO_LEAD') {
+                return fs === 'NOVO_LEAD' || fs === 'SEM_CONTATO' || fs === 'EM_CONTATO' || fs === 'CONTATO_REALIZADO';
+              }
+              if (stageId === 'EM_TRIAGEM') {
+                return fs === 'EM_TRIAGEM';
+              }
+              if (stageId === 'QUALIFICADO') {
+                return fs === 'QUALIFICADO' || fs === 'LEAD_QUALIFICADO';
+              }
+              if (stageId === 'EM_FOLLOWUP') {
+                return fs === 'EM_FOLLOWUP' || fs === 'SEM_RESPOSTA' || fs === 'REATIVADO';
+              }
+              if (stageId === 'AGENDADO') {
+                return fs === 'AGENDADO' || fs === 'REUNIAO_AGENDADA' || fs === 'COMPARECEU';
+              }
+              if (stageId === 'ENCAMINHADO_ORCAMENTO') {
+                return fs === 'ENCAMINHADO_ORCAMENTO' || fs === 'PROPOSTA_SOLICITADA' || fs === 'PROPOSTA_ENVIADA' || fs === 'EM_NEGOCIACAO';
+              }
+              if (stageId === 'GANHO') {
+                return fs === 'GANHO';
+              }
+              if (stageId === 'DESCARTADO') {
+                return fs === 'DESCARTADO' || fs === 'PERDIDO' || fs === 'LEAD_NAO_QUALIFICADO';
+              }
+              return fs === stageId;
+            });
             const Icon = stage.icon;
 
             return (

@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
       alertsCreated: 0,
     };
 
-    // 1. Buscar leads ativos (não descartados e não encaminhados)
+    // 1. Buscar leads ativos (não descartados, não encaminhados, não ganhos e não perdidos)
     const activeLeads = await prisma.lead.findMany({
       where: {
         funnelStage: {
-          notIn: [LeadFunnelStage.DESCARTADO, LeadFunnelStage.ENCAMINHADO_ORCAMENTO],
+          notIn: [LeadFunnelStage.DESCARTADO, LeadFunnelStage.ENCAMINHADO_ORCAMENTO, LeadFunnelStage.GANHO, LeadFunnelStage.PERDIDO],
         },
       },
       include: {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
           lt: now,
         },
         funnelStage: {
-          notIn: [LeadFunnelStage.DESCARTADO, LeadFunnelStage.ENCAMINHADO_ORCAMENTO],
+          notIn: [LeadFunnelStage.DESCARTADO, LeadFunnelStage.ENCAMINHADO_ORCAMENTO, LeadFunnelStage.GANHO, LeadFunnelStage.PERDIDO],
         },
       },
     });

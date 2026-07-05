@@ -226,7 +226,7 @@ export async function PUT(
       });
 
       // Lógicas específicas de etapa
-      if (funnelStage === LeadFunnelStage.DESCARTADO) {
+      if (funnelStage === LeadFunnelStage.DESCARTADO || funnelStage === LeadFunnelStage.PERDIDO) {
         updateData.lossReason = (lossReason as LeadLossReason) || null;
         updateData.lossNotes = lossNotes || null;
 
@@ -235,7 +235,7 @@ export async function PUT(
           oldValue: currentLead.funnelStage,
           newValue: funnelStage,
           userId: decoded.userId,
-          notes: `Lead descartado. Motivo: ${lossReason || 'Não informado'}. Obs: ${lossNotes || ''}`,
+          notes: `Lead descartado/perdido. Motivo: ${lossReason || 'Não informado'}. Obs: ${lossNotes || ''}`,
         });
 
         eventsToCreate.push({
@@ -244,6 +244,16 @@ export async function PUT(
           newValue: lossReason || 'Não informado',
           userId: decoded.userId,
           notes: lossNotes || 'Descarte comercial concluído.',
+        });
+      }
+
+      if (funnelStage === LeadFunnelStage.GANHO) {
+        eventsToCreate.push({
+          type: LeadEventType.DEAL_WON,
+          oldValue: currentLead.funnelStage,
+          newValue: funnelStage,
+          userId: decoded.userId,
+          notes: 'Lead marcado como GANHO (oportunidade de negócio fechada com sucesso!).',
         });
       }
     }

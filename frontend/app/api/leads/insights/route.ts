@@ -194,6 +194,8 @@ export async function GET(request: NextRequest) {
         (l.status === LeadStatus.QUENTE || l.status === LeadStatus.URGENTE) && 
         l.funnelStage !== LeadFunnelStage.ENCAMINHADO_ORCAMENTO && 
         l.funnelStage !== LeadFunnelStage.DESCARTADO &&
+        l.funnelStage !== LeadFunnelStage.GANHO &&
+        l.funnelStage !== LeadFunnelStage.PERDIDO &&
         new Date(l.updatedAt) < fortyEightHoursAgo
       )
       .map(l => ({
@@ -210,7 +212,9 @@ export async function GET(request: NextRequest) {
       .filter(l => 
         l.slaBreachCount > 0 && 
         l.funnelStage !== LeadFunnelStage.ENCAMINHADO_ORCAMENTO && 
-        l.funnelStage !== LeadFunnelStage.DESCARTADO
+        l.funnelStage !== LeadFunnelStage.DESCARTADO &&
+        l.funnelStage !== LeadFunnelStage.GANHO &&
+        l.funnelStage !== LeadFunnelStage.PERDIDO
       )
       .map(l => ({
         id: l.id,
