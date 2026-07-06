@@ -19,22 +19,13 @@ export class OpenRouterProvider implements AIProvider {
       return false;
     }
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const response = await fetch(`${this.baseUrl}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      return response.ok;
-    } catch {
-      return false;
+    // Se temos API key com tamanho mínimo, considerar disponível
+    // (evita check de rede que pode falhar em serverless)
+    if (this.apiKey.length >= 20) {
+      return true;
     }
+
+    return false;
   }
 
   async generate(request: AIRequest): Promise<AIResponse> {

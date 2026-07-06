@@ -30,11 +30,13 @@ export interface IntentResult {
 const INTENT_KEYWORDS: Record<Intent, string[]> = {
   servico_eletrica: [
     'elétrica', 'eletrica', 'eletricidade', 'tomada', 'interruptor',
-    'disjuntor', 'quadro', 'fiação', 'fio', 'cabo', 'curto-circuito',
+    'disjuntor', 'quadro', 'quadro de força', 'quadro eletrico', 'quadro elétrico',
+    'painel elétrico', 'painel eletrico', 'painel de força', 'barramento',
+    'fiação', 'fio', 'cabo', 'curto-circuito',
     'luz', 'iluminação', 'iluminacao', 'lâmpada', 'lampada', 'LED',
     'chuveiro', 'aquecedor', 'ar condicionado', 'ventilador',
     'instalação elétrica', 'instalacao eletrica', 'rede elétrica',
-    'barramento', 'Aterramento', 'SPDA', 'nobreak', 'UPS',
+    'Aterramento', 'SPDA', 'nobreak', 'UPS',
   ],
   servico_hidraulica: [
     'hidráulica', 'hidraulica', 'encanamento', 'tubo', 'tubulação',
@@ -58,7 +60,7 @@ const INTENT_KEYWORDS: Record<Intent, string[]> = {
     'móvel', 'movel', 'móveis', 'moveis', 'montagem',
     'desmontagem', 'desmontar', 'montar', 'armário', 'armario',
     'estante', 'prateleira', 'mesa', 'cadeira', 'sofá', 'sofa',
-    'cama', 'roupeiro', 'gaveta', 'rack', 'painel',
+    'cama', 'roupeiro', 'gaveta', 'rack',
     'IKEA', 'Madesa', 'Tok&Stok', 'Leroy',
     'parafuso', 'broca', 'ferramentas', 'serra',
   ],
@@ -68,6 +70,7 @@ const INTENT_KEYWORDS: Record<Intent, string[]> = {
     'configuração', 'configuracao', 'preferências', 'preferencias',
     'perfil', 'conta', 'cadastro', 'senha', 'login',
     'navegação', 'navegacao', 'menu', 'tela', 'página', 'pagina',
+    'onde', 'como', 'onde fica', 'como faço', 'como crio',
   ],
   sistema_modulos: [
     'módulo', 'modulo', 'módulos', 'modulos', 'seção', 'secao',
@@ -75,6 +78,8 @@ const INTENT_KEYWORDS: Record<Intent, string[]> = {
     'ordem de serviço', 'ordem de servico', 'OS', 'pagamento',
     'fatura', 'nota fiscal', 'despesa', 'estoque', 'compras',
     'fornecedor', 'relatório', 'relatorio', 'dashboard',
+    'criar', 'crie', 'novo', 'nova', 'cadastrar', 'adicionar',
+    'gerar', 'emitir', 'enviar', 'abrir', 'registrar',
   ],
   suporte_tecnico: [
     'erro', 'bug', 'problema', 'não funciona', 'nao funciona',
@@ -106,13 +111,12 @@ const INTENT_KEYWORDS: Record<Intent, string[]> = {
 // Palavras-chave de risco/escalonamento
 const ESCALATION_KEYWORDS = [
   'urgente', 'emergência', 'emergencia', 'perigo', 'risco',
-  'acidente', 'incêndio', 'incendio', 'curto', 'choque',
+  'acidente', 'incêndio', 'incendio', 'choque elétrico',
   'vazamento grave', 'inundação', 'inundacao', 'desabamento',
-  'garantia', 'reclamação', 'reclamacao', 'insatisfeito',
-  'processo', 'advogado', 'judicial', 'danos',
-  'cobrança', 'cobranca', 'pagamento', 'divida', 'dívida',
-  'não recebi', 'nao recebi', 'extraviado', 'extraviado',
-  'orçamento', 'orcamento', 'preço', 'preco', 'valor',
+  'garantia vencida', 'reclamação formal', 'reclamacao formal',
+  'processo', 'advogado', 'judicial', 'danos materiais',
+  'cobrança indevida', 'cobranca indevida',
+  'não recebi', 'nao recebi', 'extraviado',
 ];
 
 // Normalizar texto

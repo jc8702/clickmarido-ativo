@@ -48,6 +48,22 @@ export class AIProviderOrchestrator {
 
   // Gerar resposta com fallback automático
   async generate(request: AIRequest): Promise<AIResponse> {
+    // Se já temos um provider ativo, usá-lo diretamente
+    if (this.activeProvider) {
+      this.log(this.activeProvider.name, 'attempt', true, 'Usando provider ativo em cache');
+      
+      const response = await this.activeProvider.generate(request);
+      
+      if (response.success) {
+        this.log(this.activeProvider.name, 'success', true, `Tokens: ${response.tokensUsed}, Latência: ${response.latencyMs}ms`);
+        return response;
+      }
+
+      this.log(this.activeProvider.name, 'failed', false, response.error);
+      console.warn(`[AI_PROVIDER] Provider ${this.activeProvider.name} falhou: ${response.error}`);
+      this.activeProvider = null;
+    }
+
     // Tentar providers em ordem
     for (const provider of this.providers) {
       const available = await provider.isAvailable();

@@ -253,43 +253,152 @@ function generateRuleBasedResponse(
   // Respostas pré-definidas por intenção
   switch (intentResult.primary) {
     case 'servico_eletrica':
-      content = 'Para serviços de elétrica, posso ajudar com:\n\n• Instalação e reparo de tomadas\n• Substituição de disjuntores\n• Reparo em fiação\n• Iluminação\n\nPara orçamento, acesse **Orçamentos** → **Novo Orçamento** e selecione "Elétrica".';
+      content = `**Serviços de Elétrica** 🔌
+
+Posso ajudar com:
+• **Instalação elétrica** completa (residencial e comercial)
+• **Quadro de força** / Painel elétrico
+• **Disjuntores** e barramento
+• **Tomadas** e interruptores
+• **Iluminação** (LED,spots, lustres)
+• **Fiação** e cabeamento
+• **Chuveiro** e aquecedor
+• **Ar condicionado** (instalação)
+• **Nobreak** e UPS
+• **Aterramento** e SPDA
+
+**Para orçamento:**
+Acesse **Orçamentos** → **Novo Orçamento** e selecione "Elétrica".
+
+**Emergência?** Ligue para um eletricista habilitado imediatamente.`;
       break;
       
     case 'servico_hidraulica':
-      content = 'Para serviços de hidráulica, posso ajudar com:\n\n• Reparo de vazamentos\n• Substituição de torneiras\n• Desentupimento\n• Manutenção em caixas d\'água\n\nPara orçamento, acesse **Orçamentos** → **Novo Orçamento** e selecione "Hidráulica".';
+      content = `**Serviços de Hidráulica** 🔧
+
+Posso ajudar com:
+• **Reparo de vazamentos** (torneiras, registros, tubulações)
+• **Substituição** de torneiras e registros
+• **Desentupimento** (pia, vaso, ralo)
+• **Manutenção** em caixas d'água
+• **Instalação hidráulica** completa
+• **Aquecedor a gás** (instalação e reparo)
+• **Coluna de água**
+• **Água fria e quente**
+• **Esgoto** e descarga
+
+**Para orçamento:**
+Acesse **Orçamentos** → **Novo Orçamento** e selecione "Hidráulica".
+
+**Vazamento grave?** Feche o registro principal e acione um técnico.`;
       break;
       
     case 'servico_automacao_residencial':
-      content = 'Para automação residencial, posso ajudar com:\n\n• Portões eletrônicos\n• Fechaduras digitais\n• Câmeras de segurança\n• Integração com Alexa/Google\n\nPara orçamento, acesse **Orçamentos** → **Novo Orçamento** e selecione "Automação".';
+      content = `**Automação Residencial** 🏠
+
+Posso ajudar com:
+• **Portões eletrônicos** (motor, controle, instalação)
+• **Fechaduras digitais** e biometria
+• **Câmeras de segurança** e monitoramento
+• **Alarmes** e sensores de presença
+• **Iluminação automática**
+• **Integração** com Alexa, Google Home
+• **Domótica** completa
+
+**Para orçamento:**
+Acesse **Orçamentos** → **Novo Orçamento** e selecione "Automação".`;
       break;
       
     case 'servico_montagem_moveis':
-      content = 'Para montagem de móveis, posso ajudar com:\n\n• Montagem de armários, estantes, mesas\n• Desmontagem para mudança\n• Reparo em gavetas e portas\n• Fixação em paredes\n\nPara orçamento, acesse **Orçamentos** → **Novo Orçamento** e selecione "Montagem".';
+      content = `**Montagem de Móveis** 🪑
+
+Posso ajudar com:
+• **Montagem** de armários, estantes, mesas, cadeiras
+• **Desmontagem** para mudança
+• **Reparo** em gavetas e portas
+• **Fixação** em paredes (prateleiras, quadros)
+• Móveis de **IKEA, Madesa, Tok&Stok, Leroy**
+
+**Para orçamento:**
+Acesse **Orçamentos** → **Novo Orçamento** e selecione "Montagem".`;
       break;
       
     case 'sistema_uso_geral':
-      content = 'Sobre o uso do sistema, posso ajudar com:\n\n• Navegação\n• Cadastro de clientes\n• Criação de orçamentos\n• Gestão de OS\n• Pagamentos\n\nQual funcionalidade específica você quer saber?';
+      content = `**Como usar o ClickMarido** 💻
+
+Posso ajudar com:
+• **Navegação** no sistema
+• **Cadastro** de clientes e fornecedores
+• **Criação** de orçamentos e propostas
+• **Gestão** de ordens de serviço (OS)
+• **Pagamentos** e cobranças
+• **Relatórios** e indicadores
+• **Configurações** da conta
+
+**Qual funcionalidade específica você quer saber?**`;
       break;
       
     case 'sistema_modulos':
-      content = 'Os módulos do sistema incluem:\n\n• **Dashboard** - Visão geral\n• **Clientes** - Cadastro e gestão\n• **Orçamentos** - Propostas\n• **Ordens de Serviço** - Execução\n• **Pagamentos** - Cobranças\n• **Relatórios** - Análises\n\nQual módulo você quer usar?';
+      content = `**Módulos do ClickMarido** 📋
+
+• **Dashboard** - Visão geral do negócio
+• **Clientes** - Cadastro e gestão
+• **Orçamentos** - Propostas comerciais
+• **Ordens de Serviço** - Execução dos serviços
+• **Pagamentos** - Cobranças e recebimentos
+• **Financeiro** - Fluxo de caixa
+• **Relatórios** - Análises e indicadores
+• **Configurações** - Preferências do sistema
+
+**Qual módulo você quer usar?**`;
       break;
       
     case 'suporte_tecnico':
-      content = 'Para suporte técnico:\n\n1. Descreva o problema detalhadamente\n2. Tire um print se possível\n3. Anote os passos que deu\n4. Abra um chamado em **Suporte** → **Novo Chamado**';
+      content = `**Suporte Técnico** 🛠️
+
+Para resolver seu problema:
+1. **Descreva** o problema detalhadamente
+2. **Tire um print** da tela com o erro
+3. **Anote** os passos que deu antes do problema
+4. **Abra um chamado** em **Suporte** → **Novo Chamado**
+
+**Problemas comuns:**
+• Sistema lento → Limpe o cache do navegador
+• Erro de login → Verifique email e senha
+• Dados não salvam → Verifique sua conexão`;
       break;
       
     case 'abertura_chamado':
-      content = 'Para abrir um chamado:\n\n1. Acesse **Suporte** → **Novo Chamado**\n2. Selecione a categoria\n3. Descreva o problema\n4. Anexe prints se necessário\n5. Envie';
+      content = `**Abrir Chamado** 📩
+
+1. Acesse **Suporte** → **Novo Chamado**
+2. Selecione a **categoria** (Técnico, Financeiro, Dúvida)
+3. **Descreva** o problema ou solicitação
+4. **Anexe** prints se necessário
+5. **Envie**
+
+Responderemos o mais breve possível!`;
       break;
       
     case 'status_solicitacao':
-      content = 'Para verificar status:\n\n• **Orçamentos**: Acesse **Orçamentos** → **Meus Orçamentos**\n• **OS**: Acesse **Ordens de Serviço**\n• **Pagamentos**: Acesse **Financeiro** → **Pagamentos**\n\nQual tipo de solicitação você quer acompanhar?';
+      content = `**Acompanhar Solicitações** 📊
+
+• **Orçamentos**: Acesse **Orçamentos** → **Meus Orçamentos**
+• **Ordens de Serviço**: Acesse **Ordens de Serviço**
+• **Pagamentos**: Acesse **Financeiro** → **Pagamentos**
+• **Chamados**: Acesse **Suporte** → **Meus Chamados**
+
+**Qual tipo de solicitação você quer acompanhar?**`;
       break;
       
     default:
-      content = 'Desculpe, não consegui entender sua pergunta. Poderia reformular ou escolher uma das opções:\n\n• Dúvidas sobre serviços\n• Dúvidas sobre o sistema\n• Abrir um chamado\n• Verificar status';
+      content = `Não consegui identificar sua pergunta. Posso ajudar com:
+
+🔧 **Serviços**: Elétrica, Hidráulica, Automação, Móveis
+💻 **Sistema**: Como usar, módulos, configurações
+📩 **Suporte**: Abrir chamado, verificar status
+
+**Digite sua pergunta ou escolha uma opção acima.**`;
   }
   
   // Se há contexto relevante, adicionar
