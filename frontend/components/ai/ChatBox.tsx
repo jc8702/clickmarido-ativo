@@ -76,7 +76,10 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
     setError(null);
 
     try {
-      // Chamar API
+      // Chamar API com timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
@@ -90,7 +93,10 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
             content: m.content,
           })),
         }),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -122,13 +128,20 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
       }
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      const errorMsg = isTimeout 
+        ? 'A resposta está demorando. Tente uma pergunta mais simples.'
+        : err instanceof Error ? err.message : 'Erro desconhecido';
+      
+      setError(errorMsg);
       
       // Mensagem de erro amigável
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente ou abra um chamado técnico.',
+        content: isTimeout
+          ? '⏳ A resposta está demorando mais que o esperado. Por favor, tente novamente.'
+          : 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente ou abra um chamado técnico.',
         timestamp: new Date(),
       };
 

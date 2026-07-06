@@ -75,8 +75,19 @@ Mantenha tom profissional e empático.`;
 
 export async function processMessage(request: ChatRequest): Promise<ChatResponse> {
   const startTime = Date.now();
+  const MAX_TOTAL_TIME = 12000; // 12s máximo total (Vercel timeout ~10s)
   
-  // 1. Classificar intenção
+  // Função auxiliar com timeout global
+  const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), ms)
+      ),
+    ]);
+  };
+  
+  // 1. Classificar intenção (rápido, sem timeout)
   const intentResult = routeIntent(request.message, 
     request.conversationHistory?.map(h => h.content)
   );
@@ -127,8 +138,20 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
   // 4. Buscar contexto relevante
   const context = buildContext(request.message, intentResult.primary);
   
-  // 5. Gerar resposta com IA
-  const response = await generateAIResponse(request, intentResult, context);
+  // 5. Gerar resposta com IA (com timeout global)
+  let response;
+  const timeRemaining = MAX_TOTAL_TIME - (Date.now() - startTime);
+  
+  try {
+    response = await withTimeout(
+      generateAIResponse(request, intentResult, context),
+      Math.min(timeRemaining, 10000) // máximo 10s para IA
+    );
+  } catch (err) {
+    // Timeout ou erro → usar fallback regras
+    console.warn('[AI_TIMEOUT] Gerando resposta baseada em regras');
+    response = generateRuleBasedResponse(request, intentResult, context);
+  }
   
   const finalResponse: ChatResponse = {
     success: response.success,

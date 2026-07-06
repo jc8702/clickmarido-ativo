@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { processMessage, ChatRequest } from '@/lib/ai/agent';
+import { routeIntent } from '@/lib/ai/intent-router';
 
 // ==========================================
 // API ENDPOINT - CHAT COM IA
@@ -8,9 +9,20 @@ import { processMessage, ChatRequest } from '@/lib/ai/agent';
 // ==========================================
 
 export async function POST(request: NextRequest): Promise<Response> {
+  const MAX_API_TIME = 15000; // 15s máximo para toda a requisição
+  
+  const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: API demorou demais')), ms)
+      ),
+    ]);
+  };
+
   try {
     // 1. Validar autenticação
-    const authResult = await verifyAuth(request);
+    const authResult = await withTimeout(verifyAuth(request), 5000);
     if (!authResult.success) {
       return NextResponse.json(
         { error: 'Não autorizado' },
@@ -44,14 +56,30 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
-    // 4. Processar mensagem
+    // 4. Processar mensagem (com timeout)
     const chatRequest: ChatRequest = {
       message: message.trim(),
       userId: authResult.user?.id || authResult.user?.sub,
       conversationHistory: conversationHistory || [],
     };
 
-    const response = await processMessage(chatRequest);
+    let response;
+    try {
+      response = await withTimeout(processMessage(chatRequest), MAX_API_TIME);
+    } catch (err) {
+      // Timeout ou erro → resposta fallback imediata
+      console.warn('[AI_API_TIMEOUT]', err);
+      return NextResponse.json({
+        success: true,
+        content: getFallbackResponse(message.trim()),
+        intent: 'desconhecido',
+        needsEscalation: false,
+        clarificationNeeded: false,
+        provider: 'fallback-timeout',
+        model: 'static',
+        latencyMs: 0,
+      });
+    }
 
     // 5. Registrar log (opcional)
     console.log('[CHAT_REQUEST]', {
@@ -145,4 +173,120 @@ export async function GET(request: NextRequest): Promise<Response> {
       { status: 500 }
     );
   }
+}
+
+// Resposta fallback rápida (quando IA falha ou timeout)
+function getFallbackResponse(message: string): string {
+  const intent = routeIntent(message);
+  
+  const fallbacks: Record<string, string> = {
+    servico_eletrica: `**Serviços de Elétrica** 🔌
+
+Posso ajudar com:
+• Instalação elétrica completa
+• Quadro de força / Painel elétrico
+• Disjuntores e barramento
+• Tomadas e interruptores
+• Iluminação (LED, spots, lustres)
+• Fiação e cabeamento
+• Chuveiro e aquecedor
+• Ar condicionado
+• Nobreak e UPS
+• Aterramento e SPDA
+
+**Para orçamento:** Acesse **Orçamentos** → **Novo Orçamento** e selecione "Elétrica".`,
+
+    servico_hidraulica: `**Serviços de Hidráulica** 🔧
+
+Posso ajudar com:
+• Reparo de vazamentos
+• Substituição de torneiras
+• Desentupimento
+• Manutenção em caixas d'água
+• Instalação hidráulica completa
+• Aquecedor a gás
+• Coluna de água
+• Água fria e quente
+• Esgoto e descarga
+
+**Para orçamento:** Acesse **Orçamentos** → **Novo Orçamento** e selecione "Hidráulica".`,
+
+    servico_automacao_residencial: `**Automação Residencial** 🏠
+
+Posso ajudar com:
+• Portões eletrônicos
+• Fechaduras digitais e biometria
+• Câmeras de segurança
+• Alarmes e sensores
+• Iluminação automática
+• Integração com Alexa/Google
+• Domótica completa
+
+**Para orçamento:** Acesse **Orçamentos** → **Novo Orçamento** e selecione "Automação".`,
+
+    servico_montagem_moveis: `**Montagem de Móveis** 🪑
+
+Posso ajudar com:
+• Montagem de armários, estantes, mesas
+• Desmontagem para mudança
+• Reparo em gavetas e portas
+• Fixação em paredes
+
+**Para orçamento:** Acesse **Orçamentos** → **Novo Orçamento** e selecione "Montagem".`,
+
+    sistema_uso_geral: `**Como usar o ClickMarido** 💻
+
+Posso ajudar com:
+• Navegação no sistema
+• Cadastro de clientes
+• Criação de orçamentos
+• Gestão de ordens de serviço
+• Pagamentos e cobranças
+• Relatórios e indicadores
+
+**Qual funcionalidade específica você quer saber?**`,
+
+    sistema_modulos: `**Módulos do ClickMarido** 📋
+
+• **Dashboard** - Visão geral
+• **Clientes** - Cadastro e gestão
+• **Orçamentos** - Propostas
+• **Ordens de Serviço** - Execução
+• **Pagamentos** - Cobranças
+• **Financeiro** - Fluxo de caixa
+• **Relatórios** - Análises
+
+**Qual módulo você quer usar?**`,
+
+    suporte_tecnico: `**Suporte Técnico** 🛠️
+
+1. Descreva o problema detalhadamente
+2. Tire um print da tela com o erro
+3. Anote os passos que deu
+4. Abra um chamado em **Suporte** → **Novo Chamado**`,
+
+    abertura_chamado: `**Abrir Chamado** 📩
+
+1. Acesse **Suporte** → **Novo Chamado**
+2. Selecione a categoria
+3. Descreva o problema
+4. Anexe prints se necessário
+5. Envie`,
+
+    status_solicitacao: `**Acompanhar Solicitações** 📊
+
+• **Orçamentos**: **Orçamentos** → **Meus Orçamentos**
+• **OS**: **Ordens de Serviço**
+• **Pagamentos**: **Financeiro** → **Pagamentos**
+
+**Qual tipo de solicitação você quer acompanhar?**`,
+  };
+
+  return fallbacks[intent.primary] || `Não consegui identificar sua pergunta. Posso ajudar com:
+
+🔧 **Serviços**: Elétrica, Hidráulica, Automação, Móveis
+💻 **Sistema**: Como usar, módulos, configurações
+📩 **Suporte**: Abrir chamado, verificar status
+
+**Digite sua pergunta ou escolha uma opção acima.**`;
 }

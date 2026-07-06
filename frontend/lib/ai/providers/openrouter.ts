@@ -10,7 +10,7 @@ export class OpenRouterProvider implements AIProvider {
   constructor(config?: { apiKey?: string; model?: string; timeout?: number }) {
     this.apiKey = config?.apiKey || process.env.OPENROUTER_API_KEY || '';
     this.defaultModel = config?.model || this.defaultModel;
-    this.timeout = config?.timeout || 30000;
+    this.timeout = config?.timeout || 8000;
   }
 
   async isAvailable(): Promise<boolean> {
