@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ChatBox, ChatButton } from '@/components/ai';
+import { useChat } from '@/hooks/useChat';
 
 // Default icons
 const defaultIcons = {
@@ -151,6 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { isOpen: isChatOpen, open: openChat, close: closeChat } = useChat();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -217,6 +220,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         {children}
       </main>
+
+      {/* Chat com IA */}
+      <ChatButton onClick={openChat} />
+      <ChatBox isOpen={isChatOpen} onClose={closeChat} />
     </div>
   );
 }
