@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** CRUD Completo e exclusão segura implementados no módulo de fornecedores. Homologado localmente e deployado em produção na Vercel.
+- **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 08/07/2026 - 02:20
+- **Última Atualização:** 08/07/2026 - 02:29
 
 ## Histórico de Alterações
+- **[08/07/2026 - 02:29]:** Fluxo de Devolução de Produtos em Ordens de Compra:
+  - **API `/api/purchase-orders/[id]/return`:** Desenvolvida a rota de POST que permite registrar a devolução total ou parcial de peças. O endpoint deduz a quantidade recebida dos itens da OC, decrementa a quantidade física correspondente em estoque (`Product`), calcula o reembolso financeiro proporcional de estorno, e gera transações de crédito (entrada) no Livro Caixa (`financial_transactions`), além de estornar e cancelar a despesa correspondente (`Expense`) em caso de devolução total. Grava histórico na OC (`PurchaseOrderEvent`) e logs globais (`AuditLog`).
+  - **Status de OC:** Estendido o `status-map.ts` e o componente visual `PurchaseOrderStatusBadge.tsx` para comportar o novo status canônico `devolvida`.
+  - **UI da Tabela de Itens:** Adicionada a ação **Devolver Itens** e o modo de devolução (`returnMode`) no componente `PurchaseOrderItemsTable.tsx`, permitindo à administração inserir inputs numéricos limitados ao valor entregue para estornar os produtos de forma fácil.
+  - **Teste local e Deploy:** Desenvolvido e validado com sucesso script de testes unificado local `test_return_purchase.js` que simula o ciclo completo de compra, entrada em estoque, faturamento e devolução total/parcial reversa. Realizado build e deploy bem-sucedido em produção na Vercel.
+  - Arquivos criados: `frontend/app/api/purchase-orders/[id]/return/route.ts`, `frontend/test_return_purchase.js`
+  - Arquivos modificados: `frontend/lib/status-map.ts`, `frontend/components/purchases/PurchaseOrderStatusBadge.tsx`, `frontend/components/purchases/PurchaseOrderItemsTable.tsx`, `frontend/app/(dashboard)/purchases/[id]/page.tsx`, `frontend/hooks/usePurchaseOrders.ts`
+
 - **[08/07/2026 - 02:20]:** CRUD Completo de Fornecedores e Exclusão Segura:
   - **API `/api/vendors/[id]`:** Implementado o método `DELETE`. Adicionado tratamento de integridade referencial: caso o fornecedor possua ordens de compra (`PurchaseOrder`), a exclusão é bloqueada com retorno de erro status 400. Caso contrário, são desvinculadas despesas (`Expense`) e produtos (`Product`) de forma síncrona dentro de uma transação `$transaction` do Prisma.
   - **Hook `useVendors.ts`:** Criado o hook `useDeleteVendor` para expor o método `DELETE` integrado com autenticação JWT.
