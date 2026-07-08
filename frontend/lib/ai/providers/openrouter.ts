@@ -84,6 +84,8 @@ export class OpenRouterProvider implements AIProvider {
         content,
         provider: this.name,
         model: this.defaultModel,
+        tokensIn: data.usage?.prompt_tokens,
+        tokensOut: data.usage?.completion_tokens,
         tokensUsed: data.usage?.total_tokens,
         latencyMs: Date.now() - startTime,
       };

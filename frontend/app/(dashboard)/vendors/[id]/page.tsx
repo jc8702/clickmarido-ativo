@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState, use } from 'react';
-import { useVendor, useUpdateVendor } from '@/hooks/useVendors';
+import { useVendor, useUpdateVendor, useDeleteVendor } from '@/hooks/useVendors';
 import { VendorForm } from '@/components/vendors/VendorForm';
 import { VendorPurchaseHistory } from '@/components/vendors/VendorPurchaseHistory';
 import { Shimmer } from '@/components/Shimmer';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -13,9 +16,24 @@ type Props = {
 
 export default function VendorDetailsPage({ params }: Props) {
   const { id } = use(params);
+  const router = useRouter();
   const { data: vendor, isLoading, error, mutate } = useVendor(id);
   const { mutateAsync: updateVendor, isPending, error: updateError } = useUpdateVendor(id);
+  const { mutateAsync: deleteVendor, isPending: deleting } = useDeleteVendor();
   const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await deleteVendor(id);
+      setShowDeleteModal(false);
+      alert('Fornecedor excluído com sucesso!');
+      router.push('/vendors');
+    } catch (err: any) {
+      console.error('Error deleting vendor:', err);
+      alert(err.message || 'Erro ao excluir fornecedor');
+    }
+  };
 
   const handleSubmit = async (formData: any) => {
     try {
@@ -72,6 +90,14 @@ export default function VendorDetailsPage({ params }: Props) {
             Categoria: {vendor.category} | Classificação: {vendor.classification}
           </p>
         </div>
+        <div className="flex space-x-2">
+          <Button
+            variant="danger"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            Excluir Fornecedor
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -117,6 +143,34 @@ export default function VendorDetailsPage({ params }: Props) {
           <VendorPurchaseHistory vendorId={vendor.id} />
         </div>
       )}
+      {/* MODAL DE EXCLUSÃO */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Excluir Fornecedor"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Tem certeza que deseja excluir o fornecedor <strong>{vendor.name}</strong>?
+          </p>
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+              Atenção: A exclusão é irreversível.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              Caso o fornecedor possua Ordens de Compra associadas, a exclusão será bloqueada para manter a integridade dos dados (considere Desativar).
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
+              Sim, Excluir
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

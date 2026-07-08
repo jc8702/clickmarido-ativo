@@ -24,6 +24,8 @@ export interface IntentResult {
   needsEscalation: boolean;
   clarificationMessage?: string;
   escalationReason?: string;
+  routeTo?: string;
+  actionRequired?: boolean;
 }
 
 // Keywords para cada intenção
@@ -240,16 +242,44 @@ export function routeIntent(message: string, context?: string[]): IntentResult {
     };
   }
 
-  // 6. Verificar confiança baixa
+  // 6. Verificar confiança baixa — escalar em vez de só pedir esclarecimento
   if (primary.score < 5) {
     return {
       primary: primary.intent,
       confidence: primary.score / 20,
-      needsClarification: true,
-      needsEscalation: false,
-      clarificationMessage: 'Tenho certeza que entendi? Poderia me dar mais detalhes sobre sua pergunta?',
+      needsClarification: false,
+      needsEscalation: true,
+      escalationReason: 'Confiança muito baixa na classificação da intenção',
+      clarificationMessage: 'Não tenho certeza se entendi. Vou conectar com um especialista para melhor atender.',
     };
   }
+
+  // 7. Confiança média — pedir esclarecimento
+  if (primary.score < 10) {
+    return {
+      primary: primary.intent,
+      secondary: secondary?.intent,
+      confidence: Math.min(primary.score / 15, 1),
+      needsClarification: true,
+      needsEscalation: false,
+      clarificationMessage: 'Poderia me dar mais detalhes sobre sua pergunta para eu ajudar melhor?',
+    };
+  }
+
+  // 8. Montar resultado final com metadados de roteamento
+  const intentRoutes: Record<Intent, string> = {
+    servico_eletrica: 'servicos',
+    servico_hidraulica: 'servicos',
+    servico_automacao_residencial: 'servicos',
+    servico_montagem_moveis: 'servicos',
+    sistema_uso_geral: 'sistema',
+    sistema_modulos: 'sistema',
+    suporte_tecnico: 'suporte',
+    abertura_chamado: 'suporte',
+    status_solicitacao: 'status',
+    humano: 'escalonamento',
+    desconhecido: 'desconhecido',
+  };
 
   return {
     primary: primary.intent,
@@ -257,6 +287,8 @@ export function routeIntent(message: string, context?: string[]): IntentResult {
     confidence: Math.min(primary.score / 15, 1),
     needsClarification: false,
     needsEscalation: false,
+    routeTo: intentRoutes[primary.intent],
+    actionRequired: primary.intent === 'abertura_chamado',
   };
 }
 

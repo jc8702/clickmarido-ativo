@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useVendors } from '@/hooks/useVendors';
+import { useVendors, useDeleteVendor } from '@/hooks/useVendors';
 import { VendorClassificationBadge } from '@/components/vendors/VendorClassificationBadge';
 import { Shimmer } from '@/components/Shimmer';
+import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
 
 export default function VendorsPage() {
   const [page, setPage] = useState(1);
@@ -13,6 +15,24 @@ export default function VendorsPage() {
   const [classification, setClassification] = useState('');
   const [isActive, setIsActive] = useState('');
   const [isBlocked, setIsBlocked] = useState('');
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<any>(null);
+  const { mutateAsync: deleteVendor, isPending: deleting } = useDeleteVendor();
+
+  const handleDelete = async () => {
+    if (!vendorToDelete) return;
+    try {
+      await deleteVendor(vendorToDelete.id);
+      setShowDeleteModal(false);
+      setVendorToDelete(null);
+      mutate();
+      alert('Fornecedor excluído com sucesso!');
+    } catch (err: any) {
+      console.error('Error deleting vendor:', err);
+      alert(err.message || 'Erro ao excluir fornecedor');
+    }
+  };
 
   const { data, isLoading, error, mutate } = useVendors(
     page,
@@ -159,6 +179,15 @@ export default function VendorsPage() {
                           <Link href={`/vendors/${vendor.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800">
                             Visualizar
                           </Link>
+                          <button
+                            onClick={() => {
+                              setVendorToDelete(vendor);
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-800"
+                          >
+                            Excluir
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -194,6 +223,40 @@ export default function VendorsPage() {
           )}
         </div>
       )}
+      {/* MODAL DE EXCLUSÃO */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setVendorToDelete(null);
+        }}
+        title="Excluir Fornecedor"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+            Tem certeza que deseja excluir o fornecedor <strong>{vendorToDelete?.name}</strong>?
+          </p>
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+              Atenção: A exclusão é irreversível.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+              Caso o fornecedor possua Ordens de Compra associadas, a exclusão será bloqueada para manter a integridade dos dados (considere Desativar).
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => {
+              setShowDeleteModal(false);
+              setVendorToDelete(null);
+            }}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleDelete} isLoading={deleting}>
+              Sim, Excluir
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth } from '@/lib/auth';
 import { processMessage, ChatRequest } from '@/lib/ai/agent';
 import { routeIntent } from '@/lib/ai/intent-router';
+import { checkAiAccess } from '@/lib/ai/access';
 
 // ==========================================
 // API ENDPOINT - CHAT COM IA
@@ -30,9 +31,29 @@ export async function POST(request: NextRequest): Promise<Response> {
       );
     }
 
+    // 2. Verificar acesso ao assistente IA
+    const userId = authResult.user?.id || authResult.user?.sub;
+    if (userId) {
+      const hasAccess = await checkAiAccess(userId);
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Acesso ao assistente não autorizado. Solicite ao administrador.' },
+          { status: 403 }
+        );
+      }
+
+      // Rate limiting
+      if (!checkRateLimit(userId)) {
+        return NextResponse.json(
+          { error: 'Limite de mensagens atingido. Aguarde 1 minuto.' },
+          { status: 429 }
+        );
+      }
+    }
+
     // 2. Extrair dados da requisição
     const body = await request.json();
-    const { message, conversationHistory } = body;
+    const { message, conversationHistory, sessionId } = body;
 
     // 3. Validar mensagem
     if (!message || typeof message !== 'string') {
@@ -60,6 +81,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const chatRequest: ChatRequest = {
       message: message.trim(),
       userId: authResult.user?.id || authResult.user?.sub,
+      sessionId: sessionId || undefined,
       conversationHistory: conversationHistory || [],
     };
 

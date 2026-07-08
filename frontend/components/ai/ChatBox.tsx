@@ -1,12 +1,17 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 // ==========================================
 // COMPONENTE CHATBOX
 // Interface de chat com IA do ClickMarido
 // ==========================================
+
+// Gerar ID de sessão no client
+function generateClientId(): string {
+  return `sess-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+}
 
 interface Message {
   id: string;
@@ -15,6 +20,7 @@ interface Message {
   timestamp: Date;
   intent?: string;
   provider?: string;
+  isWelcome?: boolean;
 }
 
 interface ChatBoxProps {
@@ -27,9 +33,17 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { getToken } = useAuth();
+
+  // Gerar sessionId quando o chat abre pela primeira vez
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      setSessionId(generateClientId());
+    }
+  }, [isOpen, sessionId]);
 
   // Mensagem de boas-vindas
   useEffect(() => {
@@ -40,6 +54,7 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
           role: 'assistant',
           content: 'Olá! Sou o assistente virtual do ClickMarido. Como posso ajudar você hoje?\n\n• Dúvidas sobre serviços (elétrica, hidráulica, automação, móveis)\n• Dúvidas sobre o sistema\n• Abrir um chamado\n• Verificar status de solicitação',
           timestamp: new Date(),
+          isWelcome: true,
         },
       ]);
     }
@@ -78,7 +93,7 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
     try {
       // Chamar API com timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -88,10 +103,14 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
         },
         body: JSON.stringify({
           message: text,
-          conversationHistory: messages.slice(-10).map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          sessionId,
+          conversationHistory: messages
+            .filter((m) => !m.isWelcome)
+            .slice(-10)
+            .map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
         }),
         signal: controller.signal,
       });
@@ -159,10 +178,11 @@ export default function ChatBox({ isOpen, onClose }: ChatBoxProps) {
     }
   };
 
-  // Limpar conversa
+  // Limpar conversa (gera nova sessão)
   const handleClearChat = () => {
     setMessages([]);
     setError(null);
+    setSessionId(generateClientId());
   };
 
   if (!isOpen) return null;

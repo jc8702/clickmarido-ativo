@@ -120,3 +120,50 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Erro ao atualizar fornecedor' }, { status: 500 });
   }
 }
+
+// DELETE /api/vendors/[id] - Excluir fornecedor
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
+  try {
+    if (!validateToken(request)) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // 1. Verificar se existem ordens de compra vinculadas
+    const purchaseOrdersCount = await prisma.purchaseOrder.count({
+      where: { vendorId: id },
+    });
+
+    if (purchaseOrdersCount > 0) {
+      return NextResponse.json(
+        { error: 'Não é possível excluir o fornecedor porque existem ordens de compra associadas a ele. Sugerimos desativar o cadastro.' },
+        { status: 400 }
+      );
+    }
+
+    // 2. Usar transação para garantir integridade referencial ao excluir o fornecedor
+    await prisma.$transaction(async (tx) => {
+      // Desvincular despesas (Expense)
+      await tx.expense.updateMany({
+        where: { vendorId: id },
+        data: { vendorId: null },
+      });
+
+      // Desvincular produtos (Product)
+      await tx.product.updateMany({
+        where: { vendorId: id },
+        data: { vendorId: null },
+      });
+
+      // Excluir o fornecedor
+      await tx.vendor.delete({
+        where: { id },
+      });
+    });
+
+    return NextResponse.json({ message: 'Fornecedor excluído com sucesso' });
+  } catch (error) {
+    console.error('DELETE /api/vendors/[id] error:', error);
+    return NextResponse.json({ error: 'Erro ao excluir fornecedor' }, { status: 500 });
+  }
+}

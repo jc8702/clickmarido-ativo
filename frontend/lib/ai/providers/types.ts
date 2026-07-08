@@ -19,6 +19,8 @@ export interface AIResponse {
   content: string;
   provider: string;
   model: string;
+  tokensIn?: number;
+  tokensOut?: number;
   tokensUsed?: number;
   latencyMs: number;
   error?: string;

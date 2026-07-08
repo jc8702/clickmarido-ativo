@@ -3,6 +3,9 @@ import { buildContext, getKnowledgeBaseStats } from './rag-engine';
 import { getAIOrchestrator } from './providers';
 import { AIMessage, AIResponse } from './providers/types';
 import { logChat } from './logs';
+import { evaluateEscalation } from './escalation';
+import { formatFunctionsForPrompt, executeFunction } from './functions';
+import { loadConversation, saveMessage, formatHistoryForLLM } from './conversation-memory';
 
 // ==========================================
 // AGENTE PRINCIPAL DO CLICKMARIDO
@@ -12,6 +15,7 @@ import { logChat } from './logs';
 export interface ChatRequest {
   message: string;
   userId?: string;
+  sessionId?: string;
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
@@ -57,7 +61,21 @@ Formato de resposta:
 - Passos numerados para procedimentos
 - Negrito para termos importantes
 
-Contexto disponível será fornecido entre marcadores [CONTEXTO]...[/CONTEXTO].`;
+Contexto disponível será fornecido entre marcadores [CONTEXTO]...[/CONTEXTO].
+
+## Ferramentas Disponíveis
+
+Você pode usar as seguintes ferramentas quando necessário:
+
+${formatFunctionsForPrompt()}
+
+Para usar uma ferramenta, responda EXATAMENTE neste formato:
+[TOOL_CALL] nome_da_funcao(param1: "valor1", param2: "valor2")
+
+Exemplo:
+[TOOL_CALL] buscar_documentacao(modulo: "orçamentos")
+
+IMPORTANTE: Use ferramentas APENAS quando necessário. Se o contexto já responde a pergunta, responda diretamente.`;
 
 // Prompt para pedir esclarecimento
 const CLARIFICATION_PROMPT = `O usuário fez uma pergunta que não ficou clara. 
@@ -94,9 +112,30 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
   
   logRoute(request.message, intentResult);
   
-  // 2. Verificar se precisa de escalação
-  if (intentResult.needsEscalation) {
-    const response = await generateEscalationResponse(request, intentResult);
+  // 2. Avaliar escalonamento inteligente
+  const escalationResult = evaluateEscalation(request.message, intentResult);
+  
+  // 3. Verificar se precisa de escalação
+  if (intentResult.needsEscalation || escalationResult.shouldEscalate) {
+    const escalationReason = intentResult.escalationReason || escalationResult.reason;
+    const response = await generateEscalationResponse(request, intentResult, escalationResult);
+    
+    // Log de escalonamento (fire-and-forget)
+    logChat({
+      userId: request.userId,
+      sessionId: request.sessionId,
+      message: request.message,
+      intent: intentResult.primary,
+      confidence: intentResult.confidence,
+      provider: response.provider,
+      model: response.model,
+      tokensIn: response.tokensIn ?? response.tokensUsed ?? 0,
+      tokensOut: response.tokensOut ?? 0,
+      latencyMs: Date.now() - startTime,
+      success: response.success,
+      escalated: true,
+    }).catch(console.error);
+    
     return {
       success: true,
       content: response.content,
@@ -104,7 +143,7 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
       provider: response.provider,
       model: response.model,
       needsEscalation: true,
-      escalationReason: intentResult.escalationReason,
+      escalationReason,
       clarificationNeeded: false,
       latencyMs: Date.now() - startTime,
       logs: {
@@ -117,6 +156,22 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
   
   // 3. Verificar se precisa de esclarecimento
   if (intentResult.needsClarification) {
+    // Log de esclarecimento (fire-and-forget)
+    logChat({
+      userId: request.userId,
+      sessionId: request.sessionId,
+      message: request.message,
+      intent: intentResult.primary,
+      confidence: intentResult.confidence,
+      provider: 'rule-based',
+      model: 'none',
+      tokensIn: 0,
+      tokensOut: 0,
+      latencyMs: Date.now() - startTime,
+      success: true,
+      escalated: false,
+    }).catch(console.error);
+    
     return {
       success: true,
       content: intentResult.clarificationMessage || 'Poderia me dar mais detalhes?',
@@ -169,17 +224,27 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
     },
   };
 
-  // 6. Registrar log
+  // 6. Registrar log (fire-and-forget, não bloqueia resposta)
   logChat({
     userId: request.userId,
+    sessionId: request.sessionId,
     message: request.message,
     intent: intentResult.primary,
+    confidence: intentResult.confidence,
     provider: response.provider,
     model: response.model,
-    success: response.success,
+    tokensIn: response.tokensIn ?? response.tokensUsed ?? 0,
+    tokensOut: response.tokensOut ?? 0,
     latencyMs: finalResponse.latencyMs,
-    needsEscalation: false,
-  });
+    success: response.success,
+    escalated: false,
+  }).catch(console.error);
+
+  // Salvar na memória da conversa (fire-and-forget)
+  if (request.sessionId) {
+    saveMessage(request.sessionId, request.userId, 'user', request.message).catch(console.error);
+    saveMessage(request.sessionId, request.userId, 'assistant', response.content).catch(console.error);
+  }
 
   return finalResponse;
 }
@@ -187,12 +252,23 @@ export async function processMessage(request: ChatRequest): Promise<ChatResponse
 // Gerar resposta de escalação
 async function generateEscalationResponse(
   request: ChatRequest,
-  intentResult: IntentResult
+  intentResult: IntentResult,
+  escalationResult?: { reason: string; team?: string; priority: string; nextAction: string }
 ): Promise<AIResponse> {
   const orchestrator = getAIOrchestrator();
   
+  // Construir prompt de escalação com contexto
+  let escalationPrompt = ESCALATION_PROMPT;
+  if (escalationResult) {
+    escalationPrompt += `\n\nDetalhes do escalonamento:
+- Motivo: ${escalationResult.reason}
+- Equipe: ${escalationResult.team || 'suporte'}
+- Prioridade: ${escalationResult.priority}
+- Próxima ação: ${escalationResult.nextAction}`;
+  }
+  
   const messages: AIMessage[] = [
-    { role: 'system', content: ESCALATION_PROMPT },
+    { role: 'system', content: escalationPrompt },
     { role: 'user', content: request.message },
   ];
   
@@ -229,9 +305,17 @@ async function generateAIResponse(
     { role: 'system', content: SYSTEM_PROMPT },
   ];
   
-  // Adicionar histórico se disponível
-  if (request.conversationHistory && request.conversationHistory.length > 0) {
-    // Limitar a últimos 5 exchanges
+  // Carregar histórico da conversa (se houver sessionId)
+  if (request.sessionId) {
+    const history = await loadConversation(request.sessionId);
+    if (history.length > 0) {
+      const formattedHistory = formatHistoryForLLM(history, 10);
+      for (const msg of formattedHistory) {
+        messages.push(msg);
+      }
+    }
+  } else if (request.conversationHistory && request.conversationHistory.length > 0) {
+    // Fallback: usar histórico passado diretamente
     const recentHistory = request.conversationHistory.slice(-10);
     for (const msg of recentHistory) {
       messages.push({
@@ -260,7 +344,91 @@ async function generateAIResponse(
     return generateRuleBasedResponse(request, intentResult, context);
   }
   
+  // Verificar se a resposta contém tool call
+  const toolCallMatch = response.content.match(/\[TOOL_CALL\]\s*(\w+)\(([^)]+)\)/);
+  if (toolCallMatch) {
+    const functionName = toolCallMatch[1];
+    const paramsStr = toolCallMatch[2];
+    
+    // Parse dos parâmetros
+    const params: Record<string, string> = {};
+    const paramPairs = paramsStr.split(',').map(p => p.trim());
+    for (const pair of paramPairs) {
+      const [key, value] = pair.split(':').map(s => s.trim().replace(/"/g, ''));
+      if (key && value) {
+        params[key] = value;
+      }
+    }
+    
+    // Executar função
+    const functionResult = await executeFunction(functionName, params, request.userId, request.sessionId);
+    
+    if (functionResult.success) {
+      // Gerar resposta com base no resultado da função
+      const followUpMessages: AIMessage[] = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: request.message },
+        { role: 'assistant', content: response.content },
+        { role: 'user', content: `Resultado da ferramenta "${functionName}":\n${JSON.stringify(functionResult.result, null, 2)}\n\nAgora responda ao usuário com base nesse resultado.` },
+      ];
+      
+      const followUpResponse = await orchestrator.generate({
+        messages: followUpMessages,
+        temperature: 0.7,
+        maxTokens: 1024,
+      });
+      
+      if (followUpResponse.success) {
+        return {
+          ...followUpResponse,
+          content: followUpResponse.content,
+        };
+      }
+      
+      // Se a geração de follow-up falhar, usar resposta estática
+      return {
+        success: true,
+        content: formatFunctionResult(functionName, functionResult.result),
+        provider: response.provider,
+        model: response.model,
+        latencyMs: response.latencyMs,
+      };
+    }
+  }
+  
   return response;
+}
+
+// Formatar resultado de função para resposta estática
+function formatFunctionResult(functionName: string, result: any): string {
+  switch (functionName) {
+    case 'buscar_documentacao':
+      if (result.found && result.documents?.length > 0) {
+        const docs = result.documents.map((d: any) => `**${d.title}** (${d.category})`).join('\n• ');
+        return `Encontrei documentação relacionada:\n• ${docs}\n\nPosso ajudar com mais alguma dúvida?`;
+      }
+      return result.message || 'Não encontrei documentação específica para essa busca.';
+    
+    case 'registrar_lacuna_conhecimento':
+      return 'Sua pergunta foi registrada para melhoria da base de conhecimento. Um especialista irá analisar em breve.';
+    
+    case 'estimar_preco_servico':
+      if (result.suggestedPrice) {
+        let response = `**Estimativa de Preço**\n\n`;
+        response += `• Valor sugerido: **R$ ${result.suggestedPrice.toFixed(2)}**\n`;
+        response += `• Faixa: R$ ${result.minPrice.toFixed(2)} - R$ ${result.maxPrice.toFixed(2)}\n`;
+        response += `• Base: ${result.basis === 'historical' ? `${result.sampleSize} orçamentos anteriores` : 'taxa hora padrão'}\n`;
+        if (result.notes?.length > 0) {
+          response += `• Ajustes: ${result.notes.join(', ')}\n`;
+        }
+        response += `\n_${result.disclaimer}_`;
+        return response;
+      }
+      return 'Não foi possível gerar estimativa para esse serviço.';
+    
+    default:
+      return 'Ação executada com sucesso.';
+  }
 }
 
 // Fallback: resposta baseada em regras

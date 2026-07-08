@@ -236,3 +236,37 @@ export function useVendorClassificationSummary() {
 
   return { data, isLoading, error, mutate: fetchSummary };
 }
+
+export function useDeleteVendor() {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (id: string) => {
+    setIsPending(true);
+    setError(null);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/vendors/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao excluir fornecedor');
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending, error };
+}

@@ -14,12 +14,16 @@ model User {
   passwordHash  String         @db.VarChar(255)
   role          String         @default("admin") @db.VarChar(20)
   active        Boolean        @default(true)
+  aiAccess      Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   uploadedMedia Media[]
   notifications Notification[]
   leads         Lead[]
   leadEvents    LeadEvent[]
+  aiConversationLogs    AiConversationLog[]
+  aiFunctionCalls       AiFunctionCall[]
+  aiConversations       AiConversation[]
 
   @@map("users")
 }
@@ -1114,4 +1118,107 @@ model OperationalAlert {
 
   @@index([leadId])
   @@map("operational_alerts")
+}
+
+// ==========================================
+// AI AGENT - Assistente Virtual
+// ==========================================
+
+model AiConversationLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId String?  @db.VarChar(100)
+  message   String   @db.Text
+  intent    String   @db.VarChar(50)
+  confidence Float   @default(0)
+  provider  String   @db.VarChar(50)
+  model     String   @db.VarChar(100)
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  cost      Float    @default(0)
+  latencyMs Int      @default(0)
+  success   Boolean  @default(true)
+  escalated Boolean  @default(false)
+  escalationReason String? @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([intent])
+  @@index([createdAt])
+  @@map("ai_conversation_logs")
+}
+
+model AiKnowledgeGap {
+  id         String    @id @default(cuid())
+  question   String    @db.Text
+  domain     String    @db.VarChar(20)
+  intent     String?   @db.VarChar(50)
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+  notes      String?   @db.Text
+  createdAt  DateTime  @default(now())
+
+  @@index([resolved])
+  @@index([domain])
+  @@index([createdAt])
+  @@map("ai_knowledge_gaps")
+}
+
+model AiFunctionCall {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId String?  @db.VarChar(100)
+  function  String   @db.VarChar(100)
+  params    Json
+  result    Json?
+  success   Boolean  @default(true)
+  error     String?  @db.Text
+  latencyMs Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([function])
+  @@index([createdAt])
+  @@map("ai_function_calls")
+}
+
+model AiConversation {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId String   @unique @db.VarChar(100)
+  messages  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("ai_conversations")
+}
+
+model KnowledgeDocument {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  domain    String   @db.VarChar(20)
+  category  String   @db.VarChar(50)
+  tags      String[] @default([])
+  source    String?  @db.VarChar(255)
+  active    Boolean  @default(true)
+  // Embedding: armazenado como JSON array localmente
+  // Em produção (Neon/Supabase com pgvector), usar tipo vector(1536)
+  // Migration manual necessária para habilitar pgvector:
+  //   CREATE EXTENSION IF NOT EXISTS vector;
+  //   ALTER TABLE knowledge_documents ADD COLUMN embedding vector(1536);
+  embedding String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([domain])
+  @@index([category])
+  @@index([active])
+  @@map("knowledge_documents")
 }
