@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           vendor: { select: { id: true, name: true } },
+          serviceOrder: { select: { id: true, number: true } },
           purchaseOrders: {
             include: {
               items: {

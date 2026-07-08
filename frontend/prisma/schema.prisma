@@ -76,6 +76,9 @@ model Customer {
   creditLimit  Decimal? @default(0) @db.Decimal(10, 2)
   taxDocNumber String? // CPF/CNPJ
 
+  // Relacoes financeiras
+  accountReceivables AccountReceivable[]
+
   @@map("customers")
 }
 
@@ -351,6 +354,7 @@ model Invoice {
   quotation Quotation? @relation(fields: [quotationId], references: [id], onDelete: Cascade)
   customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   payments  Payment[]
+  accountReceivables AccountReceivable[]
 
   @@unique([invoiceNumber, seriesNumber])
   @@index([quotationId])
@@ -399,6 +403,11 @@ model Expense {
   vendor         Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
   serviceOrder   ServiceOrder?   @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
   purchaseOrders PurchaseOrder[]
+  accountPayables AccountPayable[]
+  chartOfAccount ChartOfAccount? @relation(fields: [chartOfAccountId], references: [id])
+
+  // Plano de Contas
+  chartOfAccountId String?
 
   @@index([category])
   @@index([costCenter])
@@ -438,9 +447,11 @@ model Vendor {
   isBlocked           Boolean @default(false)
 
   // Relacionamento
-  expenses       Expense[]
-  purchaseOrders PurchaseOrder[]
-  products       Product[]
+  expenses          Expense[]
+  purchaseOrders    PurchaseOrder[]
+  products          Product[]
+  accountPayables   AccountPayable[]
+  recurringExpenses RecurringExpense[]
 
   // Metadados
   notes     String?  @default("")
@@ -599,6 +610,246 @@ model AccountBalance {
   @@unique([balanceDate])
   @@index([balanceDate])
   @@map("account_balances")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - CONTAS BANCARIAS
+// ==========================================
+
+model BankAccount {
+  id             String   @id @default(cuid())
+  bankName       String   @db.VarChar(100)
+  agency         String   @db.VarChar(20)
+  accountNumber  String   @db.VarChar(30)
+  accountType    String   @default("CORRENTE") @db.VarChar(20) // CORRENTE, POUPANCA, INVESTIMENTO
+  nickname       String?  @db.VarChar(100)
+  initialBalance Decimal  @default(0) @db.Decimal(12, 2)
+  currentBalance Decimal  @default(0) @db.Decimal(12, 2)
+  status         String   @default("ativa") @db.VarChar(20) // ativa, inativa
+  color          String?  @db.VarChar(20) // Cor para identificacao visual
+  isDefault      Boolean  @default(false) // Conta padrao para recebimentos/pagamentos
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relacoes
+  accountReceivables    AccountReceivable[]
+  accountPayables       AccountPayable[]
+  transfersOut          BankTransfer[]      @relation("TransferFrom")
+  transfersIn           BankTransfer[]      @relation("TransferTo")
+  reconciliations       BankReconciliation[]
+  recurringExpenses     RecurringExpense[]
+
+  @@index([status])
+  @@index([bankName])
+  @@map("bank_accounts")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - PLANO DE CONTAS
+// ==========================================
+
+model ChartOfAccount {
+  id        String  @id @default(cuid())
+  code      String  @unique @db.VarChar(20) // Ex: 1.01.001
+  name      String  @db.VarChar(255)
+  type      String  @db.VarChar(20) // RECEITA, DESPESA, FINANCEIRO, IMPOSTO
+  parentId  String?
+  parent    ChartOfAccount? @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children  ChartOfAccount[] @relation("AccountHierarchy")
+  isActive  Boolean @default(true)
+  level     Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacoes
+  accountReceivables AccountReceivable[]
+  accountPayables    AccountPayable[]
+  expenses           Expense[]
+  recurringExpenses  RecurringExpense[]
+
+  @@index([type])
+  @@index([parentId])
+  @@index([isActive])
+  @@map("chart_of_accounts")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - CONTAS A RECEBER
+// ==========================================
+
+model AccountReceivable {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(255)
+  description     String?  @db.Text
+  totalAmount     Decimal  @db.Decimal(12, 2)
+  paidAmount      Decimal  @default(0) @db.Decimal(12, 2)
+  status          String   @default("previsto") @db.VarChar(20) // previsto, aberto, parcial, baixado, vencido, cancelado
+  dueDate         DateTime
+  paidDate        DateTime?
+  origin          String   @db.VarChar(30) // FATURAMENTO, ORCAMENTO, VENDA, MANUAL
+  paymentMethod   String?  @db.VarChar(20) // PIX, BOLETO, CARTAO, DINHEIRO, TRANSFERENCIA
+  bankAccountId   String?
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id])
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  invoiceId       String?
+  invoice         Invoice? @relation(fields: [invoiceId], references: [id])
+  chartOfAccountId String?
+  chartOfAccount  ChartOfAccount? @relation(fields: [chartOfAccountId], references: [id])
+  costCenter      String?  @db.VarChar(50)
+  discount        Decimal  @default(0) @db.Decimal(12, 2)
+  interest        Decimal  @default(0) @db.Decimal(12, 2)
+  fine            Decimal  @default(0) @db.Decimal(12, 2)
+  installment     Int?
+  installmentOf   String?  @db.VarChar(50) // ID do parcelamento pai
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([customerId])
+  @@index([invoiceId])
+  @@index([bankAccountId])
+  @@index([chartOfAccountId])
+  @@map("account_receivables")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - CONTAS A PAGAR
+// ==========================================
+
+model AccountPayable {
+  id              String   @id @default(cuid())
+  title           String   @db.VarChar(255)
+  description     String?  @db.Text
+  totalAmount     Decimal  @db.Decimal(12, 2)
+  paidAmount      Decimal  @default(0) @db.Decimal(12, 2)
+  status          String   @default("previsto") @db.VarChar(20) // previsto, aberto, parcial, pago, vencido, cancelado
+  dueDate         DateTime
+  paidDate        DateTime?
+  origin          String   @db.VarChar(30) // DESPESA, COMPRA, RECORRENCIA, MANUAL
+  paymentMethod   String?  @db.VarChar(20) // PIX, BOLETO, CARTAO, DINHEIRO, TRANSFERENCIA
+  bankAccountId   String?
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id])
+  vendorId        String?
+  vendor          Vendor? @relation(fields: [vendorId], references: [id])
+  expenseId       String?
+  expense         Expense? @relation(fields: [expenseId], references: [id])
+  chartOfAccountId String?
+  chartOfAccount  ChartOfAccount? @relation(fields: [chartOfAccountId], references: [id])
+  costCenter      String?  @db.VarChar(50)
+  discount        Decimal  @default(0) @db.Decimal(12, 2)
+  interest        Decimal  @default(0) @db.Decimal(12, 2)
+  fine            Decimal  @default(0) @db.Decimal(12, 2)
+  installment     Int?
+  installmentOf   String?  @db.VarChar(50)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacoes com recorrencia
+  recurringExpenseId String?
+  recurringExpense   RecurringExpense? @relation("RecurringPayables", fields: [recurringExpenseId], references: [id])
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([vendorId])
+  @@index([expenseId])
+  @@index([bankAccountId])
+  @@index([chartOfAccountId])
+  @@map("account_payables")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - DESPESAS FIXAS/RECORRENTES
+// ==========================================
+
+model RecurringExpense {
+  id              String   @id @default(cuid())
+  description     String   @db.VarChar(255)
+  amount          Decimal  @db.Decimal(12, 2)
+  frequency       String   @db.VarChar(20) // MENSAL, SEMANAL, ANUAL, PERSONALIZADO
+  customFrequency Int?     // Dias para PERSONALIZADO
+  dayOfMonth      Int?     // Dia do mes (1-31)
+  dayOfWeek       Int?     // Dia da semana (0-6)
+  monthOfYear     Int?     // Mes do ano (1-12)
+  startDate       DateTime
+  endDate         DateTime?
+  isActive        Boolean  @default(true)
+  lastGenerated   DateTime?
+  nextDue         DateTime
+  chartOfAccountId String?
+  chartOfAccount  ChartOfAccount? @relation(fields: [chartOfAccountId], references: [id])
+  costCenter      String?  @db.VarChar(50)
+  vendorId        String?
+  vendor          Vendor? @relation(fields: [vendorId], references: [id])
+  bankAccountId   String?
+  bankAccount     BankAccount? @relation(fields: [bankAccountId], references: [id])
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacoes
+  accountPayables AccountPayable[] @relation("RecurringPayables")
+
+  @@index([isActive])
+  @@index([nextDue])
+  @@index([frequency])
+  @@map("recurring_expenses")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - CONCILIACAO BANCARIA
+// ==========================================
+
+model BankReconciliation {
+  id              String   @id @default(cuid())
+  bankAccountId   String
+  bankAccount     BankAccount @relation(fields: [bankAccountId], references: [id])
+  transactionDate DateTime
+  description     String   @db.VarChar(500)
+  amount          Decimal  @db.Decimal(12, 2)
+  type            String   @db.VarChar(10) // ENTRADA, SAIDA
+  isReconciled    Boolean  @default(false)
+  reconciledAt    DateTime?
+  referenceType   String?  @db.VarChar(30) // ACCOUNT_RECEIVABLE, ACCOUNT_PAYABLE, TRANSFER, MANUAL
+  referenceId     String?
+  documentNumber  String?  @db.VarChar(50)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([bankAccountId])
+  @@index([isReconciled])
+  @@index([transactionDate])
+  @@index([referenceType, referenceId])
+  @@map("bank_reconciliations")
+}
+
+// ==========================================
+// MODULO FINANCEIRO - TRANSFERENCIAS ENTRE CONTAS
+// ==========================================
+
+model BankTransfer {
+  id              String   @id @default(cuid())
+  fromAccountId   String
+  fromAccount     BankAccount @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccountId     String
+  toAccount       BankAccount @relation("TransferTo", fields: [toAccountId], references: [id])
+  amount          Decimal  @db.Decimal(12, 2)
+  description     String?  @db.VarChar(255)
+  transferDate    DateTime
+  status          String   @default("concluida") @db.VarChar(20) // pendente, concluida, cancelada
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([transferDate])
+  @@index([status])
+  @@map("bank_transfers")
 }
 
 model AuditLog {

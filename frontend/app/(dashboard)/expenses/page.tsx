@@ -24,6 +24,12 @@ interface Expense {
   vendorName?: string;
   documentType?: string;
   documentNumber?: string;
+  serviceOrderId?: string;
+  serviceOrder?: {
+    id: string;
+    number: string;
+  };
+  attachmentUrl?: string;
   notes?: string;
   purchaseOrders?: {
     id: string;
@@ -53,6 +59,70 @@ const statusLabels: Record<string, string> = {
   paga: 'Paga',
   cancelada: 'Cancelada',
 };
+
+function renderOriginLink(exp: Expense) {
+  const links: React.ReactNode[] = [];
+
+  // 1. Ordens de Compra
+  if (exp.purchaseOrders && exp.purchaseOrders.length > 0) {
+    exp.purchaseOrders.forEach(po => {
+      links.push(
+        <a
+          key={`po-${po.id}`}
+          href={`/purchases/${po.id}`}
+          className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2.5 py-1 rounded-full w-fit whitespace-nowrap"
+        >
+          <Package size={12} /> OC #{po.number}
+        </a>
+      );
+    });
+  }
+
+  // 2. Ordem de Serviço
+  if (exp.serviceOrder) {
+    links.push(
+      <a
+        key={`so-${exp.serviceOrder.id}`}
+        href={`/service-orders/${exp.serviceOrder.id}`}
+        className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 px-2.5 py-1 rounded-full w-fit whitespace-nowrap"
+      >
+        <span className="text-[10px]">🔧</span> OS #{exp.serviceOrder.number}
+      </a>
+    );
+  }
+
+  // 3. Documento com Anexo
+  if (exp.attachmentUrl) {
+    const label = exp.documentNumber 
+      ? `${exp.documentType || 'DOC'} #${exp.documentNumber}`
+      : '📎 Ver Comprovante';
+    links.push(
+      <a
+        key="attachment"
+        href={exp.attachmentUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full w-fit whitespace-nowrap"
+      >
+        <span className="text-[10px]">📎</span> {label}
+      </a>
+    );
+  } else if (exp.documentNumber) {
+    // 4. Apenas o número do documento
+    const label = `${exp.documentType || 'DOC'} #${exp.documentNumber}`;
+    links.push(
+      <span key="doc-num" className="text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1 rounded-full w-fit whitespace-nowrap">
+        {label}
+      </span>
+    );
+  }
+
+  if (links.length === 0) {
+    return <span className="text-neutral-400 dark:text-neutral-500">-</span>;
+  }
+
+  return <div className="flex flex-col gap-1.5">{links}</div>;
+}
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -297,6 +367,7 @@ export default function ExpensesPage() {
                       <TableHeader>Data</TableHeader>
                       <TableHeader className="hidden sm:table-cell">Descrição</TableHeader>
                       <TableHeader className="hidden md:table-cell">Categoria</TableHeader>
+                      <TableHeader className="hidden lg:table-cell">Origem / Reg.</TableHeader>
                       <TableHeader>Valor</TableHeader>
                       <TableHeader>Status</TableHeader>
                       <TableHeader>Ações</TableHeader>
@@ -341,6 +412,9 @@ export default function ExpensesPage() {
                                 {getCategoryLabel(exp.category)}
                               </span>
                             </TableCell>
+                            <TableCell className="hidden lg:table-cell" onClick={() => hasItems && toggleRow(exp.id)}>
+                              {renderOriginLink(exp)}
+                            </TableCell>
                             <TableCell className="font-bold text-neutral-800 dark:text-neutral-200 whitespace-nowrap" onClick={() => hasItems && toggleRow(exp.id)}>
                               {formatCurrency(exp.amount)}
                             </TableCell>
@@ -369,7 +443,7 @@ export default function ExpensesPage() {
                           {/* Expanded content */}
                           {isExpanded && hasItems && (
                             <TableRow className="bg-neutral-50/50 dark:bg-neutral-800/50 border-b border-neutral-100 dark:border-neutral-700/50">
-                              <TableCell colSpan={7} className="p-0">
+                              <TableCell colSpan={8} className="p-0">
                                 <div className="px-6 py-4">
                                   <div className="bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden">
                                     <div className="px-4 py-2 bg-neutral-100 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700">

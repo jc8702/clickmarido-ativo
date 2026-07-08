@@ -138,9 +138,21 @@ const navigationLinks = [
   { href: '/warranties', label: 'Garantias', icon: defaultIcons['Garantias'] },
   { href: '/purchases', label: 'Compras', icon: defaultIcons['Compras'] },
   { href: '/vendors', label: 'Fornecedores', icon: defaultIcons['Fornecedores'] },
-  { href: '/financial', label: 'Financeiro', icon: defaultIcons['Financeiro'] },
+  // Seção Financeiro
+  { href: '/financeiro', label: 'Financeiro', icon: defaultIcons['Financeiro'], isSection: true },
+  { href: '/financeiro/contas-bancarias', label: 'Contas Bancárias', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/plano-contas', label: 'Plano de Contas', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/receber', label: 'Contas a Receber', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/pagar', label: 'Contas a Pagar', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/fixas', label: 'Despesas Fixas', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/fluxo-caixa', label: 'Fluxo de Caixa', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/dre', label: 'DRE', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/rentabilidade', label: 'Rentabilidade', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  { href: '/financeiro/conciliacao-bancaria', label: 'Conciliação Bancária', icon: defaultIcons['Financeiro'], parent: 'financeiro' },
+  // Atalhos financeiros
   { href: '/invoices', label: 'Faturamento', icon: defaultIcons['Faturamento'] },
   { href: '/expenses', label: 'Despesas', icon: defaultIcons['Despesas'] },
+  // Outros
   { href: '/reports', label: 'Relatórios', icon: defaultIcons['Relatórios'] },
   { href: '/painel-eletrico', label: 'Painel Elétrico', icon: defaultIcons['Painel Elétrico'] },
   { href: '/nps', label: 'Avaliações NPS', icon: defaultIcons['Avaliações'] },
