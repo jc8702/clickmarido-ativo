@@ -1,11 +1,19 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Adicionada coluna Ganho no Kanban de Pré-Vendas e corrigidos os filtros de leads estagnados e SLA em produção. Deploy na Vercel realizado e validado com sucesso.
+- **Status Atual:** CRUD Completo e exclusão segura implementados no módulo de fornecedores. Homologado localmente e deployado em produção na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 05/07/2026 - 02:40
+- **Última Atualização:** 08/07/2026 - 02:20
 
 ## Histórico de Alterações
+- **[08/07/2026 - 02:20]:** CRUD Completo de Fornecedores e Exclusão Segura:
+  - **API `/api/vendors/[id]`:** Implementado o método `DELETE`. Adicionado tratamento de integridade referencial: caso o fornecedor possua ordens de compra (`PurchaseOrder`), a exclusão é bloqueada com retorno de erro status 400. Caso contrário, são desvinculadas despesas (`Expense`) e produtos (`Product`) de forma síncrona dentro de uma transação `$transaction` do Prisma.
+  - **Hook `useVendors.ts`:** Criado o hook `useDeleteVendor` para expor o método `DELETE` integrado com autenticação JWT.
+  - **Telas de Fornecedores:** Adicionados botões de exclusão na listagem principal (`vendors/page.tsx`) e na página de detalhes do fornecedor (`vendors/[id]/page.tsx`), integrando modais de confirmação de exclusão para evitar acidentes.
+  - **Teste local e Deploy:** Desenvolvido e validado com sucesso script de testes unificado local `test_delete_vendor.js`. Realizado build local e deploy bem-sucedido na Vercel com link ativo.
+  - Arquivos criados: `frontend/test_delete_vendor.js`
+  - Arquivos modificados: `frontend/app/api/vendors/[id]/route.ts`, `frontend/hooks/useVendors.ts`, `frontend/app/(dashboard)/vendors/page.tsx`, `frontend/app/(dashboard)/vendors/[id]/page.tsx`
+
 - **[05/07/2026 - 02:40]:** Adicionada coluna "Ganho" e corrigidos filtros de estagnação de leads:
   - **Kanban de Pré-Vendas:** Adicionada a coluna do estágio `GANHO` imediatamente antes de "Descartado". Refatorado o filtro de leads por coluna para agrupar enums menores e intermediários (como `PROPOSTA_ENVIADA`, `SEM_CONTATO`, etc.) em colunas lógicas correspondentes, eliminando leads "fantasmas" invisíveis.
   - **Histórico Comercial:** Adicionado o registro automático dos eventos comerciais de CRM `DEAL_WON` e `DEAL_LOST` ao mover leads para os estágios `GANHO` ou `PERDIDO`.
