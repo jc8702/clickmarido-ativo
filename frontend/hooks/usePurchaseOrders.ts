@@ -310,6 +310,42 @@ export function useReceivePurchaseOrderItems(id: string) {
   return { mutateAsync, isPending, error };
 }
 
+export function useReturnPurchaseOrderItems(id: string) {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getToken } = useAuth();
+
+  const mutateAsync = async (items: { itemId: string; quantityReturned: number }[]) => {
+    setIsPending(true);
+    setError(null);
+    try {
+      const token = getToken();
+      const response = await fetch(`/api/purchase-orders/${id}/return`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ items }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erro ao processar devolução');
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { mutateAsync, isPending, error };
+}
+
 export function useCancelPurchaseOrder(id: string) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);

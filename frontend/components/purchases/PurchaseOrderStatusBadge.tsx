@@ -36,6 +36,12 @@ export function PurchaseOrderStatusBadge({ status }: Props) {
       border: 'border-emerald-200 dark:border-emerald-800/60',
       label: 'Entregue / Recebida',
     },
+    devolvida: {
+      bg: 'bg-purple-50 dark:bg-purple-950/30',
+      text: 'text-purple-700 dark:text-purple-400',
+      border: 'border-purple-200 dark:border-purple-800/60',
+      label: 'Devolvida',
+    },
     cancelada: {
       bg: 'bg-rose-50 dark:bg-rose-950/30',
       text: 'text-rose-700 dark:text-rose-400',

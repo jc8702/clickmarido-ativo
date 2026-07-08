@@ -23,10 +23,13 @@ type Props = {
   status: string;
   onReceive?: (receivedData: { itemId: string; quantityReceived: number }[]) => Promise<void>;
   isReceiving?: boolean;
+  onReturn?: (returnedData: { itemId: string; quantityReturned: number }[]) => Promise<void>;
+  isReturning?: boolean;
 };
 
-export function PurchaseOrderItemsTable({ items = [], status, onReceive, isReceiving = false }: Props) {
+export function PurchaseOrderItemsTable({ items = [], status, onReceive, isReceiving = false, onReturn, isReturning = false }: Props) {
   const [receiveMode, setReceiveMode] = useState(false);
+  const [returnMode, setReturnMode] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,44 +72,99 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
     }
   };
 
-  const canReceive = (status === 'aprovada' || status === 'parcialmente_recebida') && !!onReceive;
+  const handleSaveReturn = async () => {
+    if (!onReturn) return;
+    setSubmitting(true);
+    try {
+      const payload = Object.entries(quantities)
+        .filter(([_, qty]) => qty > 0)
+        .map(([itemId, qty]) => ({ itemId, quantityReturned: qty }));
+
+      if (payload.length === 0) {
+        alert('Insira uma quantidade maior que zero em pelo menos um item para salvar.');
+        setSubmitting(false);
+        return;
+      }
+
+      await onReturn(payload);
+      setReturnMode(false);
+      setQuantities({});
+    } catch (err: any) {
+      alert(err.message || 'Erro ao registrar devolução');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const canReceive = (status === 'aprovada' || status === 'parcialmente_recebida') && !!onReceive && !returnMode;
+  const canReturn = (status === 'recebida' || status === 'parcialmente_recebida') && !!onReturn && !receiveMode;
 
   return (
     <div className="bg-white dark:bg-neutral-800 rounded shadow overflow-hidden border border-neutral-200 dark:border-neutral-700">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex justify-between items-center bg-neutral-50 dark:bg-neutral-800/40">
         <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200 uppercase">Itens da Ordem de Compra</h4>
-        {canReceive && (
-          <div>
-            {!receiveMode ? (
+        <div className="flex space-x-2">
+          {canReceive && !receiveMode && (
+            <button
+              onClick={() => setReceiveMode(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow transition-colors"
+            >
+              📦 Receber Itens
+            </button>
+          )}
+          {canReturn && !returnMode && (
+            <button
+              onClick={() => setReturnMode(true)}
+              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-semibold shadow transition-colors"
+            >
+              🔄 Devolver Itens
+            </button>
+          )}
+
+          {receiveMode && (
+            <div className="flex space-x-2">
               <button
-                onClick={() => setReceiveMode(true)}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow transition-colors"
+                disabled={submitting}
+                onClick={handleSaveReceive}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors"
               >
-                📦 Receber Itens
+                {submitting ? 'Salvando...' : 'Confirmar Entrega'}
               </button>
-            ) : (
-              <div className="flex space-x-2">
-                <button
-                  disabled={submitting}
-                  onClick={handleSaveReceive}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors"
-                >
-                  {submitting ? 'Salvando...' : 'Confirmar Entrega'}
-                </button>
-                <button
-                  disabled={submitting}
-                  onClick={() => {
-                    setReceiveMode(false);
-                    setQuantities({});
-                  }}
-                  className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+              <button
+                disabled={submitting}
+                onClick={() => {
+                  setReceiveMode(false);
+                  setQuantities({});
+                }}
+                className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+
+          {returnMode && (
+            <div className="flex space-x-2">
+              <button
+                disabled={submitting}
+                onClick={handleSaveReturn}
+                className="px-3 py-1.5 bg-purple-655 hover:bg-purple-700 bg-purple-600 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors"
+              >
+                {submitting ? 'Processando...' : 'Confirmar Devolução'}
+              </button>
+              <button
+                disabled={submitting}
+                onClick={() => {
+                  setReturnMode(false);
+                  setQuantities({});
+                }}
+                className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -121,18 +179,20 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
               <th className="px-6 py-3 text-right">Desconto / Imposto</th>
               <th className="px-6 py-3 text-right">Subtotal</th>
               {receiveMode && <th className="px-6 py-3 text-center bg-amber-500/10 dark:bg-amber-500/5 text-amber-700 dark:text-amber-400 font-bold">Qtd. a Entregar</th>}
+              {returnMode && <th className="px-6 py-3 text-center bg-purple-500/10 dark:bg-purple-500/5 text-purple-700 dark:text-purple-400 font-bold">Qtd. a Devolver</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700 text-neutral-800 dark:text-neutral-200">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={receiveMode ? 8 : 7} className="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
+                <td colSpan={receiveMode || returnMode ? 8 : 7} className="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">
                   Nenhum item cadastrado nesta ordem de compra.
                 </td>
               </tr>
             ) : (
               items.map((item) => {
-                const maxAvailable = Math.max(0, item.quantity - item.receivedQuantity);
+                const maxReceiveAvailable = Math.max(0, item.quantity - item.receivedQuantity);
+                const maxReturnAvailable = Number(item.receivedQuantity) || 0;
                 return (
                   <tr key={item.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
                     <td className="px-6 py-4">
@@ -162,23 +222,50 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
                     </td>
                     {receiveMode && (
                       <td className="px-6 py-4 text-center bg-amber-500/10 dark:bg-amber-500/5 align-middle">
-                        {maxAvailable === 0 ? (
+                        {maxReceiveAvailable === 0 ? (
                           <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Tudo entregue</span>
                         ) : (
                           <div className="inline-flex items-center space-x-2">
                             <input
                               type="number"
                               min="0"
-                              max={maxAvailable}
+                              max={maxReceiveAvailable}
                               step="any"
                               value={quantities[item.id] !== undefined ? quantities[item.id] : ''}
-                              onChange={(e) => handleQtyChange(item.id, e.target.value, maxAvailable)}
-                              placeholder={`Máx: ${maxAvailable}`}
+                              onChange={(e) => handleQtyChange(item.id, e.target.value, maxReceiveAvailable)}
+                              placeholder={`Máx: ${maxReceiveAvailable}`}
                               className="w-20 p-1 border border-neutral-300 dark:border-neutral-600 rounded text-center text-xs bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
                             />
                             <button
                               type="button"
-                              onClick={() => setQuantities(prev => ({ ...prev, [item.id]: maxAvailable }))}
+                              onClick={() => setQuantities(prev => ({ ...prev, [item.id]: maxReceiveAvailable }))}
+                              className="px-2 py-1 bg-neutral-200 dark:bg-neutral-600 text-[10px] rounded hover:bg-neutral-300 dark:hover:bg-neutral-500"
+                            >
+                              Tudo
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
+                    {returnMode && (
+                      <td className="px-6 py-4 text-center bg-purple-500/10 dark:bg-purple-500/5 align-middle">
+                        {maxReturnAvailable === 0 ? (
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">Nenhum recebido</span>
+                        ) : (
+                          <div className="inline-flex items-center space-x-2">
+                            <input
+                              type="number"
+                              min="0"
+                              max={maxReturnAvailable}
+                              step="any"
+                              value={quantities[item.id] !== undefined ? quantities[item.id] : ''}
+                              onChange={(e) => handleQtyChange(item.id, e.target.value, maxReturnAvailable)}
+                              placeholder={`Máx: ${maxReturnAvailable}`}
+                              className="w-20 p-1 border border-neutral-300 dark:border-neutral-600 rounded text-center text-xs bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setQuantities(prev => ({ ...prev, [item.id]: maxReturnAvailable }))}
                               className="px-2 py-1 bg-neutral-200 dark:bg-neutral-600 text-[10px] rounded hover:bg-neutral-300 dark:hover:bg-neutral-500"
                             >
                               Tudo

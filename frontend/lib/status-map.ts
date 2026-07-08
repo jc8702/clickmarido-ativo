@@ -107,6 +107,7 @@ export const PurchaseOrderStatus = {
   APROVADA: 'aprovada',
   PARCIALMENTE_RECEBIDA: 'parcialmente_recebida',
   RECEBIDA: 'recebida',
+  DEVOLVIDA: 'devolvida',
   CANCELADA: 'cancelada',
 } as const;
 

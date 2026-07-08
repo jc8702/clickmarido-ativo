@@ -7,6 +7,7 @@ import {
   useEmitPurchaseOrder, 
   useApprovePurchaseOrder, 
   useReceivePurchaseOrderItems, 
+  useReturnPurchaseOrderItems,
   useCancelPurchaseOrder,
   useDeletePurchaseOrder
 } from '@/hooks/usePurchaseOrders';
@@ -30,6 +31,7 @@ export default function PurchaseOrderDetailsPage({ params }: Props) {
   const { mutateAsync: emitOrder, isPending: isEmitting } = useEmitPurchaseOrder(id);
   const { mutateAsync: approveOrder, isPending: isApproving } = useApprovePurchaseOrder(id);
   const { mutateAsync: receiveItems, isPending: isReceiving } = useReceivePurchaseOrderItems(id);
+  const { mutateAsync: returnItems, isPending: isReturning } = useReturnPurchaseOrderItems(id);
   const { mutateAsync: cancelOrder, isPending: isCancelling } = useCancelPurchaseOrder(id);
   const { mutateAsync: deleteOrder, isPending: isDeleting } = useDeletePurchaseOrder(id);
 
@@ -82,6 +84,18 @@ export default function PurchaseOrderDetailsPage({ params }: Props) {
       mutate();
     } catch (err: any) {
       alert(err.message || 'Erro ao registrar recebimento');
+      throw err;
+    }
+  };
+
+  const handleReturnItems = async (returnedData: { itemId: string; quantityReturned: number }[]) => {
+    if (!confirm('Deseja confirmar a devolução desses itens? O estoque correspondente será decrementado e o financeiro estornado.')) return;
+    try {
+      await returnItems(returnedData);
+      mutate();
+      alert('Devolução registrada com sucesso!');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao registrar devolução');
       throw err;
     }
   };
@@ -248,6 +262,8 @@ export default function PurchaseOrderDetailsPage({ params }: Props) {
               status={order.status} 
               onReceive={handleReceiveItems}
               isReceiving={isReceiving}
+              onReturn={handleReturnItems}
+              isReturning={isReturning}
             />
           ) : (
             <div className="bg-white dark:bg-neutral-800 p-6 rounded shadow border border-neutral-200 dark:border-neutral-700">
