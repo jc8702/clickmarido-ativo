@@ -6,6 +6,13 @@
 - **Última Atualização:** 08/07/2026 - 02:29
 
 ## Histórico de Alterações
+- **[09/07/2026 - 15:55]:** Edição de Ordens de Serviço após concluídas:
+  - **Componente `EditServiceOrderForm.tsx`:** Criado formulário de edição completo que permite atualizar técnico responsável, status, data agendada, valor cobrado final, endereço e observações de qualquer OS.
+  - **Listagem de OS (`service-orders/page.tsx`):** Adicionado botão de ação "Editar" na tabela de Ordens de Serviço para permitir a edição rápida de OS em qualquer status (inclusive concluídas).
+  - **Detalhes de OS (`service-orders/[id]/page.tsx`):** Inserido botão "Editar Ordem" no cabeçalho da página de visualização detalhada para atualizar dados dinamicamente.
+  - Arquivos criados: `frontend/components/EditServiceOrderForm.tsx`
+  - Arquivos modificados: `frontend/app/(dashboard)/service-orders/page.tsx`, `frontend/app/(dashboard)/service-orders/[id]/page.tsx`
+
 - **[08/07/2026 - 02:29]:** Fluxo de Devolução de Produtos em Ordens de Compra:
   - **API `/api/purchase-orders/[id]/return`:** Desenvolvida a rota de POST que permite registrar a devolução total ou parcial de peças. O endpoint deduz a quantidade recebida dos itens da OC, decrementa a quantidade física correspondente em estoque (`Product`), calcula o reembolso financeiro proporcional de estorno, e gera transações de crédito (entrada) no Livro Caixa (`financial_transactions`), além de estornar e cancelar a despesa correspondente (`Expense`) em caso de devolução total. Grava histórico na OC (`PurchaseOrderEvent`) e logs globais (`AuditLog`).
   - **Status de OC:** Estendido o `status-map.ts` e o componente visual `PurchaseOrderStatusBadge.tsx` para comportar o novo status canônico `devolvida`.

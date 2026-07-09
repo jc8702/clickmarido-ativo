@@ -5,6 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useServiceOrder, useStartServiceOrder, useCompleteServiceOrder } from '@/hooks/useServiceOrders';
 import { useAuth } from '@/hooks/useAuth';
+import { Modal } from '@/components/Modal';
+import { useEscapeToClose } from '@/hooks/useEscapeToClose';
+import EditServiceOrderForm from '@/components/EditServiceOrderForm';
 
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
   agendada: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-300', label: 'Agendada' },
@@ -24,6 +27,9 @@ export default function ServiceOrderDetailPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaList, setMediaList] = useState<any[]>([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  useEscapeToClose(isEditOpen, () => setIsEditOpen(false));
 
   const goBack = useCallback(() => {
     router.push('/service-orders');
@@ -181,6 +187,15 @@ export default function ServiceOrderDetailPage() {
       <div className="flex justify-between items-center mb-4 print:hidden">
         <button onClick={goBack} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Voltar para Ordens de Serviço</button>
         <div className="flex gap-2">
+          <button
+            onClick={() => setIsEditOpen(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-2 font-bold"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Editar Ordem
+          </button>
           <button
             onClick={() => window.print()}
             className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-2"
@@ -412,6 +427,20 @@ export default function ServiceOrderDetailPage() {
           </button>
         )}
       </div>
+      <Modal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        title="Editar Ordem de Serviço"
+      >
+        <EditServiceOrderForm
+          so={os as any}
+          onCancel={() => setIsEditOpen(false)}
+          onSuccess={() => {
+            setIsEditOpen(false);
+            mutate();
+          }}
+        />
+      </Modal>
     </div>
   );
 }

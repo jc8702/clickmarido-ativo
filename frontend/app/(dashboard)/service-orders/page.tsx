@@ -11,6 +11,7 @@ import { Modal } from '@/components/Modal';
 import { StartServiceOrderModal } from '@/components/service-orders/StartServiceOrderModal';
 import ServiceOrderForm from '../../../components/ServiceOrderForm';
 import CreateServiceOrderForm from '../../../components/CreateServiceOrderForm';
+import EditServiceOrderForm from '../../../components/EditServiceOrderForm';
 import { useAuth } from '@/hooks/useAuth';
 import { useEscapeToClose } from '@/hooks/useEscapeToClose';
 
@@ -53,10 +54,12 @@ export default function ServiceOrdersPage() {
   const [activeModalId, setActiveModalId] = useState<string | null>(null);
   const [startModalId, setStartModalId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editModalId, setEditModalId] = useState<string | null>(null);
 
   useEscapeToClose(activeModalId !== null, () => setActiveModalId(null));
   useEscapeToClose(isCreateOpen, () => setIsCreateOpen(false));
   useEscapeToClose(startModalId !== null, () => setStartModalId(null));
+  useEscapeToClose(editModalId !== null, () => setEditModalId(null));
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -161,6 +164,9 @@ export default function ServiceOrdersPage() {
                             Concluir
                           </Button>
                         )}
+                        <Button variant="outline" size="sm" onClick={() => setEditModalId(row.id)}>
+                          Editar
+                        </Button>
                         <Button variant="danger" size="sm" onClick={() => handleDeleteOrder(row.id)}>
                           Excluir
                         </Button>
@@ -214,6 +220,23 @@ export default function ServiceOrdersPage() {
           fetchOrders();
         }}
       />
+
+      <Modal
+        isOpen={editModalId !== null}
+        onClose={() => setEditModalId(null)}
+        title="Editar Ordem de Serviço"
+      >
+        {editModalId && (
+          <EditServiceOrderForm
+            so={orders.find(o => o.id === editModalId) as any}
+            onCancel={() => setEditModalId(null)}
+            onSuccess={() => {
+              setEditModalId(null);
+              fetchOrders();
+            }}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
