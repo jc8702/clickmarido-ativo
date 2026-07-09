@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const userEmail = (decoded as any).email || 'admin';
 
     const body = await request.json();
-    const { items: returnedItems = [] } = body;
+    const { items: returnedItems = [], bankAccountId } = body;
 
     if (!returnedItems || returnedItems.length === 0) {
       return NextResponse.json({ error: 'Nenhum item informado para devolução' }, { status: 400 });
@@ -149,6 +149,33 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
           // Se a despesa estava paga, gera a transação de entrada (crédito) no livro caixa
           if (existingExpense.status === 'paga') {
+            // Localizar conta de reembolso
+            let refundAccount = null;
+            if (bankAccountId) {
+              refundAccount = await tx.bankAccount.findUnique({
+                where: { id: bankAccountId }
+              });
+            }
+            if (!refundAccount) {
+              refundAccount = await tx.bankAccount.findFirst({
+                where: { isDefault: true, status: 'ativa' }
+              }) || await tx.bankAccount.findFirst({
+                where: { status: 'ativa' }
+              });
+            }
+
+            if (refundAccount) {
+              // Atualizar saldo da conta
+              await tx.bankAccount.update({
+                where: { id: refundAccount.id },
+                data: {
+                  currentBalance: {
+                    increment: totalRefunded
+                  }
+                }
+              });
+            }
+
             const lastTransaction = await tx.financialTransaction.findFirst({
               orderBy: { createdAt: 'desc' },
               select: { balance: true },
@@ -156,6 +183,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
             const prevBalance = lastTransaction?.balance ? Number(lastTransaction.balance) : 0;
             const newBalance = prevBalance + totalRefunded;
+
+            const accountName = refundAccount ? (refundAccount.nickname || refundAccount.bankName) : 'Não especificada';
 
             await tx.financialTransaction.create({
               data: {
@@ -165,10 +194,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 debit: 0,
                 balance: newBalance,
                 description: `Estorno Parcial/Total de Compra (Reembolso OC): ${purchaseOrder.number}`,
-                notes: `Devolução de itens do pedido. Categoria original: ${existingExpense.category}`,
+                notes: `Devolução de itens do pedido. Categoria original: ${existingExpense.category} | Reembolso enviado para: ${accountName}`,
                 transactionDate: new Date(),
               },
             });
+
+            // Se for devolução total (devolvida), cancelar o Contas a Pagar vinculado à despesa
+            if (newOrderStatus === 'devolvida') {
+              await tx.accountPayable.updateMany({
+                where: { expenseId: purchaseOrder.expenseId },
+                data: {
+                  status: 'cancelado',
+                  notes: `Cancelado automaticamente via devolução total da ordem de compra.`
+                }
+              });
+            }
           }
 
           // Registrar no log de auditoria da despesa

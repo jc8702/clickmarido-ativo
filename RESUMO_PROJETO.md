@@ -3,9 +3,16 @@
 ## Informações Gerais
 - **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 09/07/2026 - 16:15
+- **Última Atualização:** 09/07/2026 - 16:30
 
 ## Histórico de Alterações
+- **[09/07/2026 - 16:30]:** Auditoria e Correção de Integração Financeira Completa (Contas Bancárias, Contas a Pagar/Receber e Devoluções):
+  - **Sincronização de Entradas (Recebimentos)**: Criado o utilitário `syncPaymentReceived` para, ao confirmar um pagamento (manual ou via webhooks de Asaas/Mercado Pago ou faturas), atualizar o saldo da conta de recebimento e dar baixa no Contas a Receber correspondente.
+  - **Sincronização de Saídas (Pagamentos)**: Criado o utilitário `syncExpensePaid` para, ao marcar uma despesa como paga (manual ou no recebimento de compras), decrementar o saldo da conta e dar baixa no Contas a Pagar.
+  - **Estorno de Devolução com Conta de Destino**: O fluxo de devolução permite selecionar a conta de destino para reembolso. O saldo é incrementado e o Contas a Pagar é cancelado se a devolução for total.
+  - **Correção de Deleções (Foreign Key)**: Corrigida falha ao excluir Despesas ou Ordens de Compra com chaves estrangeiras atreladas a lançamentos do Contas a Pagar.
+  - Arquivos modificados: `frontend/lib/finance-sync.ts`, `frontend/hooks/usePurchaseOrders.ts`, `frontend/components/purchases/PurchaseOrderItemsTable.tsx`, `frontend/app/(dashboard)/purchases/[id]/page.tsx`, `frontend/app/api/purchase-orders/[id]/return/route.ts`, `frontend/app/api/purchase-orders/[id]/route.ts`, `frontend/app/api/expenses/[id]/route.ts`, `frontend/app/api/expenses/[id]/mark-paid/route.ts`, `frontend/app/api/payments/[id]/approve/route.ts`, `frontend/app/api/payments/webhook-mp/route.ts`, `frontend/app/api/webhooks/asaas/route.ts`, `frontend/app/api/invoices/[id]/pay/route.ts`
+
 - **[09/07/2026 - 16:15]:** Cadastro de Contas de Pagamento sem Agência/Conta (Mercado Pago):
   - **Tipo de Conta `PAGAMENTO`**: Adicionada a opção "Conta de Pagamento" (value: `PAGAMENTO`) no select de tipos do formulário de Contas Bancárias (`contas-bancarias/page.tsx`).
   - **Flexibilização de Campos**: Tornados opcionais os campos de Agência e Conta no frontend e no backend (POST e PUT) quando o tipo de conta selecionado for `PAGAMENTO`, salvando-os como string vazia no banco.

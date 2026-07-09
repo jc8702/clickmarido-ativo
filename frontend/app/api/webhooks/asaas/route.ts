@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
-import { logFinancialTransaction } from '@/lib/finance-sync';
+import { logFinancialTransaction, syncPaymentReceived } from '@/lib/finance-sync';
 
 export async function POST(request: NextRequest): Promise<Response> {
   try {
@@ -84,6 +84,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       paymentId: payment.id,
       credit: Number(updated.amount),
       description: `Pagamento recebido via webhook Asaas (${updated.method || 'pix'})`,
+    });
+
+    // Sincronizar com contas bancárias e contas a receber
+    await prisma.$transaction(async (tx) => {
+      await syncPaymentReceived(payment.id, tx);
     });
 
     // 7. Gerar Invoice se não existir (idempotente)

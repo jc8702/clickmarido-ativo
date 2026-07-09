@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
+import { syncPaymentReceived } from '@/lib/finance-sync';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -86,6 +87,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           transactionDate: payDate
         }
       });
+
+      // Sincronizar com contas bancárias e contas a receber
+      await syncPaymentReceived(payment.id, tx);
 
       // 4. Se tiver Quotation vinculada, atualizar para aceito
       if (invoice.quotationId) {

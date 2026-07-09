@@ -315,7 +315,10 @@ export function useReturnPurchaseOrderItems(id: string) {
   const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
 
-  const mutateAsync = async (items: { itemId: string; quantityReturned: number }[]) => {
+  const mutateAsync = async (
+    items: { itemId: string; quantityReturned: number }[],
+    bankAccountId?: string
+  ) => {
     setIsPending(true);
     setError(null);
     try {
@@ -326,7 +329,7 @@ export function useReturnPurchaseOrderItems(id: string) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, bankAccountId }),
       });
 
       if (!response.ok) {

@@ -88,10 +88,13 @@ export default function PurchaseOrderDetailsPage({ params }: Props) {
     }
   };
 
-  const handleReturnItems = async (returnedData: { itemId: string; quantityReturned: number }[]) => {
+  const handleReturnItems = async (
+    returnedData: { itemId: string; quantityReturned: number }[],
+    bankAccountId?: string
+  ) => {
     if (!confirm('Deseja confirmar a devolução desses itens? O estoque correspondente será decrementado e o financeiro estornado.')) return;
     try {
-      await returnItems(returnedData);
+      await returnItems(returnedData, bankAccountId);
       mutate();
       alert('Devolução registrada com sucesso!');
     } catch (err: any) {

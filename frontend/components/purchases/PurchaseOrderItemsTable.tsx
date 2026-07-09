@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useBankAccounts } from '@/hooks/useBankAccounts';
 
 type Props = {
   items: {
@@ -23,11 +24,13 @@ type Props = {
   status: string;
   onReceive?: (receivedData: { itemId: string; quantityReceived: number }[]) => Promise<void>;
   isReceiving?: boolean;
-  onReturn?: (returnedData: { itemId: string; quantityReturned: number }[]) => Promise<void>;
+  onReturn?: (returnedData: { itemId: string; quantityReturned: number }[], bankAccountId?: string) => Promise<void>;
   isReturning?: boolean;
 };
 
 export function PurchaseOrderItemsTable({ items = [], status, onReceive, isReceiving = false, onReturn, isReturning = false }: Props) {
+  const { data: bankAccountsData } = useBankAccounts();
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState('');
   const [receiveMode, setReceiveMode] = useState(false);
   const [returnMode, setReturnMode] = useState(false);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -86,9 +89,10 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
         return;
       }
 
-      await onReturn(payload);
+      await onReturn(payload, selectedBankAccountId || undefined);
       setReturnMode(false);
       setQuantities({});
+      setSelectedBankAccountId('');
     } catch (err: any) {
       alert(err.message || 'Erro ao registrar devolução');
     } finally {
@@ -144,11 +148,24 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
           )}
 
           {returnMode && (
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
+              <select
+                value={selectedBankAccountId}
+                onChange={e => setSelectedBankAccountId(e.target.value)}
+                className="border border-neutral-350 dark:border-neutral-600 rounded px-2 py-1 text-xs bg-white dark:bg-neutral-800 text-neutral-850 dark:text-neutral-200 border-neutral-300 font-medium"
+                disabled={submitting}
+              >
+                <option value="">-- Selecione a Conta de Reembolso --</option>
+                {bankAccountsData?.data?.map((acc: any) => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.nickname || acc.bankName} (Saldo: R$ {Number(acc.currentBalance).toFixed(2)})
+                  </option>
+                ))}
+              </select>
               <button
                 disabled={submitting}
                 onClick={handleSaveReturn}
-                className="px-3 py-1.5 bg-purple-655 hover:bg-purple-700 bg-purple-600 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors"
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded text-xs font-semibold shadow transition-colors"
               >
                 {submitting ? 'Processando...' : 'Confirmar Devolução'}
               </button>
@@ -157,6 +174,7 @@ export function PurchaseOrderItemsTable({ items = [], status, onReceive, isRecei
                 onClick={() => {
                   setReturnMode(false);
                   setQuantities({});
+                  setSelectedBankAccountId('');
                 }}
                 className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs font-semibold hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
               >

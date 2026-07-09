@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
+import { syncPaymentReceived } from '@/lib/finance-sync';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -143,6 +144,9 @@ async function handleApprove(
           },
         });
       }
+
+      // Sincronizar com contas bancárias e contas a receber
+      await syncPaymentReceived(payment.id, tx);
 
       await tx.auditLog.create({
         data: {

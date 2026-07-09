@@ -6,6 +6,7 @@ import {
   isPaymentApproved,
   validateMpWebhookSignature,
 } from '@/lib/mercadopago';
+import { syncPaymentReceived } from '@/lib/finance-sync';
 
 // POST /api/payments/webhook-mp - Webhook Mercado Pago
 // Com validação de assinatura e idempotência
@@ -244,6 +245,9 @@ export async function POST(request: NextRequest): Promise<Response> {
           },
         });
       }
+
+      // Sincronizar com contas bancárias e contas a receber
+      await syncPaymentReceived(payment!.id, tx);
     });
 
     console.log(`[WEBHOOK MP] Pagamento ${payment.id} processado: ${internalStatus}`);

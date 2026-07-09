@@ -179,6 +179,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         data: { expenseId: null },
       });
 
+      // 2.5 Deletar lançamentos de contas a pagar correspondentes
+      await tx.accountPayable.deleteMany({
+        where: { expenseId: id }
+      });
+
       // 3. Excluir despesa
       await tx.expense.delete({ where: { id } });
     });

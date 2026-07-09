@@ -363,8 +363,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         where: { id }
       });
 
-      // 5. Deletar despesa vinculada (se houver e ainda existir no banco)
+      // 5. Deletar despesa vinculada e contas a pagar correspondentes (se houver)
       if (order.expenseId) {
+        await tx.accountPayable.deleteMany({
+          where: { expenseId: order.expenseId }
+        });
         await tx.expense.deleteMany({
           where: { id: order.expenseId }
         });
