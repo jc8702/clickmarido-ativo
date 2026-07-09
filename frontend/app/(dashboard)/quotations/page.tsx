@@ -273,7 +273,7 @@ export default function QuotationsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col relative overflow-x-hidden print:bg-white print:text-black">
-      <main className="max-w-7xl mx-auto px-6 py-10 w-full flex-1 print:hidden">
+      <main className="mx-auto px-4 lg:px-8 py-10 w-full flex-1 print:hidden">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-[40px] font-bold tracking-tight text-neutral-900 dark:text-neutral-100 mb-1">Orçamentos</h1>
@@ -289,8 +289,8 @@ export default function QuotationsPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-            {Array.from({ length: 5 }).map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="space-y-4">
                 <div className="h-6 w-20 bg-neutral-200 dark:bg-neutral-700 rounded animate-pulse" />
                 <CardShimmer />
@@ -298,7 +298,7 @@ export default function QuotationsPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-start">
             {columns.map((status) => {
               const items = getQuotationsByStatus(status);
               const isDragOver = dragOverStatus === status;

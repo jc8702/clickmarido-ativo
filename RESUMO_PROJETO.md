@@ -3,9 +3,14 @@
 ## Informações Gerais
 - **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 09/07/2026 - 16:30
+- **Última Atualização:** 09/07/2026 - 16:35
 
 ## Histórico de Alterações
+- **[09/07/2026 - 16:35]:** Ajuste de Layout e Redução de Colunas nos Kanbans (Orçamentos e Pré-Vendas):
+  - **Kanban de Orçamentos**: Ampliada a largura do container da página para ocupar 100% da tela (`max-w-none px-4 lg:px-8`) e alterado o grid do quadro e skeleton de `grid-cols-5` para `grid-cols-6`, integrando a coluna "Cancelado" na mesma linha das demais colunas, eliminando o scroll horizontal.
+  - **Kanban de Pré-Vendas**: Removidas as colunas "Triagem" e "Encaminhado" de `STAGES`. Mapeada a recuperação de leads para converter automaticamente estágios legados (`EM_TRIAGEM` -> `NOVO_LEAD` e `ENCAMINHADO_ORCAMENTO` -> `AGENDADO`) para evitar perda de dados. Alterado o quadro Kanban para se organizar em um grid de 6 colunas (`grid-cols-6 w-full`) de modo a enquadrar tudo na mesma tela sem barra de scroll horizontal.
+  - Arquivos modificados: `frontend/app/(dashboard)/quotations/page.tsx`, `frontend/app/(dashboard)/pre-vendas/page.tsx`
+
 - **[09/07/2026 - 16:30]:** Auditoria e Correção de Integração Financeira Completa (Contas Bancárias, Contas a Pagar/Receber e Devoluções):
   - **Sincronização de Entradas (Recebimentos)**: Criado o utilitário `syncPaymentReceived` para, ao confirmar um pagamento (manual ou via webhooks de Asaas/Mercado Pago ou faturas), atualizar o saldo da conta de recebimento e dar baixa no Contas a Receber correspondente.
   - **Sincronização de Saídas (Pagamentos)**: Criado o utilitário `syncExpensePaid` para, ao marcar uma despesa como paga (manual ou no recebimento de compras), decrementar o saldo da conta e dar baixa no Contas a Pagar.

@@ -93,11 +93,9 @@ type Lead = {
 
 const STAGES = [
   { id: 'NOVO_LEAD', title: 'Novo Lead', icon: Users, color: 'text-primary-500 bg-primary-50 dark:bg-primary-950/30' },
-  { id: 'EM_TRIAGEM', title: 'Em Triagem', icon: Clock, color: 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800' },
   { id: 'QUALIFICADO', title: 'Qualificado', icon: CheckCircle2, color: 'text-success-600 bg-success-50 dark:bg-success-950/20' },
   { id: 'EM_FOLLOWUP', title: 'Em Follow-up', icon: MessageSquare, color: 'text-warning-600 bg-warning-50 dark:bg-warning-950/20' },
   { id: 'AGENDADO', title: 'Agendado', icon: Calendar, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/20' },
-  { id: 'ENCAMINHADO_ORCAMENTO', title: 'Encaminhado', icon: ThumbsUp, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' },
   { id: 'GANHO', title: 'Ganho', icon: Sparkles, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/20' },
   { id: 'DESCARTADO', title: 'Descartado', icon: XCircle, color: 'text-red-600 bg-red-50 dark:bg-red-950/20' }
 ];
@@ -187,10 +185,22 @@ export default function PreVendasPage() {
     })
       .then(res => res.json())
       .then(result => {
+        const processLeads = (dataArray: any[]) => {
+          return dataArray.map(lead => {
+            if (lead.funnelStage === 'EM_TRIAGEM') {
+              return { ...lead, funnelStage: 'NOVO_LEAD' };
+            }
+            if (lead.funnelStage === 'ENCAMINHADO_ORCAMENTO') {
+              return { ...lead, funnelStage: 'AGENDADO' };
+            }
+            return lead;
+          });
+        };
+
         if (result.data && Array.isArray(result.data)) {
-          setLeads(result.data);
+          setLeads(processLeads(result.data));
         } else if (Array.isArray(result)) {
-          setLeads(result);
+          setLeads(processLeads(result));
         }
       })
       .catch(err => console.error(err))
@@ -591,17 +601,14 @@ export default function PreVendasPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex gap-4 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-neutral-200 dark:scrollbar-thumb-neutral-800">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4 w-full pb-6">
           {STAGES.map((stage) => {
             const stageLeads = leads.filter(l => {
               const stageId = stage.id;
               const fs = l.funnelStage;
 
               if (stageId === 'NOVO_LEAD') {
-                return fs === 'NOVO_LEAD' || fs === 'SEM_CONTATO' || fs === 'EM_CONTATO' || fs === 'CONTATO_REALIZADO';
-              }
-              if (stageId === 'EM_TRIAGEM') {
-                return fs === 'EM_TRIAGEM';
+                return fs === 'NOVO_LEAD' || fs === 'SEM_CONTATO' || fs === 'EM_CONTATO' || fs === 'CONTATO_REALIZADO' || fs === 'EM_TRIAGEM';
               }
               if (stageId === 'QUALIFICADO') {
                 return fs === 'QUALIFICADO' || fs === 'LEAD_QUALIFICADO';
@@ -610,10 +617,7 @@ export default function PreVendasPage() {
                 return fs === 'EM_FOLLOWUP' || fs === 'SEM_RESPOSTA' || fs === 'REATIVADO';
               }
               if (stageId === 'AGENDADO') {
-                return fs === 'AGENDADO' || fs === 'REUNIAO_AGENDADA' || fs === 'COMPARECEU';
-              }
-              if (stageId === 'ENCAMINHADO_ORCAMENTO') {
-                return fs === 'ENCAMINHADO_ORCAMENTO' || fs === 'PROPOSTA_SOLICITADA' || fs === 'PROPOSTA_ENVIADA' || fs === 'EM_NEGOCIACAO';
+                return fs === 'AGENDADO' || fs === 'REUNIAO_AGENDADA' || fs === 'COMPARECEU' || fs === 'ENCAMINHADO_ORCAMENTO' || fs === 'PROPOSTA_SOLICITADA' || fs === 'PROPOSTA_ENVIADA' || fs === 'EM_NEGOCIACAO';
               }
               if (stageId === 'GANHO') {
                 return fs === 'GANHO';
@@ -628,7 +632,7 @@ export default function PreVendasPage() {
             return (
               <div 
                 key={stage.id} 
-                className="flex-shrink-0 w-72 md:w-80 bg-neutral-100/50 dark:bg-neutral-900/30 border border-neutral-200/50 dark:border-neutral-800/40 rounded-xl p-4 flex flex-col h-[calc(100vh-13rem)]"
+                className="bg-neutral-100/50 dark:bg-neutral-900/30 border border-neutral-200/50 dark:border-neutral-800/40 rounded-xl p-4 flex flex-col h-[calc(100vh-13rem)] w-full"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, stage.id)}
               >
