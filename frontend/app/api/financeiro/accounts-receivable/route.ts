@@ -17,7 +17,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
 
     const where: any = {};
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else {
+      // Por padrão, excluir cancelados
+      where.status = { not: 'cancelado' };
+    }
     if (customerId) where.customerId = customerId;
     if (startDate || endDate) {
       where.dueDate = {};
@@ -41,14 +46,25 @@ export async function GET(request: NextRequest) {
       prisma.accountReceivable.count({ where }),
     ]);
 
-    // Calcular totais
+    // Calcular totais - incluir todos os status relevantes
     const totals = await prisma.accountReceivable.aggregate({
-      where: { status: { in: ['aberto', 'parcial', 'vencido'] } },
+      where: { status: { in: ['aberto', 'parcial', 'vencido', 'baixado'] } },
       _sum: { totalAmount: true, paidAmount: true },
     });
 
     const overdue = await prisma.accountReceivable.aggregate({
       where: { status: 'vencido' },
+      _sum: { totalAmount: true, paidAmount: true },
+    });
+
+    // Totais por status
+    const pendingTotals = await prisma.accountReceivable.aggregate({
+      where: { status: { in: ['aberto', 'parcial', 'vencido'] } },
+      _sum: { totalAmount: true, paidAmount: true },
+    });
+
+    const paidTotals = await prisma.accountReceivable.aggregate({
+      where: { status: 'baixado' },
       _sum: { totalAmount: true, paidAmount: true },
     });
 
@@ -61,8 +77,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
       summary: {
-        totalPending: totals._sum.totalAmount || 0,
-        totalPaid: totals._sum.paidAmount || 0,
+        totalPending: pendingTotals._sum.totalAmount || 0,
+        totalPaid: paidTotals._sum.totalAmount || 0,
         totalOverdue: overdue._sum.totalAmount || 0,
         overduePaid: overdue._sum.paidAmount || 0,
       },

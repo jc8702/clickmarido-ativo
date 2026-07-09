@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const period = searchParams.get('period') || 'monthly'; // daily, weekly, monthly, projected
+    const period = searchParams.get('period') || 'monthly';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const bankAccountId = searchParams.get('bankAccountId');
@@ -26,10 +26,10 @@ export async function GET(request: NextRequest) {
 
     const totalBalance = bankAccounts.reduce((sum, a) => sum + Number(a.currentBalance), 0);
 
-    // Buscar entradas (contas a receber)
+    // Buscar entradas (contas a receber) - incluir todos os status relevantes
     const receivables = await prisma.accountReceivable.findMany({
       where: {
-        status: { in: ['aberto', 'parcial', 'vencido'] },
+        status: { in: ['aberto', 'parcial', 'vencido', 'baixado'] },
         dueDate: { gte: start, lte: end },
         ...(bankAccountId ? { bankAccountId } : {}),
       },
@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
       orderBy: { dueDate: 'asc' },
     });
 
-    // Buscar saídas (contas a pagar)
+    // Buscar saídas (contas a pagar) - incluir todos os status relevantes
     const payables = await prisma.accountPayable.findMany({
       where: {
-        status: { in: ['aberto', 'parcial', 'vencido'] },
+        status: { in: ['aberto', 'parcial', 'vencido', 'pago'] },
         dueDate: { gte: start, lte: end },
         ...(bankAccountId ? { bankAccountId } : {}),
       },
@@ -64,9 +64,22 @@ export async function GET(request: NextRequest) {
       orderBy: { dueDate: 'asc' },
     });
 
-    // Calcular totais
-    const totalReceivable = receivables.reduce((sum, r) => sum + (Number(r.totalAmount) - Number(r.paidAmount)), 0);
-    const totalPayable = payables.reduce((sum, p) => sum + (Number(p.totalAmount) - Number(p.paidAmount)), 0);
+    // Calcular totais - pendentes vs pagos
+    const totalReceivablePending = receivables
+      .filter(r => ['aberto', 'parcial', 'vencido'].includes(r.status))
+      .reduce((sum, r) => sum + (Number(r.totalAmount) - Number(r.paidAmount)), 0);
+
+    const totalReceivablePaid = receivables
+      .filter(r => r.status === 'baixado')
+      .reduce((sum, r) => sum + Number(r.totalAmount), 0);
+
+    const totalPayablePending = payables
+      .filter(p => ['aberto', 'parcial', 'vencido'].includes(p.status))
+      .reduce((sum, p) => sum + (Number(p.totalAmount) - Number(p.paidAmount)), 0);
+
+    const totalPayablePaid = payables
+      .filter(p => p.status === 'pago')
+      .reduce((sum, p) => sum + Number(p.totalAmount), 0);
 
     // Projeção futura (próximos 90 dias)
     const futureEnd = new Date();
@@ -74,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     const futureReceivables = await prisma.accountReceivable.findMany({
       where: {
-        status: { in: ['previsto', 'aberto'] },
+        status: { in: ['previsto', 'aberto', 'parcial'] },
         dueDate: { gt: end, lte: futureEnd },
         ...(bankAccountId ? { bankAccountId } : {}),
       },
@@ -87,7 +100,7 @@ export async function GET(request: NextRequest) {
 
     const futurePayables = await prisma.accountPayable.findMany({
       where: {
-        status: { in: ['previsto', 'aberto'] },
+        status: { in: ['previsto', 'aberto', 'parcial'] },
         dueDate: { gt: end, lte: futureEnd },
         ...(bankAccountId ? { bankAccountId } : {}),
       },
@@ -98,7 +111,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Projeção 30/60/90 dias
+    // Projeção 30/60/90 dias (baseada em saldos pendentes)
     const projection30 = calculateProjection(futureReceivables, futurePayables, 30);
     const projection60 = calculateProjection(futureReceivables, futurePayables, 60);
     const projection90 = calculateProjection(futureReceivables, futurePayables, 90);
@@ -112,9 +125,12 @@ export async function GET(request: NextRequest) {
       bankAccounts,
       totalBalance,
       current: {
-        receivable: totalReceivable,
-        payable: totalPayable,
-        projected: totalBalance + totalReceivable - totalPayable,
+        receivable: totalReceivablePending,
+        receivablePaid: totalReceivablePaid,
+        payable: totalPayablePending,
+        payablePaid: totalPayablePaid,
+        netPending: totalReceivablePending - totalPayablePending,
+        projected: totalBalance + totalReceivablePending - totalPayablePending,
       },
       items: {
         receivables,

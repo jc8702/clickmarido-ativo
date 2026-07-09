@@ -29,7 +29,10 @@ export async function GET(request: NextRequest) {
     // Buscar ordens de serviço concluídas no período
     const serviceOrders = await prisma.serviceOrder.findMany({
       where: {
-        completedAt: { gte: start, lte: end },
+        OR: [
+          { completedAt: { gte: start, lte: end } },
+          { createdAt: { gte: start, lte: end } },
+        ],
         status: 'concluida',
         ...(customerId ? { customerId } : {}),
       },
@@ -50,6 +53,28 @@ export async function GET(request: NextRequest) {
         },
         customer: { select: { id: true, name: true } },
         expenses: { select: { amount: true } },
+        payments: { select: { amount: true, status: true } },
+      },
+    });
+
+    // Buscar faturamento do período para complementar
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        issueDate: { gte: start, lte: end },
+        status: { in: ['emitida', 'paga'] },
+      },
+      select: {
+        id: true,
+        totalAmount: true,
+        customerId: true,
+        customer: { select: { id: true, name: true } },
+        quotation: {
+          select: {
+            serviceOrder: {
+              select: { id: true },
+            },
+          },
+        },
       },
     });
 
@@ -57,7 +82,7 @@ export async function GET(request: NextRequest) {
     const profitability = serviceOrders.map(so => {
       const revenue = Number(so.quotation?.total || so.finalTotal);
       const costOfGoods = so.quotation?.items?.reduce(
-        (sum, item) => sum + Number(item.costPrice) * Number(item.quantity), 0
+        (sum, item) => sum + Number(item.costPrice || 0) * Number(item.quantity), 0
       ) || 0;
       const directExpenses = so.expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
       const totalCost = costOfGoods + directExpenses;
@@ -74,9 +99,31 @@ export async function GET(request: NextRequest) {
         totalCost,
         grossProfit,
         margin,
-        completedAt: so.completedAt,
+        completedAt: so.completedAt || so.createdAt,
       };
     });
+
+    // Adicionar faturas que não estão vinculadas a OS concluída
+    const osIds = new Set(serviceOrders.map(so => so.id));
+    const standaloneInvoices = invoices.filter(inv => {
+      const osId = inv.quotation?.serviceOrder?.id;
+      return !osId || !osIds.has(osId);
+    });
+
+    for (const inv of standaloneInvoices) {
+      profitability.push({
+        id: inv.id,
+        number: inv.id.slice(-6).toUpperCase(),
+        customer: inv.customer,
+        revenue: Number(inv.totalAmount),
+        costOfGoods: 0,
+        directExpenses: 0,
+        totalCost: 0,
+        grossProfit: Number(inv.totalAmount),
+        margin: 100,
+        completedAt: inv.issueDate,
+      });
+    }
 
     // Agrupar por cliente
     const byCustomer = profitability.reduce((acc, p) => {
@@ -117,7 +164,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       period: { start, end },
       summary: {
-        totalOrders: serviceOrders.length,
+        totalOrders: profitability.length,
         totalRevenue,
         totalCost,
         totalProfit,
@@ -127,6 +174,7 @@ export async function GET(request: NextRequest) {
       mostProfitable,
       leastProfitable,
       allOperations: profitability,
+      invoiceCount: standaloneInvoices.length,
     });
   } catch (error) {
     console.error('Erro ao buscar rentabilidade:', error);

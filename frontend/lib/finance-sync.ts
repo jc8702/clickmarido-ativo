@@ -149,6 +149,19 @@ export async function syncPaymentReceived(paymentId: string, tx: any) {
         }
       });
     }
+
+    // 4. Criar registro de conciliação bancária
+    await tx.bankReconciliation.create({
+      data: {
+        bankAccountId: bankAccount.id,
+        transactionDate: payment.paidAt || new Date(),
+        description: `Recebimento - ${payment.description || 'Pagamento'}`,
+        amount: amount,
+        type: 'ENTRADA',
+        isReconciled: true,
+        reconciledAt: new Date(),
+      },
+    });
   } catch (error) {
     console.error('Error syncing payment received:', error);
   }
@@ -242,6 +255,19 @@ export async function syncExpensePaid(expenseId: string, tx: any) {
         }
       });
     }
+
+    // 4. Criar registro de conciliação bancária
+    await tx.bankReconciliation.create({
+      data: {
+        bankAccountId: bankAccount.id,
+        transactionDate: expense.paidAt || new Date(),
+        description: `Pagamento - ${expense.description || 'Despesa'}`,
+        amount: amount,
+        type: 'SAIDA',
+        isReconciled: true,
+        reconciledAt: new Date(),
+      },
+    });
   } catch (error) {
     console.error('Error syncing expense paid:', error);
   }

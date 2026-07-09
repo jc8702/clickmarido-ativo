@@ -70,30 +70,37 @@ export async function GET(request: NextRequest) {
     const descontos = invoices.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
     const receitaLiquida = receitaBruta - impostosSobreReceita - descontos;
 
-    // Custos (despesas diretas)
-    const custosOperacionais = expenses
-      .filter(e => ['MATERIAL', 'SERVICO', 'TRANSPORTE'].includes(e.category))
+    // Custos dos produtos/serviços vendidos (CPV) - materiais e serviços diretos
+    const custosProdutosServicos = expenses
+      .filter(e => ['MATERIAL', 'SERVICO', 'TRANSPORTE', 'PECA', 'MAO_DE_OBRA'].includes(e.category))
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
-    const lucroBruto = receitaLiquida - custosOperacionais;
+    const lucroBruto = receitaLiquida - custosProdutosServicos;
 
-    // Despesas operacionais
+    // Despesas operacionais (fixas e administrativas)
     const despesasOperacionais = expenses
-      .filter(e => ['ALUGUEL', 'UTILITIES', 'FERRAMENTAS', 'OUTROS'].includes(e.category))
+      .filter(e => ['ALUGUEL', 'UTILIDADES', 'FERRAMENTAS', 'MARKETING', 'RH', 'OUTROS', 'OUTROS_CUSTOS'].includes(e.category))
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
     const resultadoOperacional = lucroBruto - despesasOperacionais;
 
-    // Despesas financeiras
-    const despesasFinanceiras = paidPayables
+    // Despesas financeiras (juros, tarifas bancárias, etc)
+    const despesasFinanceiras = expenses
+      .filter(e => ['JUROS', 'TARIFAS', 'FINANCEIRO'].includes(e.category))
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // Somar contas a pagar pagas que são despesas financeiras
+    const paidPayableFinancial = paidPayables
       .filter(p => p.chartOfAccount?.type === 'FINANCEIRO')
       .reduce((sum, p) => sum + Number(p.paidAmount || p.totalAmount), 0);
 
-    const resultadoFinanceiro = resultadoOperacional - despesasFinanceiras;
+    const totalDespesasFinanceiras = despesasFinanceiras + paidPayableFinancial;
+
+    const resultadoFinanceiro = resultadoOperacional - totalDespesasFinanceiras;
 
     // Impostos
     const impostos = expenses
-      .filter(e => e.category === 'IMPOSTOS_TAXAS' || e.costCenter === 'IMPOSTOS_TAXAS')
+      .filter(e => ['IMPOSTOS_TAXAS', 'IMPOSTOS', 'TAXAS'].includes(e.category) || e.costCenter === 'IMPOSTOS')
       .reduce((sum, e) => sum + Number(e.amount), 0);
 
     const lucroLiquido = resultadoFinanceiro - impostos;
@@ -122,11 +129,11 @@ export async function GET(request: NextRequest) {
         impostosSobreReceita,
         descontos,
         receitaLiquida,
-        custosOperacionais,
+        custosProdutosServicos,
         lucroBruto,
         despesasOperacionais,
         resultadoOperacional,
-        despesasFinanceiras,
+        despesasFinanceiras: totalDespesasFinanceiras,
         resultadoFinanceiro,
         impostos,
         lucroLiquido,

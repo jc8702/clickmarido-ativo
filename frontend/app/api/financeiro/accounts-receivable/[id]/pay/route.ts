@@ -18,77 +18,138 @@ export async function POST(
       return NextResponse.json({ error: 'Valor inválido' }, { status: 400 });
     }
 
-    const account = await prisma.accountReceivable.findUnique({
-      where: { id: params.id },
-      select: { totalAmount: true, paidAmount: true, status: true },
-    });
+    const result = await prisma.$transaction(async (tx) => {
+      const account = await tx.accountReceivable.findUnique({
+        where: { id: params.id },
+        select: { totalAmount: true, paidAmount: true, status: true, title: true, invoiceId: true },
+      });
 
-    if (!account) {
-      return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
-    }
+      if (!account) {
+        throw new Error('Conta não encontrada');
+      }
 
-    if (account.status === 'baixado' || account.status === 'cancelado') {
-      return NextResponse.json({ error: 'Conta já foi baixada ou cancelada' }, { status: 400 });
-    }
+      if (account.status === 'baixado' || account.status === 'cancelado') {
+        throw new Error('Conta já foi baixada ou cancelada');
+      }
 
-    const newPaidAmount = Number(account.paidAmount) + Number(amount);
-    const totalAmount = Number(account.totalAmount);
+      const newPaidAmount = Number(account.paidAmount) + Number(amount);
+      const totalAmount = Number(account.totalAmount);
 
-    // Determinar novo status
-    let newStatus: string;
-    if (newPaidAmount >= totalAmount) {
-      newStatus = 'baixado';
-    } else {
-      newStatus = 'parcial';
-    }
+      // Determinar novo status
+      let newStatus: string;
+      if (newPaidAmount >= totalAmount) {
+        newStatus = 'baixado';
+      } else {
+        newStatus = 'parcial';
+      }
 
-    // Atualizar conta
-    const updatedAccount = await prisma.accountReceivable.update({
-      where: { id: params.id },
-      data: {
-        paidAmount: newPaidAmount,
-        status: newStatus,
-        paidDate: newStatus === 'baixado' ? new Date(paymentDate || Date.now()) : null,
-        paymentMethod,
-        bankAccountId,
-      },
-    });
+      const paidDate = newStatus === 'baixado' ? new Date(paymentDate || Date.now()) : null;
 
-    // Atualizar saldo da conta bancária
-    if (bankAccountId) {
-      await prisma.bankAccount.update({
-        where: { id: bankAccountId },
+      // Atualizar conta
+      const updatedAccount = await tx.accountReceivable.update({
+        where: { id: params.id },
         data: {
-          currentBalance: {
-            increment: Number(amount),
-          },
+          paidAmount: newPaidAmount,
+          status: newStatus,
+          paidDate,
+          paymentMethod,
+          bankAccountId,
         },
       });
-    }
 
-    // Registrar transação financeira
-    await prisma.financialTransaction.create({
-      data: {
-        type: 'PAYMENT_RECEIVED',
-        description: `Recebimento - ${account.title || 'Conta a receber'}`,
-        credit: Number(amount),
-        balance: newPaidAmount,
-        notes,
-      },
+      // Atualizar saldo da conta bancária (entrada)
+      if (bankAccountId) {
+        await tx.bankAccount.update({
+          where: { id: bankAccountId },
+          data: {
+            currentBalance: {
+              increment: Number(amount),
+            },
+          },
+        });
+      }
+
+      // Buscar saldo atual da conta bancária para o balance
+      let currentBalance = 0;
+      if (bankAccountId) {
+        const bankAccount = await tx.bankAccount.findUnique({
+          where: { id: bankAccountId },
+          select: { currentBalance: true },
+        });
+        currentBalance = Number(bankAccount?.currentBalance || 0);
+      }
+
+      // Registrar transação financeira
+      await tx.financialTransaction.create({
+        data: {
+          type: 'PAYMENT_RECEIVED',
+          invoiceId: account.invoiceId || null,
+          description: `Recebimento - ${account.title || 'Conta a receber'}`,
+          credit: Number(amount),
+          debit: 0,
+          balance: currentBalance,
+          notes: notes || `Recebimento via ${paymentMethod || 'manual'}`,
+          transactionDate: paidDate || new Date(),
+        },
+      });
+
+      // Atualizar Invoice vinculada se existir
+      if (account.invoiceId && newStatus === 'baixado') {
+        const invoice = await tx.invoice.findUnique({
+          where: { id: account.invoiceId },
+          select: { totalAmount: true },
+        });
+
+        if (invoice) {
+          const totalPaid = await tx.accountReceivable.aggregate({
+            where: { invoiceId: account.invoiceId, status: 'baixado' },
+            _sum: { paidAmount: true },
+          });
+
+          const totalPaidAmount = Number(totalPaid._sum.paidAmount || 0) + Number(amount);
+          if (totalPaidAmount >= Number(invoice.totalAmount)) {
+            await tx.invoice.update({
+              where: { id: account.invoiceId },
+              data: { status: 'paga' },
+            });
+          }
+        }
+      }
+
+      // Criar registro de conciliação bancária
+      if (bankAccountId) {
+        await tx.bankReconciliation.create({
+          data: {
+            bankAccountId,
+            transactionDate: paidDate || new Date(),
+            description: `Recebimento - ${account.title || 'Conta a receber'}`,
+            amount: Number(amount),
+            type: 'ENTRADA',
+            isReconciled: true,
+            reconciledAt: new Date(),
+          },
+        });
+      }
+
+      return {
+        account: updatedAccount,
+        payment: {
+          amount,
+          method: paymentMethod,
+          date: paidDate || new Date(),
+          newStatus,
+          remaining: totalAmount - newPaidAmount,
+        },
+      };
     });
 
-    return NextResponse.json({
-      account: updatedAccount,
-      payment: {
-        amount,
-        method: paymentMethod,
-        date: paymentDate || new Date().toISOString(),
-        newStatus,
-        remaining: totalAmount - newPaidAmount,
-      },
-    });
-  } catch (error) {
+    return NextResponse.json(result);
+  } catch (error: any) {
     console.error('Erro ao baixar conta a receber:', error);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    const message = error.message || 'Erro interno';
+    const status = message.includes('não encontrada') ? 404
+      : message.includes('já foi baixada') ? 400
+      : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

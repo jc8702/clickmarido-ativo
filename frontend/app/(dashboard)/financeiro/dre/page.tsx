@@ -59,7 +59,7 @@ export default function DREPage() {
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-2">
                 <DRELine label="= Receita Líquida" value={data.dre.receitaLiquida} bold />
               </div>
-              <DRELine label="(-) Custos Operacionais" value={data.dre.custosOperacionais} negative />
+              <DRELine label="(-) Custos Produtos/Serviços" value={data.dre.custosProdutosServicos} negative />
               <div className="border-t border-neutral-200 dark:border-neutral-700 pt-2">
                 <DRELine label="= Lucro Bruto" value={data.dre.lucroBruto} bold />
               </div>
