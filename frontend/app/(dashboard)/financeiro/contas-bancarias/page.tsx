@@ -192,7 +192,7 @@ export default function ContasBancariasPage() {
                 value={form.agency}
                 onChange={e => setForm({ ...form, agency: e.target.value })}
                 className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
-                required={form.accountType !== 'PAGAMENTO'}
+                placeholder="Opcional"
               />
             </div>
             <div>
@@ -202,7 +202,7 @@ export default function ContasBancariasPage() {
                 value={form.accountNumber}
                 onChange={e => setForm({ ...form, accountNumber: e.target.value })}
                 className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
-                required={form.accountType !== 'PAGAMENTO'}
+                placeholder="Opcional"
               />
             </div>
           </div>

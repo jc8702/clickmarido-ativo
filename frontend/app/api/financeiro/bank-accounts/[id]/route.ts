@@ -51,11 +51,7 @@ export async function PUT(
     const { bankName, agency, accountNumber, accountType, nickname, initialBalance, currentBalance, status, color, isDefault, notes } = body;
 
     if (!bankName) {
-      return NextResponse.json({ error: 'Dados obrigatórios não informados' }, { status: 400 });
-    }
-
-    if (accountType !== 'PAGAMENTO' && (!agency || !accountNumber)) {
-      return NextResponse.json({ error: 'Agência e Conta são obrigatórias para este tipo de conta' }, { status: 400 });
+      return NextResponse.json({ error: 'Nome do banco é obrigatório' }, { status: 400 });
     }
 
     // Se for definida como padrão, remover padrão das outras
