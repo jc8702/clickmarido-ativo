@@ -198,17 +198,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                 transactionDate: new Date(),
               },
             });
+          }
 
-            // Se for devolução total (devolvida), cancelar o Contas a Pagar vinculado à despesa
-            if (newOrderStatus === 'devolvida') {
-              await tx.accountPayable.updateMany({
-                where: { expenseId: purchaseOrder.expenseId },
-                data: {
-                  status: 'cancelado',
-                  notes: `Cancelado automaticamente via devolução total da ordem de compra.`
-                }
-              });
-            }
+          // Se for devolução total (devolvida), cancelar o Contas a Pagar vinculado à despesa
+          if (newOrderStatus === 'devolvida') {
+            await tx.accountPayable.updateMany({
+              where: { expenseId: purchaseOrder.expenseId },
+              data: {
+                status: 'cancelado',
+                notes: `Cancelado automaticamente via devolução total da ordem de compra.`
+              }
+            });
           }
 
           // Registrar no log de auditoria da despesa

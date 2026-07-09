@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { syncPaymentReceived } from '@/lib/finance-sync';
 import { fireAndForgetNotification } from '@/lib/notifications/whatsapp';
 
 interface AutomationResult {
@@ -33,16 +34,62 @@ export async function handleServiceOrderCompleted(
       };
     }
 
-    // 3. Create payment
-    const payment = await prisma.payment.create({
-      data: {
-        quotationId: serviceOrder.quotationId,
-        customerId: serviceOrder.customerId,
-        amount: serviceOrder.finalTotal,
-        method: 'pix',
-        status: 'pendente',
-        description: `Pagamento - Orçamento ${serviceOrder.quotationId.slice(-6).toUpperCase()}`,
-      },
+    const now = new Date();
+
+    // 3. Create payment already confirmed and integrate with financial module
+    const result = await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.create({
+        data: {
+          quotationId: serviceOrder.quotationId,
+          customerId: serviceOrder.customerId,
+          amount: serviceOrder.finalTotal,
+          method: 'pix',
+          status: 'confirmado',
+          paidAt: now,
+          confirmedAt: now,
+          description: `Pagamento - Orçamento ${serviceOrder.quotationId.slice(-6).toUpperCase()}`,
+        },
+      });
+
+      // Create invoice for the payment
+      const invoiceCount = await tx.invoice.count();
+      const invoiceNumber = `INV-${now.getFullYear()}-${String(invoiceCount + 1).padStart(4, '0')}-${Math.floor(Math.random() * 1000)}`;
+
+      const invoice = await tx.invoice.create({
+        data: {
+          customerId: serviceOrder.customerId,
+          invoiceNumber,
+          issueDate: now,
+          dueDate: now,
+          subtotal: serviceOrder.finalTotal,
+          totalAmount: serviceOrder.finalTotal,
+          status: 'paga',
+          description: `Fatura gerada automaticamente ao concluir OS`,
+        },
+      });
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: { invoiceId: invoice.id },
+      });
+
+      // Create financial transaction (credit)
+      await tx.financialTransaction.create({
+        data: {
+          type: 'PAYMENT_RECEIVED',
+          paymentId: payment.id,
+          invoiceId: invoice.id,
+          credit: serviceOrder.finalTotal,
+          debit: 0,
+          description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (PIX)`,
+          transactionDate: now,
+        },
+      });
+
+      // Sync with bank account and accounts receivable
+      await syncPaymentReceived(payment.id, tx);
+
+      return payment;
     });
 
     // 4. Log automation execution
@@ -51,12 +98,12 @@ export async function handleServiceOrderCompleted(
       entityId: serviceOrderId,
       action: 'create_payment',
       result: 'success',
-      metadata: { paymentId: payment.id },
+      metadata: { paymentId: result.id },
     });
 
     return {
       status: 'success',
-      paymentId: payment.id,
+      paymentId: result.id,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
