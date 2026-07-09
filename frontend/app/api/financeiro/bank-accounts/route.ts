@@ -43,8 +43,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { bankName, agency, accountNumber, accountType, nickname, initialBalance, color, isDefault, notes } = body;
 
-    if (!bankName || !agency || !accountNumber) {
+    if (!bankName) {
       return NextResponse.json({ error: 'Dados obrigatórios não informados' }, { status: 400 });
+    }
+
+    if (accountType !== 'PAGAMENTO' && (!agency || !accountNumber)) {
+      return NextResponse.json({ error: 'Agência e Conta são obrigatórias para este tipo de conta' }, { status: 400 });
     }
 
     // Se for definida como padrão, remover padrão das outras
@@ -58,8 +62,8 @@ export async function POST(request: NextRequest) {
     const account = await prisma.bankAccount.create({
       data: {
         bankName,
-        agency,
-        accountNumber,
+        agency: agency || '',
+        accountNumber: accountNumber || '',
         accountType: accountType || 'CORRENTE',
         nickname,
         initialBalance: initialBalance || 0,

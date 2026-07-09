@@ -50,6 +50,14 @@ export async function PUT(
     const body = await request.json();
     const { bankName, agency, accountNumber, accountType, nickname, initialBalance, currentBalance, status, color, isDefault, notes } = body;
 
+    if (!bankName) {
+      return NextResponse.json({ error: 'Dados obrigatórios não informados' }, { status: 400 });
+    }
+
+    if (accountType !== 'PAGAMENTO' && (!agency || !accountNumber)) {
+      return NextResponse.json({ error: 'Agência e Conta são obrigatórias para este tipo de conta' }, { status: 400 });
+    }
+
     // Se for definida como padrão, remover padrão das outras
     if (isDefault) {
       await prisma.bankAccount.updateMany({
@@ -62,9 +70,9 @@ export async function PUT(
       where: { id: params.id },
       data: {
         bankName,
-        agency,
-        accountNumber,
-        accountType,
+        agency: agency || '',
+        accountNumber: accountNumber || '',
+        accountType: accountType || 'CORRENTE',
         nickname,
         initialBalance,
         currentBalance,

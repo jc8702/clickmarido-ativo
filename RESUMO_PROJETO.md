@@ -3,9 +3,15 @@
 ## Informações Gerais
 - **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 09/07/2026 - 16:05
+- **Última Atualização:** 09/07/2026 - 16:15
 
 ## Histórico de Alterações
+- **[09/07/2026 - 16:15]:** Cadastro de Contas de Pagamento sem Agência/Conta (Mercado Pago):
+  - **Tipo de Conta `PAGAMENTO`**: Adicionada a opção "Conta de Pagamento" (value: `PAGAMENTO`) no select de tipos do formulário de Contas Bancárias (`contas-bancarias/page.tsx`).
+  - **Flexibilização de Campos**: Tornados opcionais os campos de Agência e Conta no frontend e no backend (POST e PUT) quando o tipo de conta selecionado for `PAGAMENTO`, salvando-os como string vazia no banco.
+  - **Exibição Polida**: Omitida a exibição de agência/conta vazias nos cards de contas bancárias da listagem no frontend.
+  - Arquivos modificados: `frontend/app/(dashboard)/financeiro/contas-bancarias/page.tsx`, `frontend/app/api/financeiro/bank-accounts/route.ts`, `frontend/app/api/financeiro/bank-accounts/[id]/route.ts`
+
 - **[09/07/2026 - 16:05]:** Exibição de especialidades e recomendação inteligente de técnicos na OS:
   - **Identificação da Especialidade**: O select de escolha de técnicos agora exibe a especialidade ao lado do nome (ex: `Nome (Especialidade)`).
   - **Sugerir por Categoria**: O sistema lê a categoria do primeiro serviço/produto da OS e ordena/destaca os técnicos que possuem especialidade correspondente com uma tag `⭐ (Recomendado para esta OS)`.

@@ -11,6 +11,7 @@ const ACCOUNT_TYPES = [
   { value: 'CORRENTE', label: 'Corrente' },
   { value: 'POUPANCA', label: 'Poupança' },
   { value: 'INVESTIMENTO', label: 'Investimento' },
+  { value: 'PAGAMENTO', label: 'Conta de Pagamento' },
 ];
 
 export default function ContasBancariasPage() {
@@ -137,7 +138,10 @@ export default function ContasBancariasPage() {
                     {account.nickname || account.bankName}
                   </p>
                   <p className="text-sm text-neutral-500">
-                    {account.bankName} • Ag. {account.agency} • Cc. {account.accountNumber}
+                    {account.bankName}
+                    {account.agency ? ` • Ag. ${account.agency}` : ''}
+                    {account.accountNumber ? ` • Cc. ${account.accountNumber}` : ''}
+                    {account.accountType === 'PAGAMENTO' ? ' (Pagamento)' : ''}
                   </p>
                 </div>
               </div>
@@ -188,7 +192,7 @@ export default function ContasBancariasPage() {
                 value={form.agency}
                 onChange={e => setForm({ ...form, agency: e.target.value })}
                 className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
-                required
+                required={form.accountType !== 'PAGAMENTO'}
               />
             </div>
             <div>
@@ -198,7 +202,7 @@ export default function ContasBancariasPage() {
                 value={form.accountNumber}
                 onChange={e => setForm({ ...form, accountNumber: e.target.value })}
                 className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
-                required
+                required={form.accountType !== 'PAGAMENTO'}
               />
             </div>
           </div>
