@@ -15,6 +15,7 @@ interface StartServiceOrderModalProps {
 interface Technician {
   id: string;
   name: string;
+  specialty?: string;
 }
 
 export function StartServiceOrderModal({ isOpen, onClose, osId, onSuccess }: StartServiceOrderModalProps) {
@@ -105,7 +106,7 @@ export function StartServiceOrderModal({ isOpen, onClose, osId, onSuccess }: Sta
 
           <div>
             <label className="block text-sm font-bold text-neutral-800 dark:text-neutral-200 mb-1">
-              Técnico Responsável
+              Técnico Responsável {osDetails?.quotation?.items?.[0]?.product?.category && `(Categoria OS: ${osDetails.quotation.items[0].product.category})`}
             </label>
             <select
               value={selectedTechnician}
@@ -113,11 +114,25 @@ export function StartServiceOrderModal({ isOpen, onClose, osId, onSuccess }: Sta
               className="w-full px-3 py-2 border-2 border-neutral-300 dark:border-neutral-600 rounded bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:border-primary-500"
             >
               <option value="">Selecione um técnico</option>
-              {technicians.map((tech) => (
-                <option key={tech.id} value={tech.id}>
-                  {tech.name}
-                </option>
-              ))}
+              {(() => {
+                const serviceCategory = osDetails?.quotation?.items?.[0]?.product?.category || '';
+                const sortedTechnicians = [...technicians].sort((a, b) => {
+                  if (!serviceCategory) return 0;
+                  const aMatch = a.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+                  const bMatch = b.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+                  if (aMatch && !bMatch) return -1;
+                  if (!aMatch && bMatch) return 1;
+                  return 0;
+                });
+                return sortedTechnicians.map((tech) => {
+                  const isMatch = serviceCategory && tech.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+                  return (
+                    <option key={tech.id} value={tech.id}>
+                      {tech.name} ({tech.specialty || 'Geral'}){isMatch ? ' ⭐ (Recomendado para esta OS)' : ''}
+                    </option>
+                  );
+                });
+              })()}
             </select>
           </div>
 

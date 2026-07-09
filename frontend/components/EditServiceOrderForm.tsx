@@ -8,19 +8,11 @@ import api from '../lib/api';
 interface Technician {
   id: string;
   name: string;
+  specialty?: string;
 }
 
 interface EditServiceOrderFormProps {
-  so: {
-    id: string;
-    number: string;
-    technicianId: string | null;
-    scheduledTime: string | null;
-    address: string;
-    notes: string;
-    finalTotal: number;
-    status: string;
-  };
+  so: any;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -35,6 +27,7 @@ const formatForDatetimeLocal = (dateString?: string | null) => {
 
 export function EditServiceOrderForm({ so, onSuccess, onCancel }: EditServiceOrderFormProps) {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [osDetails, setOsDetails] = useState<any>(so);
   const [loadingTechs, setLoadingTechs] = useState(true);
   const [formData, setFormData] = useState({
     technicianId: so.technicianId || '',
@@ -48,20 +41,26 @@ export function EditServiceOrderForm({ so, onSuccess, onCancel }: EditServiceOrd
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchTechnicians = async () => {
+    const fetchData = async () => {
+      setLoadingTechs(true);
       try {
-        const res = await api.get('/technicians?limit=100');
-        const data = res.data?.data || res.data || [];
-        setTechnicians(data);
+        const [techsRes, osRes] = await Promise.all([
+          api.get('/technicians?limit=100'),
+          !so.quotation?.items ? api.get(`/service-orders/${so.id}`) : Promise.resolve(null)
+        ]);
+        setTechnicians(techsRes.data.data || techsRes.data || []);
+        if (osRes) {
+          setOsDetails(osRes.data);
+        }
       } catch (err) {
-        console.error('Erro ao buscar técnicos:', err);
-        setError('Erro ao carregar lista de técnicos.');
+        console.error('Erro ao buscar dados:', err);
+        setError('Erro ao carregar lista de técnicos ou dados da OS.');
       } finally {
         setLoadingTechs(false);
       }
     };
-    fetchTechnicians();
-  }, []);
+    fetchData();
+  }, [so]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +85,17 @@ export function EditServiceOrderForm({ so, onSuccess, onCancel }: EditServiceOrd
     }
   };
 
+  const serviceCategory = osDetails?.quotation?.items?.[0]?.product?.category || '';
+
+  const sortedTechnicians = [...technicians].sort((a, b) => {
+    if (!serviceCategory) return 0;
+    const aMatch = a.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+    const bMatch = b.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
+  });
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5 animate-fade-in text-neutral-800 dark:text-neutral-200">
       {error && (
@@ -97,7 +107,7 @@ export function EditServiceOrderForm({ so, onSuccess, onCancel }: EditServiceOrd
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-1.5">
-            Técnico Responsável
+            Técnico Responsável {serviceCategory && `(Categoria OS: ${serviceCategory})`}
           </label>
           {loadingTechs ? (
             <div className="h-10 bg-neutral-100 dark:bg-neutral-700 animate-pulse rounded-lg" />
@@ -108,11 +118,14 @@ export function EditServiceOrderForm({ so, onSuccess, onCancel }: EditServiceOrd
               onChange={e => setFormData({ ...formData, technicianId: e.target.value })}
             >
               <option value="">Nenhum técnico atribuído</option>
-              {technicians.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
+              {sortedTechnicians.map(t => {
+                const isMatch = serviceCategory && t.specialty?.toLowerCase().includes(serviceCategory.toLowerCase());
+                return (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.specialty || 'Geral'}){isMatch ? ' ⭐ (Recomendado para esta OS)' : ''}
+                  </option>
+                );
+              })}
             </select>
           )}
         </div>

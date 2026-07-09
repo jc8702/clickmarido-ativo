@@ -3,9 +3,16 @@
 ## Informações Gerais
 - **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 08/07/2026 - 02:29
+- **Última Atualização:** 09/07/2026 - 16:05
 
 ## Histórico de Alterações
+- **[09/07/2026 - 16:05]:** Exibição de especialidades e recomendação inteligente de técnicos na OS:
+  - **Identificação da Especialidade**: O select de escolha de técnicos agora exibe a especialidade ao lado do nome (ex: `Nome (Especialidade)`).
+  - **Sugerir por Categoria**: O sistema lê a categoria do primeiro serviço/produto da OS e ordena/destaca os técnicos que possuem especialidade correspondente com uma tag `⭐ (Recomendado para esta OS)`.
+  - **Formulário de Edição**: Atualizado o `EditServiceOrderForm.tsx` para carregar a OS completa via API caso não possua os itens de categoria na listagem, habilitando o matching de especialidades.
+  - **Modal de Início**: Atualizado o `StartServiceOrderModal.tsx` com a mesma inteligência de ordenação e recomendação ao iniciar a OS.
+  - Arquivos modificados: `frontend/components/EditServiceOrderForm.tsx`, `frontend/components/service-orders/StartServiceOrderModal.tsx`
+
 - **[09/07/2026 - 15:55]:** Edição de Ordens de Serviço após concluídas:
   - **Componente `EditServiceOrderForm.tsx`:** Criado formulário de edição completo que permite atualizar técnico responsável, status, data agendada, valor cobrado final, endereço e observações de qualquer OS.
   - **Listagem de OS (`service-orders/page.tsx`):** Adicionado botão de ação "Editar" na tabela de Ordens de Serviço para permitir a edição rápida de OS em qualquer status (inclusive concluídas).
