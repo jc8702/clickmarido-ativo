@@ -48,6 +48,7 @@ export default function PagarPage() {
     dueDate: '',
     origin: 'MANUAL',
     vendorId: '',
+    bankAccountId: '',
     notes: '',
   });
   const [payForm, setPayForm] = useState({
@@ -64,7 +65,7 @@ export default function PagarPage() {
       await createAccount(form);
       toast.success('Conta a pagar criada!');
       setShowModal(false);
-      setForm({ title: '', description: '', totalAmount: 0, dueDate: '', origin: 'MANUAL', vendorId: '', notes: '' });
+      setForm({ title: '', description: '', totalAmount: 0, dueDate: '', origin: 'MANUAL', vendorId: '', bankAccountId: '', notes: '' });
     } catch (error) {
       toast.error('Erro ao criar conta');
     }
@@ -235,6 +236,19 @@ export default function PagarPage() {
                 required
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Conta Bancária</label>
+            <select
+              value={form.bankAccountId}
+              onChange={e => setForm({ ...form, bankAccountId: e.target.value })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+            >
+              <option value="">Selecione...</option>
+              {bankAccounts.data.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.nickname || acc.bankName}</option>
+              ))}
+            </select>
           </div>
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>

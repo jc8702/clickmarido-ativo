@@ -79,6 +79,8 @@ export function useAccountsReceivable(filters?: {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[AccountsReceivable] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

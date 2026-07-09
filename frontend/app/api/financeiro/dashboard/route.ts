@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
         nickname: true,
         currentBalance: true,
         accountType: true,
+        accountNumber: true,
         color: true,
       },
       orderBy: { isDefault: 'desc' },

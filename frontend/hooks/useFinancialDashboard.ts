@@ -63,6 +63,8 @@ export function useFinancialDashboard() {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[Financeiro] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

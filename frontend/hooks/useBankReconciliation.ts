@@ -42,6 +42,8 @@ export function useBankReconciliation(filters?: { bankAccountId?: string; isReco
         const result = await response.json();
         setData(result);
       }
+    } catch (error) {
+      console.error('Erro ao buscar conciliações bancárias:', error);
     } finally {
       setIsLoading(false);
     }

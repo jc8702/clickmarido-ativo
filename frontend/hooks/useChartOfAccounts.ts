@@ -35,6 +35,8 @@ export function useChartOfAccounts(type?: string) {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[ChartOfAccounts] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

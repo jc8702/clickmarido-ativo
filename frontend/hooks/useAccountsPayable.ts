@@ -79,6 +79,8 @@ export function useAccountsPayable(filters?: {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[AccountsPayable] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

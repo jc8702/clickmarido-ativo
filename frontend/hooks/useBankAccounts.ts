@@ -37,6 +37,8 @@ export function useBankAccounts() {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[BankAccounts] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

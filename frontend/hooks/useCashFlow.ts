@@ -8,6 +8,9 @@ interface CashFlowData {
   current: {
     receivable: number;
     payable: number;
+    receivablePaid: number;
+    payablePaid: number;
+    netPending: number;
     projected: number;
   };
   items: {
@@ -52,6 +55,8 @@ export function useCashFlow(filters?: {
         const result = await response.json();
         setData(result);
       }
+    } catch (error) {
+      console.error('Erro ao buscar fluxo de caixa:', error);
     } finally {
       setIsLoading(false);
     }

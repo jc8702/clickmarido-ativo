@@ -49,6 +49,8 @@ export function useRentability(filters?: {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[Rentability] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);

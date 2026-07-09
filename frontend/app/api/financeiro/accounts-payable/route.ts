@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
       prisma.accountPayable.count({ where }),
     ]);
 
-    // Calcular totais - incluir todos os status relevantes
+    // Calcular totais - incluir todos os status relevantes (incluindo previsto)
     const totals = await prisma.accountPayable.aggregate({
-      where: { status: { in: ['aberto', 'parcial', 'vencido', 'pago'] } },
+      where: { status: { in: ['previsto', 'aberto', 'parcial', 'vencido', 'pago'] } },
       _sum: { totalAmount: true, paidAmount: true },
     });
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Totais por status
     const pendingTotals = await prisma.accountPayable.aggregate({
-      where: { status: { in: ['aberto', 'parcial', 'vencido'] } },
+      where: { status: { in: ['previsto', 'aberto', 'parcial', 'vencido'] } },
       _sum: { totalAmount: true, paidAmount: true },
     });
 

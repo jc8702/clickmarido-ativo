@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { validateToken } from '@/lib/auth';
+import { syncExpensePaid } from '@/lib/finance-sync';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -129,6 +130,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               transactionDate: payDate,
             },
           });
+
+          // Sincronizar com contas bancárias e contas a pagar
+          await syncExpensePaid(purchaseOrder.expenseId, tx);
 
           // 3. Registrar no log de auditoria
           await tx.auditLog.create({

@@ -8,7 +8,7 @@ interface DREData {
     impostosSobreReceita: number;
     descontos: number;
     receitaLiquida: number;
-    custosOperacionais: number;
+    custosProdutosServicos: number;
     lucroBruto: number;
     despesasOperacionais: number;
     resultadoOperacional: number;
@@ -51,6 +51,8 @@ export function useDRE(filters?: { startDate?: string; endDate?: string; period?
         const result = await response.json();
         setData(result);
       }
+    } catch (error) {
+      console.error('Erro ao buscar DRE:', error);
     } finally {
       setIsLoading(false);
     }

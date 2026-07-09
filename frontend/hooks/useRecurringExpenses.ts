@@ -48,6 +48,8 @@ export function useRecurringExpenses(isActive?: boolean) {
       if (response.ok) {
         const result = await response.json();
         setData(result);
+      } else {
+        console.error('[RecurringExpenses] API error:', response.status, await response.text());
       }
     } finally {
       setIsLoading(false);
