@@ -108,7 +108,12 @@ export function ItemsBuilder() {
     }
   };
 
-  const subtotal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
+  const travelDistance = watch('travel_distance') || 0;
+  const travelRate = watch('travel_rate') || 0;
+  const travelTotal = travelDistance * travelRate;
+
+  const subtotalOriginal = items.reduce((acc: number, item: any) => acc + (Number(item.quantity || 0) * Number(item.unit_price || 0)), 0);
+  const subtotal = subtotalOriginal + travelTotal;
   
   // Folga de Venda: percentual adicionado ao subtotal para ter margem de segurança
   const marginAmount = subtotal * (marginPercentage / 100);
@@ -303,6 +308,43 @@ export function ItemsBuilder() {
           </div>
         </div>
 
+        {/* Deslocamento */}
+        <div className="border-b border-primary-200 dark:border-primary-700 pb-4 space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Distância Deslocamento (KM)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  {...register('travel_distance', { valueAsNumber: true })}
+                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-right bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">km</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Valor por KM (R$)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">R$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('travel_rate', { valueAsNumber: true })}
+                  className="w-full p-2 border border-neutral-300 dark:border-neutral-600 rounded text-right bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+                />
+              </div>
+            </div>
+          </div>
+          {travelTotal > 0 && (
+            <div className="text-xs text-neutral-500 dark:text-neutral-400 text-right">
+              Deslocamento Total: R$ {travelTotal.toFixed(2)} (Rateio: R$ {(travelTotal / (items.length || 1)).toFixed(2)} por item)
+            </div>
+          )}
+        </div>
+
         {/* Folga de Venda */}
         <div className="border-b border-primary-200 dark:border-primary-700 pb-4">
           <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Folga de Venda (%)</label>
@@ -345,8 +387,16 @@ export function ItemsBuilder() {
 
         {/* Totais */}
         <div className="space-y-2 text-right">
+          <p className="text-neutral-600 dark:text-neutral-400 text-sm">
+            Subtotal Itens: <span className="font-medium">R$ {Number(subtotalOriginal || 0).toFixed(2)}</span>
+          </p>
+          {travelTotal > 0 && (
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm">
+              + Deslocamento: <span className="font-medium">R$ {travelTotal.toFixed(2)}</span>
+            </p>
+          )}
           <p className="text-neutral-600 dark:text-neutral-400">
-            Subtotal: <span className="font-semibold">R$ {Number(subtotal || 0).toFixed(2)}</span>
+            Subtotal Geral: <span className="font-semibold">R$ {Number(subtotal || 0).toFixed(2)}</span>
           </p>
           {marginPercentage > 0 && (
             <p className="text-neutral-500 dark:text-neutral-400 text-sm">

@@ -98,6 +98,8 @@ export default function EditClientPage() {
           payment_method: normalizedPaymentMethod as 'PIX' | 'DINHEIRO' | 'CARTAO_CREDITO',
           installments: Number(data.installments) || 1,
           margin_percentage: Number(data.marginPercentage) || 0,
+          travel_distance: Number(data.travelDistance) || 0,
+          travel_rate: Number(data.travelRate) || 1.10,
         });
       } catch (e) {
         setError('Erro ao carregar orçamento');
@@ -147,12 +149,16 @@ export default function EditClientPage() {
       }));
       const marginPercentage = Number(data.margin_percentage) || 0;
       const discountPercentage = Number(data.discount_percentage) || 0;
+      const travelDistance = Number(data.travel_distance) || 0;
+      const travelRate = Number(data.travel_rate) || 1.10;
+      const travelTotal = travelDistance * travelRate;
 
-      // Recalculate total from items with Folga de Venda and Desconto percentual
-      const subtotal = safeItems.reduce(
+      // Recalculate total from items with Travel, Folga de Venda and Desconto percentual
+      const subtotalBase = safeItems.reduce(
         (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
         0
       );
+      const subtotal = subtotalBase + travelTotal;
       
       // Folga de Venda: percentual adicionado ao subtotal
       const marginAmount = subtotal * (marginPercentage / 100);
@@ -182,6 +188,8 @@ export default function EditClientPage() {
           installments: Number(data.installments) || 1,
           margin_percentage: marginPercentage,
           discount_percentage: discountPercentage,
+          travel_distance: travelDistance,
+          travel_rate: travelRate,
         }),
       });
       if (!res.ok) {

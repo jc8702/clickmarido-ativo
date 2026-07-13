@@ -71,11 +71,16 @@ export async function POST(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'Cliente não encontrado' }, { status: 404 });
     }
 
-    // Calcular total com Folga de Venda e Desconto percentual
-    const subtotal = items.reduce(
+    // Calcular total com Deslocamento, Folga de Venda e Desconto percentual
+    const travelDistance = Number(body.travel_distance) || 0;
+    const travelRate = body.travel_rate !== undefined ? Number(body.travel_rate) : 1.10;
+    const travelTotal = travelDistance * travelRate;
+
+    const subtotalBase = items.reduce(
       (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || item.price || 0),
       0
     );
+    const subtotal = subtotalBase + travelTotal;
     const marginPercentage = body.margin_percentage || 0;
     const discountPercentage = body.discount_percentage || 0;
     
@@ -125,6 +130,8 @@ export async function POST(request: NextRequest): Promise<Response> {
         installments: body.installments || 1,
         marginPercentage: body.margin_percentage || 0,
         discountPercentage: body.discount_percentage || 0,
+        travelDistance,
+        travelRate,
       },
       include: { customer: true },
     });

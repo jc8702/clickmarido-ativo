@@ -30,6 +30,28 @@ export async function GET(
       return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
     }
 
+    // Diluição do deslocamento caso seja requisitado (pelo PDF de Impressão)
+    const { searchParams } = new URL(request.url);
+    const includeTravel = searchParams.get('includeTravel') === 'true';
+
+    if (includeTravel && quotation.items.length > 0) {
+      const travelDistance = Number(quotation.travelDistance) || 0;
+      const travelRate = Number(quotation.travelRate) || 0;
+      const travelTotal = travelDistance * travelRate;
+
+      if (travelTotal > 0) {
+        const share = travelTotal / quotation.items.length;
+        quotation.items = quotation.items.map((item: any) => {
+          const qty = Number(item.quantity) || 1;
+          return {
+            ...item,
+            unitPrice: Number(item.unitPrice) + (share / qty),
+            subtotal: Number(item.subtotal) + share,
+          };
+        });
+      }
+    }
+
     return NextResponse.json(quotation);
 
   } catch (error) {
@@ -51,7 +73,7 @@ export async function PUT(
 
     const oldValue = await prisma.quotation.findUnique({
       where: { id },
-      select: { id: true, customerId: true, total: true, status: true, notes: true },
+      select: { id: true, customerId: true, total: true, status: true, notes: true, travelDistance: true, travelRate: true },
     });
 
     const body = await request.json();
@@ -68,6 +90,8 @@ export async function PUT(
     if (body.margin_percentage !== undefined) updateData.marginPercentage = body.margin_percentage;
     if (body.discount_percentage !== undefined) updateData.discountPercentage = body.discount_percentage;
     if (body.customer_id !== undefined) updateData.customerId = body.customer_id;
+    if (body.travel_distance !== undefined) updateData.travelDistance = Number(body.travel_distance) || 0;
+    if (body.travel_rate !== undefined) updateData.travelRate = Number(body.travel_rate) || 1.10;
 
     const quotation = await prisma.quotation.update({
       where: { id },
@@ -82,11 +106,16 @@ export async function PUT(
         where: { quotationId: id },
       });
 
-      // Calculate total from items with Folga de Venda and Desconto percentual
-      const subtotal = body.items.reduce(
+      // Calculate total from items with Travel, Folga de Venda and Desconto percentual
+      const travelDistance = body.travel_distance !== undefined ? Number(body.travel_distance) : Number(oldValue?.travelDistance || 0);
+      const travelRate = body.travel_rate !== undefined ? Number(body.travel_rate) : Number(oldValue?.travelRate || 1.10);
+      const travelTotal = travelDistance * travelRate;
+
+      const subtotalBase = body.items.reduce(
         (sum: number, item: any) => sum + (item.quantity || 1) * (item.unit_price || 0),
         0
       );
+      const subtotal = subtotalBase + travelTotal;
       const marginPercentage = body.margin_percentage || 0;
       const discountPercentage = body.discount_percentage || 0;
       
@@ -100,10 +129,14 @@ export async function PUT(
       // Total final = subtotal + folga - desconto
       const total = subtotalWithMargin - discountAmount;
 
-      // Update total
+      // Update total and travel fields
       await prisma.quotation.update({
         where: { id },
-        data: { total },
+        data: { 
+          total,
+          travelDistance,
+          travelRate,
+        },
       });
 
       // Create new items

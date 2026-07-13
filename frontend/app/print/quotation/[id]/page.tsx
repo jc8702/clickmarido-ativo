@@ -31,7 +31,7 @@ export default function PrintQuotationPage() {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         let response = null;
         if (token) {
-          response = await fetch(`/api/quotations/${id}`, {
+          response = await fetch(`/api/quotations/${id}?includeTravel=true`, {
             headers: { Authorization: `Bearer ${token}` },
           });
         }

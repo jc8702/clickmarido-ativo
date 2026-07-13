@@ -27,6 +27,8 @@ export default function NewQuotationPage() {
       payment_method: 'PIX',
       installments: 1,
       margin_percentage: 0,
+      travel_distance: 0,
+      travel_rate: 1.10,
     }
   });
 

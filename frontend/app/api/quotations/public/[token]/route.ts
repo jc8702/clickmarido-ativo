@@ -23,14 +23,26 @@ export async function GET(
       return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
     }
 
-    // Mapear dados para o formato esperado pelo frontend público
-    const items = quotation.items.map((item: any) => ({
-      name: item.product?.name || '',
-      sku: item.product?.sku || '',
-      description: item.product?.description || '',
-      quantity: Number(item.quantity),
-      unit_price: Number(item.unitPrice),
-    }));
+    // Mapear dados para o formato esperado pelo frontend público (com a diluição do deslocamento)
+    const travelDistance = Number(quotation.travelDistance) || 0;
+    const travelRate = Number(quotation.travelRate) || 0;
+    const travelTotal = travelDistance * travelRate;
+    const share = quotation.items.length > 0 ? (travelTotal / quotation.items.length) : 0;
+
+    const items = quotation.items.map((item: any) => {
+      const qty = Number(item.quantity) || 1;
+      const unitPriceOriginal = Number(item.unitPrice);
+      const unitPriceWithTravel = share > 0 ? (unitPriceOriginal + (share / qty)) : unitPriceOriginal;
+
+      return {
+        name: item.product?.name || item.name || '',
+        sku: item.product?.sku || item.sku || '',
+        description: item.product?.description || item.description || '',
+        quantity: Number(item.quantity),
+        unit_price: unitPriceWithTravel,
+      };
+    });
+
 
     return NextResponse.json({
       id: quotation.id,
