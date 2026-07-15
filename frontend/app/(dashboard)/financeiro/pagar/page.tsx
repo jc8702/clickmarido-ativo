@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<string, string> = {
   aberto: 'Aberto',
   parcial: 'Parcial',
   pago: 'Pago',
+  baixado: 'Pago',
   vencido: 'Vencido',
   cancelado: 'Cancelado',
 };
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
   aberto: 'bg-yellow-100 text-yellow-800',
   parcial: 'bg-orange-100 text-orange-800',
   pago: 'bg-green-100 text-green-800',
+  baixado: 'bg-green-100 text-green-800',
   vencido: 'bg-red-100 text-red-800',
   cancelado: 'bg-neutral-100 text-neutral-800',
 };
@@ -220,7 +222,7 @@ export default function PagarPage() {
                   </td>
                   <td className="p-4 text-center">
                     <div className="flex justify-center gap-2">
-                      {account.status !== 'pago' && account.status !== 'cancelado' && (
+                      {account.status !== 'pago' && account.status !== 'baixado' && account.status !== 'cancelado' && (
                         <button
                           onClick={() => openPayModal(account)}
                           className="text-sm text-green-600 hover:text-green-800"

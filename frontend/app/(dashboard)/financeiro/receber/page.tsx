@@ -218,7 +218,7 @@ export default function ReceberPage() {
                   </td>
                   <td className="p-4 text-center">
                     <div className="flex justify-center gap-2">
-                      {account.status !== 'pago' && account.status !== 'cancelado' && (
+                      {account.status !== 'pago' && account.status !== 'baixado' && account.status !== 'cancelado' && (
                         <button
                           onClick={() => openPayModal(account)}
                           className="text-sm text-green-600 hover:text-green-800"
