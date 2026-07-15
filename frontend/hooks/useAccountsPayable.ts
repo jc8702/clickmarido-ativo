@@ -147,6 +147,24 @@ export function useAccountsPayable(filters?: {
     return response.json();
   };
 
+  const refundPayment = async (
+    id: string,
+    data: { amount: number; bankAccountId: string; notes?: string; cancelAccount: boolean }
+  ) => {
+    const token = getToken();
+    const response = await fetch(`/api/financeiro/accounts-payable/${id}/refund`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Erro ao registrar estorno');
+    await mutate();
+    return response.json();
+  };
+
   return {
     data,
     isLoading,
@@ -155,5 +173,6 @@ export function useAccountsPayable(filters?: {
     updateAccount,
     deleteAccount,
     makePayment,
+    refundPayment,
   };
 }

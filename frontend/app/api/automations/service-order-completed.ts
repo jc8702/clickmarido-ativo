@@ -26,30 +26,34 @@ export async function handleServiceOrderCompleted(
       where: { quotationId: serviceOrder.quotationId },
     });
 
-    if (existingPayment) {
+    if (existingPayment && existingPayment.invoiceId) {
       return {
         status: 'skipped',
-        reason: 'Payment already exists',
+        reason: 'Payment already exists and is fully integrated',
         paymentId: existingPayment.id,
       };
     }
 
     const now = new Date();
 
-    // 3. Create payment already confirmed and integrate with financial module
+    // 3. Create payment (or update existing) and integrate with financial module
     const result = await prisma.$transaction(async (tx) => {
-      const payment = await tx.payment.create({
-        data: {
-          quotationId: serviceOrder.quotationId,
-          customerId: serviceOrder.customerId,
-          amount: serviceOrder.finalTotal,
-          method: 'pix',
-          status: 'confirmado',
-          paidAt: now,
-          confirmedAt: now,
-          description: `Pagamento - Orçamento ${serviceOrder.quotationId.slice(-6).toUpperCase()}`,
-        },
-      });
+      let payment = existingPayment;
+
+      if (!payment) {
+        payment = await tx.payment.create({
+          data: {
+            quotationId: serviceOrder.quotationId,
+            customerId: serviceOrder.customerId,
+            amount: serviceOrder.finalTotal,
+            method: 'pix',
+            status: 'confirmado',
+            paidAt: now,
+            confirmedAt: now,
+            description: `Pagamento - Orçamento ${serviceOrder.quotationId.slice(-6).toUpperCase()}`,
+          },
+        });
+      }
 
       // Create invoice for the payment
       const invoiceCount = await tx.invoice.count();
@@ -59,10 +63,10 @@ export async function handleServiceOrderCompleted(
         data: {
           customerId: serviceOrder.customerId,
           invoiceNumber,
-          issueDate: now,
-          dueDate: now,
-          subtotal: serviceOrder.finalTotal,
-          totalAmount: serviceOrder.finalTotal,
+          issueDate: payment.createdAt || now,
+          dueDate: payment.createdAt || now,
+          subtotal: payment.amount,
+          totalAmount: payment.amount,
           status: 'paga',
           description: `Fatura gerada automaticamente ao concluir OS`,
         },
@@ -79,7 +83,7 @@ export async function handleServiceOrderCompleted(
           type: 'PAYMENT_RECEIVED',
           paymentId: payment.id,
           invoiceId: invoice.id,
-          credit: serviceOrder.finalTotal,
+          credit: payment.amount,
           debit: 0,
           description: `Recebimento de Pagamento #${payment.id.slice(-6).toUpperCase()} (PIX)`,
           transactionDate: now,

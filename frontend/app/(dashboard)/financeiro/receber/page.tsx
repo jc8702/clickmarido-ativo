@@ -40,6 +40,7 @@ export default function ReceberPage() {
   const { data: bankAccounts } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
   const [form, setForm] = useState({
     title: '',
@@ -57,6 +58,12 @@ export default function ReceberPage() {
     bankAccountId: '',
     paymentDate: '',
     notes: '',
+  });
+  const [refundForm, setRefundForm] = useState({
+    amount: 0,
+    bankAccountId: '',
+    notes: '',
+    cancelAccount: true,
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -85,6 +92,20 @@ export default function ReceberPage() {
     }
   };
 
+  const handleRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAccount) return;
+    try {
+      await refundPayment(selectedAccount.id, refundForm);
+      toast.success('Estorno registrado!');
+      setShowRefundModal(false);
+      setSelectedAccount(null);
+      setRefundForm({ amount: 0, bankAccountId: '', notes: '', cancelAccount: true });
+    } catch (error) {
+      toast.error('Erro ao registrar estorno');
+    }
+  };
+
   const openPayModal = (account: any) => {
     setSelectedAccount(account);
     setPayForm({
@@ -95,6 +116,17 @@ export default function ReceberPage() {
       notes: '',
     });
     setShowPayModal(true);
+  };
+
+  const openRefundModal = (account: any) => {
+    setSelectedAccount(account);
+    setRefundForm({
+      amount: Number(account.paidAmount),
+      bankAccountId: account.bankAccountId || '',
+      notes: '',
+      cancelAccount: true,
+    });
+    setShowRefundModal(true);
   };
 
   return (
@@ -185,14 +217,24 @@ export default function ReceberPage() {
                     </span>
                   </td>
                   <td className="p-4 text-center">
-                    {account.status !== 'baixado' && account.status !== 'cancelado' && (
-                      <button
-                        onClick={() => openPayModal(account)}
-                        className="text-sm text-green-600 hover:text-green-800"
-                      >
-                        Receber
-                      </button>
-                    )}
+                    <div className="flex justify-center gap-2">
+                      {account.status !== 'pago' && account.status !== 'cancelado' && (
+                        <button
+                          onClick={() => openPayModal(account)}
+                          className="text-sm text-green-600 hover:text-green-800"
+                        >
+                          Receber
+                        </button>
+                      )}
+                      {Number(account.paidAmount) > 0 && account.status !== 'cancelado' && (
+                        <button
+                          onClick={() => openRefundModal(account)}
+                          className="text-sm text-orange-600 hover:text-orange-800"
+                        >
+                          Estornar
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -308,6 +350,68 @@ export default function ReceberPage() {
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="secondary" onClick={() => setShowPayModal(false)}>Cancelar</Button>
             <Button type="submit">Confirmar Recebimento</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Estornar */}
+      <Modal isOpen={showRefundModal} onClose={() => setShowRefundModal(false)} title="Estornar Recebimento">
+        <form onSubmit={handleRefund} className="space-y-4">
+          <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+            <p className="text-sm text-orange-800">
+              O estorno criará uma transação de saída (débito) na conta bancária selecionada.
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Valor do Estorno (Max: {selectedAccount ? formatCurrency(selectedAccount.paidAmount) : 'R$ 0,00'})</label>
+            <input
+              type="number"
+              step="0.01"
+              max={selectedAccount ? selectedAccount.paidAmount : 0}
+              value={refundForm.amount}
+              onChange={e => setRefundForm({ ...refundForm, amount: parseFloat(e.target.value) || 0 })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Devolver dinheiro da Conta Bancária</label>
+            <select
+              value={refundForm.bankAccountId}
+              onChange={e => setRefundForm({ ...refundForm, bankAccountId: e.target.value })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+              required
+            >
+              <option value="">Selecione...</option>
+              {bankAccounts?.data?.map((acc: any) => (
+                <option key={acc.id} value={acc.id}>{acc.nickname || acc.bankName}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="cancelAccount"
+              checked={refundForm.cancelAccount}
+              onChange={e => setRefundForm({ ...refundForm, cancelAccount: e.target.checked })}
+              className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+            />
+            <label htmlFor="cancelAccount" className="text-sm text-neutral-700 dark:text-neutral-300">
+              Cancelar a conta a receber após o estorno
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Observações (Opcional)</label>
+            <textarea
+              value={refundForm.notes}
+              onChange={e => setRefundForm({ ...refundForm, notes: e.target.value })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+              rows={2}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="secondary" onClick={() => setShowRefundModal(false)}>Cancelar</Button>
+            <Button type="submit" variant="danger">Confirmar Estorno</Button>
           </div>
         </form>
       </Modal>
