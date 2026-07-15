@@ -1,11 +1,24 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Fluxo de devolução de produtos de Ordens de Compra e integração reversa financeira/estoque finalizados. Homologado e deployado na Vercel.
+- **Status Atual:** Auditoria e correção de todas as inconsistências financeiras no banco real finalizadas, com integração completa entre os submódulos, DRE, Fluxo de Caixa e Rentabilidade reajustados. Homologado e pronto para deploy automático.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 09/07/2026 - 16:35
+- **Última Atualização:** 15/07/2026 - 11:30
 
 ## Histórico de Alterações
+- **[15/07/2026 - 11:30]:** Auditoria e Correção Geral do Módulo Financeiro com Saneamento de Dados Reais:
+  - **Saneamento Retroativo**: Criado e executado o script `fix_financeiro.js` que criou Contas a Pagar para 5 despesas ativas órfãs, recalculou o saldo da Conta Principal com base nas conciliações (de R$ 199,50 para R$ -9,05) e corrigiu o campo `balance` das transações do Livro Caixa.
+  - **Prevenção de Inconsistências**: Atualizado o `POST /api/expenses` para gerar automaticamente o registro correspondente no Contas a Pagar (`AccountPayable`) com status `aberto`.
+  - **Dashboard & Fluxo de Caixa**: Incluídas as despesas recorrentes (`RecurringExpense`) na projeção de saída de 30/60/90 dias e implementado fallback de OS concluídas no faturamento do dashboard quando não houver pagamentos confirmados.
+  - **DRE & Rentabilidade**: Integrados pagamentos e OS concluídas no cálculo da receita bruta para refletir os ganhos reais da empresa e implementada a inteligência de transição mensal de 10 dias nas telas.
+  - Arquivos modificados: `frontend/app/api/expenses/route.ts`, `frontend/app/api/financeiro/cash-flow/route.ts`, `frontend/app/api/financeiro/dashboard/route.ts`, `frontend/app/api/financeiro/dre/route.ts`, `frontend/app/api/financeiro/rentability/route.ts`
+
+- **[13/07/2026 - 14:15]:** Cálculo Automático e Rateio de Deslocamento no Módulo de Orçamentos:
+  - **Prisma Schema**: Adicionadas as colunas `travelDistance` e `travelRate` à model `Quotation`.
+  - **Backend**: Atualizada a lógica de cálculo do total para embutir o deslocamento (`travelDistance * travelRate`) no subtotal nas rotas POST e PUT. Criada a diluição automática nos itens no GET de orçamento (se `includeTravel=true`) e no GET público (padrão).
+  - **Frontend**: Criados campos de KM e valor por KM no form de orçamento (`ItemsBuilder.tsx`), ajustadas as telas de Novo/Edição de orçamento e configurado o PDF de impressão para solicitar a diluição nos itens.
+  - Arquivos modificados: `frontend/prisma/schema.prisma`, `frontend/lib/validations/quotation.schema.ts`, `frontend/app/api/quotations/route.ts`, `frontend/app/api/quotations/[id]/route.ts`, `frontend/app/api/quotations/public/[token]/route.ts`, `frontend/components/quotations/ItemsBuilder.tsx`, `frontend/app/(dashboard)/quotations/new/ClientPage.tsx`, `frontend/app/(dashboard)/quotations/[id]/EditClientPage.tsx`, `frontend/app/print/quotation/[id]/page.tsx`
+
 - **[09/07/2026 - 16:35]:** Ajuste de Layout e Redução de Colunas nos Kanbans (Orçamentos e Pré-Vendas):
   - **Kanban de Orçamentos**: Ampliada a largura do container da página para ocupar 100% da tela (`max-w-none px-4 lg:px-8`) e alterado o grid do quadro e skeleton de `grid-cols-5` para `grid-cols-6`, integrando a coluna "Cancelado" na mesma linha das demais colunas, eliminando o scroll horizontal.
   - **Kanban de Pré-Vendas**: Removidas as colunas "Triagem" e "Encaminhado" de `STAGES`. Mapeada a recuperação de leads para converter automaticamente estágios legados (`EM_TRIAGEM` -> `NOVO_LEAD` e `ENCAMINHADO_ORCAMENTO` -> `AGENDADO`) para evitar perda de dados. Alterado o quadro Kanban para se organizar em um grid de 6 colunas (`grid-cols-6 w-full`) de modo a enquadrar tudo na mesma tela sem barra de scroll horizontal.

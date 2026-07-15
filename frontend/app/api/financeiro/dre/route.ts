@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     const period = searchParams.get('period') || 'monthly'; // monthly, quarterly, yearly
 
-    // Definir período padrão: mês atual
+    // Definir período padrão: mês atual (com transição inteligente nos primeiros 10 dias)
     let start: Date, end: Date;
     const now = new Date();
 
@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
       end = new Date(endDate);
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
+      // Nos primeiros 10 dias do mês, incluir mês anterior para manter dados visíveis
+      if (now.getDate() <= 10) {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      }
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
 
@@ -35,6 +39,31 @@ export async function GET(request: NextRequest) {
         totalAmount: true,
         taxAmount: true,
         discountAmount: true,
+      },
+    });
+
+    // Buscar pagamentos confirmados no período (receita real mesmo sem fatura)
+    const confirmedPayments = await prisma.payment.findMany({
+      where: {
+        status: 'confirmado',
+        paidAt: { gte: start, lte: end },
+      },
+      select: {
+        amount: true,
+        invoiceId: true,
+      },
+    });
+
+    // Buscar OS concluídas no período (receita real mesmo sem pagamento)
+    const completedOrders = await prisma.serviceOrder.findMany({
+      where: {
+        status: 'concluida',
+        completedAt: { gte: start, lte: end },
+      },
+      select: {
+        id: true,
+        finalTotal: true,
+        quotationId: true,
       },
     });
 
@@ -64,8 +93,27 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calcular DRE
-    const receitaBruta = invoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
+    // Calcular DRE - Receita Bruta (maior entre faturas, pagamentos e OS)
+    const receitaFaturas = invoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
+    
+    // Pagamentos sem fatura vinculada (avulsos) 
+    const receitaPagamentosAvulsos = confirmedPayments
+      .filter(p => !p.invoiceId)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    
+    // OS concluídas sem fatura vinculada
+    const invoiceQuotationIds = new Set(
+      invoices
+        .filter((i: any) => i.quotationId)
+        .map((i: any) => i.quotationId)
+    );
+    const receitaOsSemFatura = completedOrders
+      .filter(os => !invoiceQuotationIds.has(os.quotationId))
+      .reduce((sum, os) => sum + Number(os.finalTotal), 0);
+
+    // Receita bruta = faturas + pagamentos avulsos + OS sem fatura (evitando dupla contagem)
+    const receitaBruta = receitaFaturas + receitaPagamentosAvulsos + receitaOsSemFatura;
+    
     const impostosSobreReceita = invoices.reduce((sum, i) => sum + Number(i.taxAmount || 0), 0);
     const descontos = invoices.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
     const receitaLiquida = receitaBruta - impostosSobreReceita - descontos;

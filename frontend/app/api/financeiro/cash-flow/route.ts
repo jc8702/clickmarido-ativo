@@ -116,6 +116,36 @@ export async function GET(request: NextRequest) {
     const projection60 = calculateProjection(futureReceivables, futurePayables, 60);
     const projection90 = calculateProjection(futureReceivables, futurePayables, 90);
 
+    // Incluir recorrências ativas na projeção de saída
+    const recurringExpenses = await prisma.recurringExpense.findMany({
+      where: { isActive: true },
+      select: { amount: true, frequency: true, nextDue: true, description: true }
+    });
+
+    let recurring30 = 0, recurring60 = 0, recurring90 = 0;
+    const now30 = new Date(); now30.setDate(now30.getDate() + 30);
+    const now60 = new Date(); now60.setDate(now60.getDate() + 60);
+    const now90 = new Date(); now90.setDate(now90.getDate() + 90);
+
+    for (const re of recurringExpenses) {
+      const amt = Number(re.amount);
+      // Estimar quantas vezes a recorrência será cobrada em cada janela
+      if (re.frequency === 'MENSAL') {
+        recurring30 += amt;
+        recurring60 += amt * 2;
+        recurring90 += amt * 3;
+      } else if (re.frequency === 'SEMANAL') {
+        recurring30 += amt * 4;
+        recurring60 += amt * 8;
+        recurring90 += amt * 13;
+      } else if (re.frequency === 'ANUAL') {
+        // Verificar se o nextDue cai dentro da janela
+        if (new Date(re.nextDue) <= now90) recurring90 += amt;
+        if (new Date(re.nextDue) <= now60) recurring60 += amt;
+        if (new Date(re.nextDue) <= now30) recurring30 += amt;
+      }
+    }
+
     // Alertas
     const overdueReceivable = receivables.filter(r => r.status === 'vencido');
     const overduePayable = payables.filter(p => p.status === 'vencido');
@@ -136,10 +166,14 @@ export async function GET(request: NextRequest) {
         receivables,
         payables,
       },
+      recurringExpenses: {
+        count: recurringExpenses.length,
+        monthly: recurringExpenses.reduce((s, r) => s + Number(r.amount), 0),
+      },
       projection: {
-        days30: totalBalance + projection30,
-        days60: totalBalance + projection60,
-        days90: totalBalance + projection90,
+        days30: totalBalance + projection30 - recurring30,
+        days60: totalBalance + projection60 - recurring60,
+        days90: totalBalance + projection90 - recurring90,
       },
       alerts: {
         overdueReceivable: {

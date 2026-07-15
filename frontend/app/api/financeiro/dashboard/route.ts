@@ -87,6 +87,26 @@ export async function GET(request: NextRequest) {
       (sum, p) => sum + (Number(p.totalAmount) - Number(p.paidAmount)), 0
     );
 
+    // Incluir recorrências na projeção de saída (30 dias)
+    const recurringMonthly = Number(recurringExpenses._sum.amount || 0);
+
+    // Receita real: se não há pagamentos confirmados recentes, usar OS concluídas
+    const confirmedPaymentsTotal = await prisma.payment.aggregate({
+      where: { status: 'confirmado' },
+      _sum: { amount: true },
+    });
+    const totalConfirmedPayments = Number(confirmedPaymentsTotal._sum.amount || 0);
+
+    // Se receita real for 0, buscar de OS concluídas
+    let realRevenue = totalConfirmedPayments;
+    if (realRevenue === 0) {
+      const completedOS = await prisma.serviceOrder.aggregate({
+        where: { status: 'concluida' },
+        _sum: { finalTotal: true },
+      });
+      realRevenue = Number(completedOS._sum.finalTotal || 0);
+    }
+
     // Últimas movimentações
     const recentReceivables = await prisma.accountReceivable.findMany({
       take: 5,
@@ -117,6 +137,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       bankAccounts,
       totalBalance,
+      realRevenue,
       receivables: {
         total: receivables._sum.totalAmount || 0,
         paid: receivables._sum.paidAmount || 0,
@@ -145,8 +166,8 @@ export async function GET(request: NextRequest) {
       },
       projection: {
         inflow: projectedInflow,
-        outflow: projectedOutflow,
-        net: projectedInflow - projectedOutflow,
+        outflow: projectedOutflow + recurringMonthly,
+        net: projectedInflow - projectedOutflow - recurringMonthly,
       },
       recentActivity: {
         receivables: recentReceivables,

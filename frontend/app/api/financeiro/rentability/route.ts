@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const customerId = searchParams.get('customerId');
     const groupBy = searchParams.get('groupBy') || 'customer'; // customer, service, period
 
-    // Definir período padrão: mês atual
+    // Definir período padrão: mês atual (com transição inteligente nos primeiros 10 dias)
     let start: Date, end: Date;
     const now = new Date();
 
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
       end = new Date(endDate);
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
+      // Nos primeiros 10 dias do mês, incluir mês anterior para manter dados visíveis
+      if (now.getDate() <= 10) {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      }
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     }
 

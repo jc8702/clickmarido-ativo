@@ -128,14 +128,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (expense.status === 'paga' || expense.status === 'pendente') {
-      await logFinancialTransaction({
-        type: 'EXPENSE_RECORDED',
-        expenseId: expense.id,
-        debit: Number(expense.amount),
-        description: `Despesa registrada: ${expense.description}`,
+    // Integração automática: criar Conta a Pagar vinculada
+    try {
+      await prisma.accountPayable.create({
+        data: {
+          title: description,
+          description: `Despesa ID: ${expense.id}`,
+          totalAmount: numericAmount,
+          paidAmount: 0,
+          status: 'aberto',
+          dueDate: dueDate ? new Date(dueDate) : (expenseDate ? new Date(expenseDate) : new Date()),
+          origin: 'DESPESA',
+          expenseId: expense.id,
+          vendorId: vendorId || null,
+          notes: `Gerado automaticamente na criação da despesa.`
+        }
       });
+    } catch (apError) {
+      console.error('[EXPENSES] Erro ao criar conta a pagar vinculada:', apError);
     }
+
+    await logFinancialTransaction({
+      type: 'EXPENSE_RECORDED',
+      expenseId: expense.id,
+      debit: Number(expense.amount),
+      description: `Despesa registrada: ${expense.description}`,
+    });
 
     return NextResponse.json(expense, { status: 201 });
   } catch (error: any) {
@@ -143,3 +161,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar despesa' }, { status: 500 });
   }
 }
+
