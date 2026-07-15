@@ -38,7 +38,7 @@ const PAYMENT_METHODS = [
 
 export default function PagarPage() {
   const [filters, setFilters] = useState({ status: '', page: 1 });
-  const { data, isLoading, createAccount, makePayment, refundPayment } = useAccountsPayable(filters);
+  const { data, isLoading, createAccount, makePayment, refundPayment, deleteAccount } = useAccountsPayable(filters);
   const { data: bankAccounts } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
@@ -107,6 +107,16 @@ export default function PagarPage() {
       setRefundForm({ amount: 0, bankAccountId: '', notes: '', cancelAccount: true });
     } catch (error) {
       toast.error('Erro ao registrar estorno');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta conta? Isso reverterá os pagamentos, transações financeiras e saldos bancários associados.')) return;
+    try {
+      await deleteAccount(id);
+      toast.success('Conta excluída com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao excluir conta');
     }
   };
 
@@ -238,6 +248,12 @@ export default function PagarPage() {
                           Estornar
                         </button>
                       )}
+                      <button
+                        onClick={() => handleDelete(account.id)}
+                        className="text-sm text-red-600 hover:text-red-800"
+                      >
+                        Excluir
+                      </button>
                     </div>
                   </td>
                 </tr>

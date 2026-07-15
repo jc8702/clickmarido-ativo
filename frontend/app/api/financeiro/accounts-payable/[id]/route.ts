@@ -92,21 +92,69 @@ export async function DELETE(
   try {
     const account = await prisma.accountPayable.findUnique({
       where: { id },
-      select: { paidAmount: true, status: true },
+      select: { id: true, paidAmount: true, status: true, bankAccountId: true, expenseId: true, paidDate: true, dueDate: true, title: true },
     });
 
     if (!account) {
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    if (Number(account.paidAmount) > 0) {
-      return NextResponse.json(
-        { error: 'Não é possível excluir conta com valores pagos' },
-        { status: 400 }
-      );
-    }
+    await prisma.$transaction(async (tx) => {
+      const amountToRevert = Number(account.paidAmount);
 
-    await prisma.accountPayable.delete({ where: { id } });
+      // 1. Reverter saldo da conta bancária
+      if (account.bankAccountId && amountToRevert > 0) {
+        await tx.bankAccount.update({
+          where: { id: account.bankAccountId },
+          data: {
+            currentBalance: {
+              increment: amountToRevert, // Reverte o débito (devolve para a conta)
+            },
+          },
+        });
+      }
+
+      // 2. Excluir conciliação bancária relacionada
+      await tx.bankReconciliation.deleteMany({
+        where: {
+          OR: [
+            { referenceType: 'ACCOUNT_PAYABLE', referenceId: id },
+            {
+              bankAccountId: account.bankAccountId || '',
+              amount: amountToRevert,
+              type: 'SAIDA',
+              transactionDate: account.paidDate || account.dueDate,
+            },
+          ],
+        },
+      });
+
+      // 3. Excluir transações financeiras relacionadas ao pagamento/despesa
+      if (account.expenseId) {
+        await tx.financialTransaction.deleteMany({
+          where: {
+            expenseId: account.expenseId,
+          },
+        });
+
+        // 4. Excluir despesa vinculada
+        await tx.expense.delete({
+          where: { id: account.expenseId },
+        });
+      }
+
+      // Deletar transações financeiras pelo título se necessário
+      await tx.financialTransaction.deleteMany({
+        where: {
+          description: { contains: account.title },
+        },
+      });
+
+      // 5. Excluir a conta a pagar
+      await tx.accountPayable.delete({
+        where: { id },
+      });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

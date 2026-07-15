@@ -92,21 +92,100 @@ export async function DELETE(
   try {
     const account = await prisma.accountReceivable.findUnique({
       where: { id },
-      select: { paidAmount: true, status: true },
+      include: {
+        invoice: {
+          include: {
+            payments: true,
+          },
+        },
+      },
     });
 
     if (!account) {
       return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 });
     }
 
-    if (Number(account.paidAmount) > 0) {
-      return NextResponse.json(
-        { error: 'Não é possível excluir conta com valores recebidos' },
-        { status: 400 }
-      );
-    }
+    await prisma.$transaction(async (tx) => {
+      const amountToRevert = Number(account.paidAmount);
 
-    await prisma.accountReceivable.delete({ where: { id } });
+      // 1. Reverter saldo da conta bancária
+      if (account.bankAccountId && amountToRevert > 0) {
+        await tx.bankAccount.update({
+          where: { id: account.bankAccountId },
+          data: {
+            currentBalance: {
+              decrement: amountToRevert,
+            },
+          },
+        });
+      }
+
+      // 2. Excluir conciliação bancária relacionada
+      await tx.bankReconciliation.deleteMany({
+        where: {
+          OR: [
+            { referenceType: 'ACCOUNT_RECEIVABLE', referenceId: id },
+            {
+              bankAccountId: account.bankAccountId || '',
+              amount: amountToRevert,
+              type: 'ENTRADA',
+              transactionDate: account.paidDate || account.dueDate,
+            },
+          ],
+        },
+      });
+
+      // 3. Excluir pagamentos e faturas relacionadas
+      if (account.invoiceId) {
+        const paymentIds = account.invoice.payments.map((p) => p.id);
+
+        if (paymentIds.length > 0) {
+          // Deletar transações financeiras dos pagamentos
+          await tx.financialTransaction.deleteMany({
+            where: {
+              paymentId: { in: paymentIds },
+            },
+          });
+
+          // Deletar pagamentos
+          await tx.payment.deleteMany({
+            where: {
+              id: { in: paymentIds },
+            },
+          });
+        }
+
+        // Deletar transações financeiras da fatura
+        await tx.financialTransaction.deleteMany({
+          where: {
+            invoiceId: account.invoiceId,
+          },
+        });
+
+        // Deletar fatura
+        await tx.invoice.delete({
+          where: { id: account.invoiceId },
+        });
+      }
+
+      // 4. Se a conta foi criada a partir de um pagamento avulso direto
+      const payIdFromNotes = account.notes?.match(/Pagamento ID:\s*([a-zA-Z0-9]+)/)?.[1]
+        || account.description?.match(/Pagamento ID:\s*([a-zA-Z0-9]+)/)?.[1];
+
+      if (payIdFromNotes) {
+        await tx.financialTransaction.deleteMany({
+          where: { paymentId: payIdFromNotes },
+        });
+        await tx.payment.deleteMany({
+          where: { id: payIdFromNotes },
+        });
+      }
+
+      // 5. Excluir a conta a receber
+      await tx.accountReceivable.delete({
+        where: { id },
+      });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
