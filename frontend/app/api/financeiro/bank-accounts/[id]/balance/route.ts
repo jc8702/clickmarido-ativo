@@ -4,11 +4,13 @@ import { validateToken } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -19,7 +21,7 @@ export async function PUT(
     }
 
     const account = await prisma.bankAccount.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         currentBalance,
         notes: notes || undefined,

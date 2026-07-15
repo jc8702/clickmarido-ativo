@@ -4,15 +4,17 @@ import { validateToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const transfer = await prisma.bankTransfer.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         fromAccount: true,
         toAccount: true,
@@ -32,15 +34,17 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const transfer = await prisma.bankTransfer.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { status: true },
     });
 
@@ -54,7 +58,7 @@ export async function DELETE(
 
     // Cancelar transferência (não estornar automaticamente por segurança)
     await prisma.bankTransfer.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'cancelada' },
     });
 

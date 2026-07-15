@@ -4,15 +4,17 @@ import { validateToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const account = await prisma.bankAccount.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         accountReceivables: {
           where: { status: { in: ['aberto', 'parcial', 'vencido'] } },
@@ -40,11 +42,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -57,13 +61,13 @@ export async function PUT(
     // Se for definida como padrão, remover padrão das outras
     if (isDefault) {
       await prisma.bankAccount.updateMany({
-        where: { isDefault: true, id: { not: params.id } },
+        where: { isDefault: true, id: { not: id } },
         data: { isDefault: false },
       });
     }
 
     const account = await prisma.bankAccount.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         bankName,
         agency: agency || '',
@@ -88,16 +92,18 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     // Verificar se há movimentações vinculadas
     const hasMovements = await prisma.accountReceivable.findFirst({
-      where: { bankAccountId: params.id },
+      where: { bankAccountId: id },
     });
 
     if (hasMovements) {
@@ -107,7 +113,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.bankAccount.delete({ where: { id: params.id } });
+    await prisma.bankAccount.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

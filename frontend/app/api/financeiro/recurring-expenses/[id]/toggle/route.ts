@@ -4,15 +4,17 @@ import { validateToken } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const expense = await prisma.recurringExpense.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { isActive: true },
     });
 
@@ -21,7 +23,7 @@ export async function POST(
     }
 
     const updated = await prisma.recurringExpense.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: !expense.isActive },
     });
 

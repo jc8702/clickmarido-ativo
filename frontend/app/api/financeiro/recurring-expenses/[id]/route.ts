@@ -4,15 +4,17 @@ import { validateToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const expense = await prisma.recurringExpense.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         vendor: true,
         bankAccount: true,
@@ -37,11 +39,13 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -52,7 +56,7 @@ export async function PUT(
     } = body;
 
     const expense = await prisma.recurringExpense.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         description,
         amount,
@@ -81,14 +85,16 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
-    await prisma.recurringExpense.delete({ where: { id: params.id } });
+    await prisma.recurringExpense.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Erro ao excluir despesa fixa:', error);

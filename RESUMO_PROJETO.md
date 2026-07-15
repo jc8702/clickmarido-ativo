@@ -1,11 +1,17 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Auditoria e correção de todas as inconsistências financeiras no banco real finalizadas, com integração completa entre os submódulos, DRE, Fluxo de Caixa e Rentabilidade reajustados. Homologado e pronto para deploy automático.
+- **Status Atual:** Pente fino de auditoria concluído e resolvido: CRUD de contas bancárias, contas a pagar e despesas fixas 100% corrigido (Next.js 15+ async params). Banco de dados real Neon saneado e sincronizado, exibindo R$ 440,00 de serviço e R$ 470,91 de ordens de compra em junho/julho de forma consistente.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 15/07/2026 - 11:30
+- **Última Atualização:** 15/07/2026 - 14:00
 
 ## Histórico de Alterações
+- **[15/07/2026 - 14:00]:** Correção Geral de CRUDs Financeiros e Amarração Fina de Junho/Julho:
+  - **CRUDs Restabelecidos**: Corrigidos todos os 11 endpoints de rotas dinâmicas sob `/api/financeiro` para resolver o parâmetro `params` de forma assíncrona (`await params`), resolvendo falhas de edição, exclusão e baixa em Contas Bancárias, Contas a Pagar e Despesas Fixas no Next.js 15+.
+  - **Saneamento e Amarração de Serviços (R$ 440,00)**: Reativadas as faturas canceladas de julho (`INV-2026-0004-631` de R$ 150,00 e `INV-2026-0003-109` de R$ 100,00) como pagas e as ordens de serviço correspondentes concluídas. Atualizados status de `OS-0001` (R$ 60,00) e `OS-0002` (R$ 130,00) de agendada para concluída. Confirmados todos os pagamentos e registradas transações no Livro Caixa, consolidando exatamente R$ 440,00 de faturamento de serviço feito.
+  - **Saneamento de Compras (R$ 470,91)**: Sincronizadas as despesas da tabela `Expense` com todas as OCs no Contas a Pagar (`OC-2026-000001` a `OC-2026-000005`) com os valores corretos de pagas e cancelada. Recalculados saldos bancários e Livro Caixa, fazendo os relatórios de DRE, Fluxo de Caixa e Rentabilidade exibirem R$ 470,91 de ordens de compra de forma precisa.
+  - Arquivos modificados: `frontend/app/api/financeiro/accounts-payable/[id]/pay/route.ts`, `frontend/app/api/financeiro/accounts-payable/[id]/route.ts`, `frontend/app/api/financeiro/accounts-receivable/[id]/pay/route.ts`, `frontend/app/api/financeiro/accounts-receivable/[id]/route.ts`, `frontend/app/api/financeiro/bank-accounts/[id]/balance/route.ts`, `frontend/app/api/financeiro/bank-accounts/[id]/route.ts`, `frontend/app/api/financeiro/bank-reconciliation/[id]/reconcile/route.ts`, `frontend/app/api/financeiro/bank-transfers/[id]/route.ts`, `frontend/app/api/financeiro/chart-of-accounts/[id]/route.ts`, `frontend/app/api/financeiro/recurring-expenses/[id]/route.ts`, `frontend/app/api/financeiro/recurring-expenses/[id]/toggle/route.ts`
+
 - **[15/07/2026 - 11:30]:** Auditoria e Correção Geral do Módulo Financeiro com Saneamento de Dados Reais:
   - **Saneamento Retroativo**: Criado e executado o script `fix_financeiro.js` que criou Contas a Pagar para 5 despesas ativas órfãs, recalculou o saldo da Conta Principal com base nas conciliações (de R$ 199,50 para R$ -9,05) e corrigiu o campo `balance` das transações do Livro Caixa.
   - **Prevenção de Inconsistências**: Atualizado o `POST /api/expenses` para gerar automaticamente o registro correspondente no Contas a Pagar (`AccountPayable`) com status `aberto`.

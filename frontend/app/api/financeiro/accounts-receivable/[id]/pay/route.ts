@@ -4,11 +4,13 @@ import { validateToken } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -20,7 +22,7 @@ export async function POST(
 
     const result = await prisma.$transaction(async (tx) => {
       const account = await tx.accountReceivable.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { totalAmount: true, paidAmount: true, status: true, title: true, invoiceId: true },
       });
 
@@ -47,7 +49,7 @@ export async function POST(
 
       // Atualizar conta
       const updatedAccount = await tx.accountReceivable.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           paidAmount: newPaidAmount,
           status: newStatus,

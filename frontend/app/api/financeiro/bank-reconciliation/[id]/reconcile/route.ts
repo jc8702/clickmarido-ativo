@@ -4,15 +4,17 @@ import { validateToken } from '@/lib/auth';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!validateToken(request)) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const reconciliation = await prisma.bankReconciliation.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { isReconciled: true },
     });
 
@@ -25,7 +27,7 @@ export async function POST(
     }
 
     const updated = await prisma.bankReconciliation.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isReconciled: true,
         reconciledAt: new Date(),
