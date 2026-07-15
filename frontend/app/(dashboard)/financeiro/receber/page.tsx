@@ -36,7 +36,7 @@ const PAYMENT_METHODS = [
 
 export default function ReceberPage() {
   const [filters, setFilters] = useState({ status: '', page: 1 });
-  const { data, isLoading, createAccount, receivePayment } = useAccountsReceivable(filters);
+  const { data, isLoading, createAccount, receivePayment, refundPayment } = useAccountsReceivable(filters);
   const { data: bankAccounts } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);

@@ -36,7 +36,7 @@ const PAYMENT_METHODS = [
 
 export default function PagarPage() {
   const [filters, setFilters] = useState({ status: '', page: 1 });
-  const { data, isLoading, createAccount, makePayment } = useAccountsPayable(filters);
+  const { data, isLoading, createAccount, makePayment, refundPayment } = useAccountsPayable(filters);
   const { data: bankAccounts } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
