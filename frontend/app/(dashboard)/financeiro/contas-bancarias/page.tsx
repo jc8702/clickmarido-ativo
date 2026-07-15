@@ -17,7 +17,10 @@ const ACCOUNT_TYPES = [
 export default function ContasBancariasPage() {
   const { data, isLoading, createAccount, updateAccount, deleteAccount, adjustBalance } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [adjustingAccount, setAdjustingAccount] = useState<any>(null);
+  const [balanceForm, setBalanceForm] = useState({ currentBalance: 0, notes: '' });
   const [form, setForm] = useState({
     bankName: '',
     agency: '',
@@ -45,6 +48,25 @@ export default function ContasBancariasPage() {
       resetForm();
     } catch (error) {
       toast.error('Erro ao salvar conta');
+    }
+  };
+
+  const handleAdjustBalanceClick = (account: any) => {
+    setAdjustingAccount(account);
+    setBalanceForm({ currentBalance: Number(account.currentBalance) || 0, notes: '' });
+    setShowBalanceModal(true);
+  };
+
+  const handleAdjustBalanceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustingAccount) return;
+    try {
+      await adjustBalance(adjustingAccount.id, balanceForm.currentBalance, balanceForm.notes);
+      toast.success('Saldo ajustado com sucesso!');
+      setShowBalanceModal(false);
+      setAdjustingAccount(null);
+    } catch (error) {
+      toast.error('Erro ao ajustar saldo');
     }
   };
 
@@ -149,6 +171,12 @@ export default function ContasBancariasPage() {
                 {formatCurrency(account.currentBalance)}
               </p>
               <div className="flex gap-2">
+                <button
+                  onClick={() => handleAdjustBalanceClick(account)}
+                  className="text-sm text-green-600 hover:text-green-800"
+                >
+                  Ajustar Saldo
+                </button>
                 <button
                   onClick={() => handleEdit(account)}
                   className="text-sm text-primary-600 hover:text-primary-800"
@@ -262,6 +290,47 @@ export default function ContasBancariasPage() {
             </Button>
             <Button type="submit">
               {editingAccount ? 'Salvar' : 'Criar'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={showBalanceModal}
+        onClose={() => { setShowBalanceModal(false); setAdjustingAccount(null); }}
+        title="Ajustar Saldo da Conta"
+      >
+        <form onSubmit={handleAdjustBalanceSubmit} className="space-y-4">
+          <p className="text-sm text-neutral-500 mb-2">
+            Isso atualizará o saldo e criará uma transação de ajuste financeiro no livro caixa para garantir a integridade.
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Novo Saldo Atual</label>
+            <input
+              type="number"
+              step="0.01"
+              value={balanceForm.currentBalance}
+              onChange={e => setBalanceForm({ ...balanceForm, currentBalance: parseFloat(e.target.value) || 0 })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Motivo do Ajuste (Opcional)</label>
+            <input
+              type="text"
+              value={balanceForm.notes}
+              onChange={e => setBalanceForm({ ...balanceForm, notes: e.target.value })}
+              className="w-full border border-neutral-300 dark:border-neutral-600 rounded-lg px-3 py-2 bg-white dark:bg-neutral-800"
+              placeholder="Ex: Correção de saldo, taxa bancária, etc."
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="secondary" onClick={() => { setShowBalanceModal(false); setAdjustingAccount(null); }}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              Ajustar Saldo
             </Button>
           </div>
         </form>
