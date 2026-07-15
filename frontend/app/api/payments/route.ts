@@ -133,6 +133,8 @@ export async function POST(request: NextRequest): Promise<Response> {
         description: `Pagamento recebido via ${payment.method}`,
         userId: '',
       });
+      const { syncPaymentReceived } = await import('@/lib/finance-sync');
+      await syncPaymentReceived(payment.id, prisma);
     }
 
     return NextResponse.json(payment, { status: 201 });
