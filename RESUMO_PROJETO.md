@@ -1,11 +1,18 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Pente fino de auditoria concluído e resolvido: CRUD de contas bancárias, contas a pagar e despesas fixas 100% corrigido (Next.js 15+ async params). Banco de dados real Neon saneado e sincronizado, exibindo R$ 440,00 de serviço e R$ 470,91 de ordens de compra em junho/julho de forma consistente.
+- **Status Atual:** Histórico de movimentações (extrato) por conta bancária integrado com design expansível no card de contas bancárias. API resolvida e deploy pronto.
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 15/07/2026 - 14:00
+- **Última Atualização:** 16/07/2026 - 16:55
 
 ## Histórico de Alterações
+- **[16/07/2026 - 16:55]:** Histórico de Movimentações por Conta Bancária e Expansão de Card:
+  - **Histórico de Transações por Conta**: Criada a rota de API `/api/financeiro/bank-accounts/[id]/transactions` para buscar, unificar e ordenar por data as transações reais da conta bancária (Contas a Pagar pagas, Contas a Receber recebidas, Transferências concluídas e Ajustes de saldo manuais).
+  - **Identificação da Ação**: Implementado mapeamento inteligente que resolve e extrai códigos de identificação compactos para cada movimentação (ex: `OC-2026-000004`, `OS-0001`, `INV-2026-0001`, `TF-ENV` ou `AJUSTE`) a partir dos relacionamentos de banco e textos do lançamento.
+  - **Card Interativo**: Atualizado o frontend para tornar os cards de conta bancária expansíveis ao clique. Ao expandir, o histórico de movimentações correspondente é carregado sob demanda via hook `useBankAccounts` e renderizado em um painel com scroll interno, listando sinal, valor, badge de identificação estilizado, descrição e data.
+  - Arquivos criados: `frontend/app/api/financeiro/bank-accounts/[id]/transactions/route.ts`, `frontend/test_bank_transactions.js`
+  - Arquivos modificados: `frontend/hooks/useBankAccounts.ts`, `frontend/app/(dashboard)/financeiro/contas-bancarias/page.tsx`
+
 - **[15/07/2026 - 14:00]:** Correção Geral de CRUDs Financeiros e Amarração Fina de Junho/Julho:
   - **CRUDs Restabelecidos**: Corrigidos todos os 11 endpoints de rotas dinâmicas sob `/api/financeiro` para resolver o parâmetro `params` de forma assíncrona (`await params`), resolvendo falhas de edição, exclusão e baixa em Contas Bancárias, Contas a Pagar e Despesas Fixas no Next.js 15+.
   - **Saneamento e Amarração de Serviços (R$ 440,00)**: Reativadas as faturas canceladas de julho (`INV-2026-0004-631` de R$ 150,00 e `INV-2026-0003-109` de R$ 100,00) como pagas e as ordens de serviço correspondentes concluídas. Atualizados status de `OS-0001` (R$ 60,00) e `OS-0002` (R$ 130,00) de agendada para concluída. Confirmados todos os pagamentos e registradas transações no Livro Caixa, consolidando exatamente R$ 440,00 de faturamento de serviço feito.

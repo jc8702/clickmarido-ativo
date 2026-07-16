@@ -101,6 +101,14 @@ export function useBankAccounts() {
     await mutate();
     return response.json();
   };
+  const getTransactions = useCallback(async (id: string) => {
+    const token = getToken();
+    const response = await fetch(`/api/financeiro/bank-accounts/${id}/transactions`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error('Erro ao buscar transações da conta');
+    return response.json();
+  }, [getToken]);
 
   return {
     data,
@@ -110,5 +118,6 @@ export function useBankAccounts() {
     updateAccount,
     deleteAccount,
     adjustBalance,
+    getTransactions,
   };
 }

@@ -15,7 +15,7 @@ const ACCOUNT_TYPES = [
 ];
 
 export default function ContasBancariasPage() {
-  const { data, isLoading, createAccount, updateAccount, deleteAccount, adjustBalance } = useBankAccounts();
+  const { data, isLoading, createAccount, updateAccount, deleteAccount, adjustBalance, getTransactions } = useBankAccounts();
   const [showModal, setShowModal] = useState(false);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
@@ -32,6 +32,33 @@ export default function ContasBancariasPage() {
     isDefault: false,
     notes: '',
   });
+
+  // Estados para movimentações expansíveis
+  const [expandedAccountId, setExpandedAccountId] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Record<string, any[]>>({});
+  const [loadingTransactions, setLoadingTransactions] = useState<Record<string, boolean>>({});
+
+  const handleToggleExpand = async (accountId: string) => {
+    if (expandedAccountId === accountId) {
+      setExpandedAccountId(null);
+      return;
+    }
+    
+    setExpandedAccountId(accountId);
+    
+    if (!transactions[accountId]) {
+      setLoadingTransactions(prev => ({ ...prev, [accountId]: true }));
+      try {
+        const txs = await getTransactions(accountId);
+        setTransactions(prev => ({ ...prev, [accountId]: txs }));
+      } catch (error) {
+        toast.error('Erro ao carregar movimentações');
+        console.error(error);
+      } finally {
+        setLoadingTransactions(prev => ({ ...prev, [accountId]: false }));
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +92,12 @@ export default function ContasBancariasPage() {
       toast.success('Saldo ajustado com sucesso!');
       setShowBalanceModal(false);
       setAdjustingAccount(null);
+      // Limpar cache de transações para forçar recarga, já que o ajuste cria uma nova transação
+      setTransactions(prev => {
+        const updated = { ...prev };
+        delete updated[adjustingAccount.id];
+        return updated;
+      });
     } catch (error) {
       toast.error('Erro ao ajustar saldo');
     }
@@ -143,7 +176,12 @@ export default function ContasBancariasPage() {
           data.data.map((account) => (
             <div
               key={account.id}
-              className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4 relative"
+              onClick={() => handleToggleExpand(account.id)}
+              className={`bg-white dark:bg-neutral-900 rounded-xl border p-4 relative cursor-pointer transition-all duration-300 ${
+                expandedAccountId === account.id
+                  ? 'border-primary-500 dark:border-primary-400 shadow-md ring-1 ring-primary-500/20'
+                  : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm'
+              }`}
             >
               {account.isDefault && (
                 <span className="absolute top-2 right-2 text-xs bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded">
@@ -170,26 +208,81 @@ export default function ContasBancariasPage() {
               <p className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
                 {formatCurrency(account.currentBalance)}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   onClick={() => handleAdjustBalanceClick(account)}
-                  className="text-sm text-green-600 hover:text-green-800"
+                  className="text-sm text-green-600 hover:text-green-800 dark:text-green-500 dark:hover:text-green-400 font-medium"
                 >
                   Ajustar Saldo
                 </button>
                 <button
                   onClick={() => handleEdit(account)}
-                  className="text-sm text-primary-600 hover:text-primary-800"
+                  className="text-sm text-primary-600 hover:text-primary-800 dark:text-primary-500 dark:hover:text-primary-400 font-medium"
                 >
                   Editar
                 </button>
                 <button
                   onClick={() => handleDelete(account.id)}
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400 font-medium"
                 >
                   Excluir
                 </button>
               </div>
+
+              {/* Painel de Transações Expandido */}
+              {expandedAccountId === account.id && (
+                <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-800" onClick={(e) => e.stopPropagation()}>
+                  <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2">
+                    Movimentações Recentes
+                  </p>
+                  
+                  {loadingTransactions[account.id] ? (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : !transactions[account.id] || transactions[account.id].length === 0 ? (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 py-2 text-center">
+                      Nenhuma movimentação nesta conta
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                      {transactions[account.id].map((tx) => (
+                        <div 
+                          key={tx.id} 
+                          className="flex items-center justify-between text-xs py-1.5 border-b border-neutral-50 dark:border-neutral-800/40 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/20 px-1 rounded transition-colors"
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0 mr-2">
+                            <span className={`font-semibold shrink-0 ${
+                              tx.type === 'DEBIT' 
+                                ? 'text-red-600 dark:text-red-400' 
+                                : 'text-green-600 dark:text-green-400'
+                            }`}>
+                              {tx.type === 'DEBIT' ? '-' : '+'} {formatCurrency(tx.amount)}
+                            </span>
+                            <span className={`px-1.5 py-0.5 rounded-[4px] text-[9px] font-bold tracking-wide shrink-0 ${
+                              tx.identifier.startsWith('OC-')
+                                ? 'bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/30'
+                                : tx.identifier.startsWith('OS-')
+                                ? 'bg-purple-100/80 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/30'
+                                : tx.identifier.startsWith('INV-')
+                                ? 'bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200/50 dark:border-amber-800/30'
+                                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                            }`}>
+                              {tx.identifier}
+                            </span>
+                            <span className="text-neutral-600 dark:text-neutral-400 truncate" title={tx.description}>
+                              {tx.description}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0 font-medium">
+                            {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}
