@@ -17,14 +17,12 @@ export async function GET(request: NextRequest) {
     const now = new Date();
 
     if (startDate && endDate) {
-      // Usar datas exatas considerando início do dia para startDate e fim do dia para endDate
       const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
       const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
       start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0);
       end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999);
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-      // Nos primeiros 10 dias do mês, incluir mês anterior para manter dados visíveis
       if (now.getDate() <= 10) {
         start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
       }
@@ -89,7 +87,6 @@ export async function GET(request: NextRequest) {
 
     const recordedInvoiceIds = new Set<string>();
 
-    // a) Pagamentos confirmados no período
     for (const p of allPayments) {
       const pDate = p.paidAt || p.confirmedAt || p.createdAt;
       if (pDate >= start && pDate <= end) {
@@ -104,12 +101,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // b) Contas a Receber baixadas no período
     for (const r of allReceivables) {
       const rDate = r.paidDate || r.updatedAt || r.createdAt;
       if (rDate >= start && rDate <= end) {
         if (r.invoiceId && recordedInvoiceIds.has(r.invoiceId)) {
-          continue; // Já contabilizado via Payment
+          continue;
         }
         revenueItems.push({
           id: r.id,
@@ -122,7 +118,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // c) Faturas pagas no período
     for (const inv of allInvoices) {
       if (inv.status === 'paga') {
         const invDate = inv.updatedAt || inv.issueDate;
@@ -175,48 +170,67 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const expenseItems: Array<{
+    // Desduplicação inteligente de despesas:
+    // Se a mesma Ordem de Compra ou transação existir como AccountPayable (categoria DESPESA) e como Expense (ex: MATERIAL),
+    // mantemos APENAS uma entrada categorizada como "DESPESA".
+    type ExpenseItem = {
       id: string;
       date: Date;
       description: string;
       amount: number;
       category: string;
       costCenter?: string | null;
-    }> = [];
+    };
 
-    const recordedExpenseIds = new Set<string>();
+    const expenseMap = new Map<string, ExpenseItem>();
 
-    for (const e of allExpenses) {
-      const eDate = e.expenseDate || e.createdAt;
-      if (eDate >= start && eDate <= end) {
-        expenseItems.push({
-          id: e.id,
-          date: eDate,
-          description: e.description || 'Despesa',
-          amount: Number(e.amount),
-          category: e.category || 'OUTROS',
-          costCenter: e.costCenter,
-        });
-        recordedExpenseIds.add(e.id);
-      }
-    }
+    const getExpenseKey = (desc: string, amount: number) => {
+      const ocMatch = desc.match(/OC-\d{4}-\d+/i);
+      if (ocMatch) return ocMatch[0].toUpperCase();
+      return `${desc.toLowerCase().trim()}_${amount.toFixed(2)}`;
+    };
 
+    // Prioridade 1: Contas a pagar registradas (com categoria DESPESA)
     for (const p of allPayables) {
       const pDate = p.paidDate || p.updatedAt || p.createdAt;
       if (pDate >= start && pDate <= end) {
-        if (p.expenseId && recordedExpenseIds.has(p.expenseId)) {
-          continue; // Já contabilizado via Expense
-        }
-        expenseItems.push({
+        const desc = p.title || p.description || 'Conta a Pagar';
+        const amt = Number(p.paidAmount || p.totalAmount);
+        const key = getExpenseKey(desc, amt);
+
+        expenseMap.set(key, {
           id: p.id,
           date: pDate,
-          description: p.title || p.description || 'Conta a Pagar',
-          amount: Number(p.paidAmount || p.totalAmount),
-          category: p.chartOfAccount?.type || 'OUTROS',
+          description: desc,
+          amount: amt,
+          category: 'DESPESA',
           costCenter: null,
         });
       }
     }
+
+    // Prioridade 2: Despesas da tabela Expense (adiciona apenas se a OC/transação já não estiver presente)
+    for (const e of allExpenses) {
+      const eDate = e.expenseDate || e.createdAt;
+      if (eDate >= start && eDate <= end) {
+        const desc = e.description || 'Despesa';
+        const amt = Number(e.amount);
+        const key = getExpenseKey(desc, amt);
+
+        if (!expenseMap.has(key)) {
+          expenseMap.set(key, {
+            id: e.id,
+            date: eDate,
+            description: desc,
+            amount: amt,
+            category: 'DESPESA',
+            costCenter: e.costCenter,
+          });
+        }
+      }
+    }
+
+    const expenseItems = Array.from(expenseMap.values());
 
     // Calcular totais da DRE
     const receitaBruta = revenueItems.reduce((sum, item) => sum + item.amount, 0);
@@ -237,28 +251,24 @@ export async function GET(request: NextRequest) {
 
     const receitaLiquida = receitaBruta - impostosSobreReceita - descontos;
 
-    // CPV (Custos Produtos/Serviços Vendidos)
     const custosProdutosServicos = expenseItems
       .filter(e => ['MATERIAL', 'SERVICO', 'TRANSPORTE', 'PECA', 'MAO_DE_OBRA'].includes(e.category))
       .reduce((sum, e) => sum + e.amount, 0);
 
     const lucroBruto = receitaLiquida - custosProdutosServicos;
 
-    // Despesas operacionais
     const despesasOperacionais = expenseItems
-      .filter(e => ['ALUGUEL', 'UTILIDADES', 'FERRAMENTAS', 'MARKETING', 'RH', 'OUTROS', 'OUTROS_CUSTOS'].includes(e.category))
+      .filter(e => ['ALUGUEL', 'UTILIDADES', 'FERRAMENTAS', 'MARKETING', 'RH', 'OUTROS', 'OUTROS_CUSTOS', 'DESPESA'].includes(e.category))
       .reduce((sum, e) => sum + e.amount, 0);
 
     const resultadoOperacional = lucroBruto - despesasOperacionais;
 
-    // Despesas financeiras
     const totalDespesasFinanceiras = expenseItems
       .filter(e => ['JUROS', 'TARIFAS', 'FINANCEIRO'].includes(e.category))
       .reduce((sum, e) => sum + e.amount, 0);
 
     const resultadoFinanceiro = resultadoOperacional - totalDespesasFinanceiras;
 
-    // Impostos
     const impostos = expenseItems
       .filter(e => ['IMPOSTOS_TAXAS', 'IMPOSTOS', 'TAXAS'].includes(e.category) || e.costCenter === 'IMPOSTOS')
       .reduce((sum, e) => sum + e.amount, 0);
@@ -290,7 +300,7 @@ export async function GET(request: NextRequest) {
         description: item.description,
         amount: item.amount,
         type: 'revenue' as const,
-        category: 'Receita',
+        category: 'RECEITA',
       })),
       ...expenseItems.map(item => ({
         id: item.id,
@@ -298,7 +308,7 @@ export async function GET(request: NextRequest) {
         description: item.description,
         amount: -item.amount,
         type: 'expense' as const,
-        category: item.category,
+        category: 'DESPESA',
       })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

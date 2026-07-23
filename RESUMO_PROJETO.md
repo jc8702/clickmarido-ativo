@@ -6,6 +6,11 @@
 - **Última Atualização:** 23/07/2026 - 15:30
 
 ## Histórico de Alterações
+- **[23/07/2026 - 17:25]:** Desduplicação de Despesas e Simplificação de Filtros na DRE:
+  - **Desduplicação Inteligente**: Despesas vinculadas a Ordens de Compra (OCs) presentes em `AccountPayable` e `Expense` agora são desduplicadas por código de OC/chave de transação, priorizando o rótulo `DESPESA` e eliminando repetições como `MATERIAL`.
+  - **Filtros Simplificados**: Removido o filtro dropdown de categorias no Histórico de Movimentações da DRE, mantendo estritamente os botões `Tudo`, `Receitas` e `Despesas`.
+  - Arquivos modificados: `frontend/app/api/financeiro/dre/route.ts`, `frontend/app/(dashboard)/financeiro/dre/page.tsx`
+
 - **[23/07/2026 - 17:00]:** Correção Definitiva de Receitas e Filtro por Período na DRE:
   - **Unificação de Fontes de Receita**: A DRE agora unifica todas as 3 origens de receita do CRM: `Payment` (pagamentos confirmados), `AccountReceivable` (contas a receber baixadas/parciais) e `Invoice` (faturas pagas), com desduplicação automática por `invoiceId`.
   - **Tratamento de Datas e Fuso Horário**: Tratado o parsing de datas (`startDate` e `endDate`) para cobrir desde a meia-noite do primeiro dia até 23:59:59 do último dia no fuso horário local.
