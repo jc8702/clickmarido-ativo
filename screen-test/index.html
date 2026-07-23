@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Tela - Teste de Pixels e Resolução</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a2e;
+            --text-primary: #e8e8f0;
+            --text-secondary: #9090a8;
+            --accent: #6c5ce7;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --success: #00d68f;
+            --warning: #ffaa00;
+            --danger: #ff4757;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ===== DASHBOARD VIEW ===== */
+        #dashboard {
+            padding: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #a29bfe);
+            border-radius: 2px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e8e8f0, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* System Info Card */
+        .system-info {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .system-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), #a29bfe, var(--success));
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .info-item .value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .info-item .value.highlight {
+            color: var(--accent);
+        }
+
+        /* Test Grid */
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .test-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .test-card .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .test-card .icon.red { background: rgba(255, 71, 87, 0.15); }
+        .test-card .icon.green { background: rgba(0, 214, 143, 0.15); }
+        .test-card .icon.blue { background: rgba(108, 92, 231, 0.15); }
+        .test-card .icon.yellow { background: rgba(255, 170, 0, 0.15); }
+        .test-card .icon.cyan { background: rgba(0, 210, 255, 0.15); }
+        .test-card .icon.purple { background: rgba(162, 155, 254, 0.15); }
+
+        .test-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .test-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .test-card .badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.essential {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
+        }
+
+        .badge.recommended {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--warning);
+        }
+
+        /* Results Panel */
+        .results-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .results-panel h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-row .name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .result-status {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-ok {
+            background: rgba(0, 214, 143, 0.15);
+            color: var(--success);
+        }
+
+        .status-warning {
+            background: rgba(255, 170, 0, 0.15);
+            color: var(--warning);
+        }
+
+        .status-error {
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--danger);
+        }
+
+        .status-pending {
+            background: rgba(144, 144, 168, 0.15);
+            color: var(--text-secondary);
+        }
+
+        /* ===== FULLSCREEN TEST VIEW ===== */
+        #testView {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            cursor: crosshair;
+        }
+
+        #testCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .test-overlay {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 24px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: #fff;
+            transition: opacity 0.3s ease;
+        }
+
+        .test-overlay .key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* Mouse tracker info */
+        .mouse-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px 16px;
+            z-index: 10001;
+            font-family: 'Inter', monospace;
+            font-size: 12px;
+            color: #fff;
+            pointer-events: none;
+        }
+
+        /* Line artifact detector */
+        .artifact-zone {
+            position: fixed;
+            left: 0;
+            right: 0;
+            height: 2px;
+            z-index: 10002;
+            pointer-events: none;
+        }
+
+        /* Auto-run test banner */
+        .auto-banner {
+            background: linear-gradient(135deg, rgba(108, 92, 231, 0.1), rgba(0, 214, 143, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auto-banner .pulse {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .auto-banner p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .auto-banner strong {
+            color: var(--text-primary);
+        }
+
+        /* Zoom magnifier */
+        #magnifier {
+            display: none;
+            position: fixed;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 10003;
+        }
+
+        #magnifierCanvas {
+            width: 160px;
+            height: 160px;
+        }
+
+        /* Button styles */
+        .btn-run-all {
+            background: linear-gradient(135deg, var(--accent), #a29bfe);
+            border: none;
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 32px auto 0;
+        }
+
+        .btn-run-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        /* Loading animation */
+        .scanning {
+            position: relative;
+        }
+
+        .scanning::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            .system-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <div class="header">
+            <h1>🖥️ Diagnóstico de Tela</h1>
+            <p>Teste completo de pixels, resolução e artefatos visuais</p>
+        </div>
+
+        <div class="auto-banner" id="autoBanner">
+            <div class="pulse"></div>
+            <p><strong>Análise automática em andamento...</strong> Detectando informações do sistema e verificando possíveis problemas.</p>
+        </div>
+
+        <div class="system-info" id="systemInfo">
+            <!-- Populated by JS -->
+        </div>
+
+        <div class="test-grid">
+            <div class="test-card" onclick="startTest('solid-colors')">
+                <span class="badge essential">Essencial</span>
+                <div class="icon red">🔴</div>
+                <h3>Cores Sólidas</h3>
+                <p>Detecta pixels mortos e stuck pixels com telas de cores puras (vermelho, verde, azul, preto, branco).</p>
+            </div>
+
+            <div class="test-card" onclick="startTest('gradient')">
+                <span class="badge essential">Essencial</span>
+                <div class="icon purple">🌈</div>
+                <h3>Gradientes</h3>
+                <p>Verifica banding de cores e transições suaves. Detecta problemas de profundidade de cor.</p>
+            </div>
+
+            <div class="test-card" onclick="startTest('grid-lines')">
+                <span class="badge essential">Essencial</span>
+                <div class="icon blue">📐</div>
+                <h3>Linhas e Grade</h3>
+                <p>Testa alinhamento de pixels, linhas retas e detecção de artefatos/tremores.</p>
+            </div>
+
+            <div class="test-card" onclick="startTest('checkerboard')">
+                <span class="badge recommended">Recomendado</span>
+                <div class="icon green">♟️</div>
+                <h3>Xadrez (Checkerboard)</h3>
+                <p>Padrão xadrez 1px para verificar nitidez e interferência entre pixels adjacentes.</p>
+            </div>
+
+            <div class="test-card" onclick="startTest('mouse-trail')">
+                <span class="badge essential">Essencial</span>
+                <div class="icon yellow">🖱️</div>
+                <h3>Rastreio do Mouse</h3>
+                <p>Mova o mouse para detectar linhas fantasma, tremores e artefatos de renderização.</p>
+            </div>
+
+            <div class="test-card" onclick="startTest('toolbar-zone')">
+                <span class="badge essential">Essencial</span>
+                <div class="icon cyan">⚡</div>
+                <h3>Zona da Barra de Ferramentas</h3>
+                <p>Teste específico para a região abaixo da barra de ferramentas onde você relatou o problema.</p>
+            </div>
+        </div>
+
+        <div class="results-panel" id="resultsPanel">
+            <h2>📊 Resultados do Diagnóstico</h2>
+            <div id="resultsList">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <button class="btn-run-all" onclick="runAutoTest()">▶ Executar Diagnóstico Automático Completo</button>
+    </div>
+
+    <!-- Fullscreen Test View -->
+    <div id="testView">
+        <canvas id="testCanvas"></canvas>
+        <div class="test-overlay" id="testOverlay">
+            <span>Pressione <span class="key">ESC</span> para sair</span>
+            <span>|</span>
+            <span><span class="key">→</span> Próximo</span>
+            <span><span class="key">M</span> Lupa</span>
+        </div>
+        <div class="mouse-info" id="mouseInfo" style="display:none;">
+            <div>X: <span id="mx">0</span> Y: <span id="my">0</span></div>
+            <div>Pixel: <span id="mpx">--</span></div>
+        </div>
+        <div id="magnifier">
+            <canvas id="magnifierCanvas" width="160" height="160"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        const state = {
+            currentTest: null,
+            currentStep: 0,
+            magnifierOn: false,
+            results: {},
+            testSteps: {},
+        };
+
+        const canvas = document.getElementById('testCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const magCanvas = document.getElementById('magnifierCanvas');
+        const magCtx = magCanvas.getContext('2d');
+
+        // ===== SYSTEM INFO =====
+        function gatherSystemInfo() {
+            const info = {
+                screenWidth: screen.width,
+                screenHeight: screen.height,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                devicePixelRatio: window.devicePixelRatio,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth,
+                orientation: screen.orientation ? screen.orientation.type : 'N/A',
+                availWidth: screen.availWidth,
+                availHeight: screen.availHeight,
+            };
+
+            const container = document.getElementById('systemInfo');
+            container.innerHTML = `
+                <div class="info-item">
+                    <span class="label">Resolução da Tela</span>
+                    <span class="value highlight">${info.screenWidth} × ${info.screenHeight}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Área Disponível</span>
+                    <span class="value">${info.availWidth} × ${info.availHeight}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Janela do Navegador</span>
+                    <span class="value">${info.windowWidth} × ${info.windowHeight}</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Device Pixel Ratio</span>
+                    <span class="value highlight">${info.devicePixelRatio}x</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Profundidade de Cor</span>
+                    <span class="value">${info.colorDepth} bits</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Pixel Depth</span>
+                    <span class="value">${info.pixelDepth} bits</span>
+                </div>
+            `;
+
+            // Auto-analysis
+            const issues = [];
+
+            if (info.devicePixelRatio !== Math.round(info.devicePixelRatio)) {
+                issues.push({
+                    name: 'Escala fracionada',
+                    status: 'warning',
+                    detail: `DPR ${info.devicePixelRatio} pode causar linhas tremendo/borradas`
+                });
+            }
+
+            if (info.devicePixelRatio > 1 && info.devicePixelRatio < 2) {
+                issues.push({
+                    name: 'Escala intermediária (125%/150%)',
+                    status: 'warning',
+                    detail: 'Causa artefatos de subpixel e linhas irregulares'
+                });
+            }
+
+            if (info.screenWidth !== info.availWidth || info.screenHeight !== info.availHeight) {
+                const barHeight = info.screenHeight - info.availHeight;
+                issues.push({
+                    name: 'Barra de tarefas detectada',
+                    status: 'ok',
+                    detail: `Altura da barra: ~${barHeight}px`
+                });
+            }
+
+            if (info.colorDepth < 24) {
+                issues.push({
+                    name: 'Profundidade de cor baixa',
+                    status: 'error',
+                    detail: `${info.colorDepth} bits — pode causar banding`
+                });
+            } else {
+                issues.push({
+                    name: 'Profundidade de cor',
+                    status: 'ok',
+                    detail: `${info.colorDepth} bits — adequado`
+                });
+            }
+
+            // Check for toolbar zone issue
+            const toolbarBottom = info.screenHeight - info.availHeight;
+            if (toolbarBottom > 0) {
+                issues.push({
+                    name: 'Zona crítica (abaixo da barra)',
+                    status: 'warning',
+                    detail: `A barra termina em ~${toolbarBottom}px — verifique artefatos nessa região`
+                });
+            }
+
+            // DPI scaling analysis
+            const scalePct = Math.round(info.devicePixelRatio * 100);
+            if (scalePct === 100) {
+                issues.push({
+                    name: 'Escala do Windows',
+                    status: 'ok',
+                    detail: '100% — sem distorção de escala'
+                });
+            } else if (scalePct === 125 || scalePct === 150 || scalePct === 175) {
+                issues.push({
+                    name: 'Escala do Windows',
+                    status: 'warning',
+                    detail: `${scalePct}% — PROVÁVEL CAUSA do tremor de linhas`
+                });
+            } else if (scalePct === 200) {
+                issues.push({
+                    name: 'Escala do Windows',
+                    status: 'ok',
+                    detail: '200% — escala inteira, sem artefatos'
+                });
+            }
+
+            renderResults(issues);
+            return info;
+        }
+
+        function renderResults(issues) {
+            const container = document.getElementById('resultsList');
+            container.innerHTML = issues.map(issue => `
+                <div class="result-row">
+                    <span class="name">${issue.name}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:12px;color:var(--text-secondary)">${issue.detail}</span>
+                        <span class="result-status status-${issue.status}">
+                            ${issue.status === 'ok' ? '✓ OK' : issue.status === 'warning' ? '⚠ Atenção' : '✗ Problema'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== TEST ENGINE =====
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+        }
+
+        function startTest(testName) {
+            state.currentTest = testName;
+            state.currentStep = 0;
+            document.getElementById('testView').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            setupCanvas();
+            renderTest();
+
+            document.addEventListener('keydown', handleTestKey);
+            document.addEventListener('mousemove', handleMouse);
+        }
+
+        function exitTest() {
+            document.getElementById('testView').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('mouseInfo').style.display = 'none';
+            document.getElementById('magnifier').style.display = 'none';
+            state.magnifierOn = false;
+            document.removeEventListener('keydown', handleTestKey);
+            document.removeEventListener('mousemove', handleMouse);
+        }
+
+        function handleTestKey(e) {
+            if (e.key === 'Escape') {
+                exitTest();
+            } else if (e.key === 'ArrowRight' || e.key === ' ') {
+                state.currentStep++;
+                renderTest();
+            } else if (e.key === 'ArrowLeft') {
+                if (state.currentStep > 0) state.currentStep--;
+                renderTest();
+            } else if (e.key === 'm' || e.key === 'M') {
+                state.magnifierOn = !state.magnifierOn;
+                document.getElementById('magnifier').style.display = state.magnifierOn ? 'block' : 'none';
+                document.getElementById('mouseInfo').style.display = state.magnifierOn ? 'block' : 'none';
+            }
+        }
+
+        function handleMouse(e) {
+            if (state.currentTest === 'mouse-trail') {
+                drawMouseTrail(e);
+            }
+            if (state.currentTest === 'toolbar-zone') {
+                drawToolbarZoneTracker(e);
+            }
+
+            if (state.magnifierOn) {
+                updateMagnifier(e);
+            }
+
+            document.getElementById('mx').textContent = e.clientX;
+            document.getElementById('my').textContent = e.clientY;
+
+            try {
+                const dpr = window.devicePixelRatio || 1;
+                const px = ctx.getImageData(e.clientX * dpr, e.clientY * dpr, 1, 1).data;
+                document.getElementById('mpx').textContent = `rgb(${px[0]},${px[1]},${px[2]})`;
+            } catch(err) {
+                document.getElementById('mpx').textContent = '--';
+            }
+        }
+
+        function updateMagnifier(e) {
+            const mag = document.getElementById('magnifier');
+            const size = 160;
+            const zoom = 8;
+            const dpr = window.devicePixelRatio || 1;
+
+            mag.style.left = (e.clientX + 20) + 'px';
+            mag.style.top = (e.clientY - size - 20) + 'px';
+
+            const sourceSize = Math.floor(size / zoom);
+            const sx = Math.max(0, e.clientX * dpr - sourceSize / 2);
+            const sy = Math.max(0, e.clientY * dpr - sourceSize / 2);
+
+            try {
+                const imageData = ctx.getImageData(sx, sy, sourceSize, sourceSize);
+                magCtx.clearRect(0, 0, size, size);
+                magCtx.imageSmoothingEnabled = false;
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = sourceSize;
+                tempCanvas.height = sourceSize;
+                tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+
+                magCtx.drawImage(tempCanvas, 0, 0, sourceSize, sourceSize, 0, 0, size, size);
+
+                // Crosshair
+                magCtx.strokeStyle = 'rgba(255,0,0,0.5)';
+                magCtx.lineWidth = 1;
+                magCtx.beginPath();
+                magCtx.moveTo(size / 2, 0);
+                magCtx.lineTo(size / 2, size);
+                magCtx.moveTo(0, size / 2);
+                magCtx.lineTo(size, size / 2);
+                magCtx.stroke();
+            } catch (err) {}
+        }
+
+        // ===== RENDER TESTS =====
+        function renderTest() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            switch (state.currentTest) {
+                case 'solid-colors':
+                    renderSolidColors(w, h);
+                    break;
+                case 'gradient':
+                    renderGradient(w, h);
+                    break;
+                case 'grid-lines':
+                    renderGridLines(w, h);
+                    break;
+                case 'checkerboard':
+                    renderCheckerboard(w, h);
+                    break;
+                case 'mouse-trail':
+                    renderMouseTrailBase(w, h);
+                    break;
+                case 'toolbar-zone':
+                    renderToolbarZone(w, h);
+                    break;
+            }
+        }
+
+        // --- Solid Colors ---
+        function renderSolidColors(w, h) {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#000000', '#ffffff', '#808080'];
+            const names = ['Vermelho', 'Verde', 'Azul', 'Preto', 'Branco', 'Cinza 50%'];
+            const step = state.currentStep % colors.length;
+
+            ctx.fillStyle = colors[step];
+            ctx.fillRect(0, 0, w, h);
+
+            // Info text
+            const textColor = step === 3 || step === 2 ? '#fff' : '#000';
+            ctx.fillStyle = textColor;
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${names[step]} (${step + 1}/${colors.length}) — Procure por pixels que não correspondem à cor`, w / 2, 30);
+        }
+
+        // --- Gradient ---
+        function renderGradient(w, h) {
+            const gradients = [
+                { type: 'h', colors: ['#000', '#fff'], name: 'Preto → Branco (Horizontal)' },
+                { type: 'v', colors: ['#000', '#fff'], name: 'Preto → Branco (Vertical)' },
+                { type: 'h', colors: ['#ff0000', '#00ff00'], name: 'Vermelho → Verde' },
+                { type: 'h', colors: ['#0000ff', '#ffff00'], name: 'Azul → Amarelo' },
+                { type: 'rainbow', name: 'Arco-Íris Completo' },
+            ];
+            const step = state.currentStep % gradients.length;
+            const g = gradients[step];
+
+            if (g.type === 'rainbow') {
+                for (let x = 0; x < w; x++) {
+                    const hue = (x / w) * 360;
+                    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+                    ctx.fillRect(x, 0, 1, h);
+                }
+            } else {
+                const isH = g.type === 'h';
+                const grad = isH
+                    ? ctx.createLinearGradient(0, 0, w, 0)
+                    : ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, g.colors[0]);
+                grad.addColorStop(1, g.colors[1]);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(w / 2 - 200, 10, 400, 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${g.name} (${step + 1}/${gradients.length}) — Procure por faixas/banding`, w / 2, 30);
+        }
+
+        // --- Grid Lines ---
+        function renderGridLines(w, h) {
+            const patterns = ['fine-grid', 'horizontal-lines', 'vertical-lines', 'diagonal', '1px-alternating'];
+            const names = ['Grade Fina (10px)', 'Linhas Horizontais 1px', 'Linhas Verticais 1px', 'Diagonais 45°', 'Alternância 1px'];
+            const step = state.currentStep % patterns.length;
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+
+            switch (patterns[step]) {
+                case 'fine-grid':
+                    for (let x = 0; x <= w; x += 10) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + 0.5, 0);
+                        ctx.lineTo(x + 0.5, h);
+                        ctx.stroke();
+                    }
+                    for (let y = 0; y <= h; y += 10) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y + 0.5);
+                        ctx.lineTo(w, y + 0.5);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 'horizontal-lines':
+                    for (let y = 0; y <= h; y += 2) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y + 0.5);
+                        ctx.lineTo(w, y + 0.5);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 'vertical-lines':
+                    for (let x = 0; x <= w; x += 2) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + 0.5, 0);
+                        ctx.lineTo(x + 0.5, h);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 'diagonal':
+                    for (let i = -h; i < w + h; i += 10) {
+                        ctx.beginPath();
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i + h, h);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case '1px-alternating':
+                    const dpr = window.devicePixelRatio || 1;
+                    for (let y = 0; y < h; y += 2) {
+                        ctx.fillStyle = y % 4 === 0 ? '#fff' : '#000';
+                        ctx.fillRect(0, y, w, 1);
+                    }
+                    break;
+            }
+
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(w / 2 - 250, 10, 500, 30);
+            ctx.fillStyle = '#0f0';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${names[step]} (${step + 1}/${patterns.length}) — Procure por linhas irregulares ou tremendo`, w / 2, 30);
+        }
+
+        // --- Checkerboard ---
+        function renderCheckerboard(w, h) {
+            const sizes = [1, 2, 4, 8];
+            const step = state.currentStep % sizes.length;
+            const size = sizes[step];
+
+            for (let y = 0; y < h; y += size) {
+                for (let x = 0; x < w; x += size) {
+                    const isEven = ((x / size + y / size) % 2) === 0;
+                    ctx.fillStyle = isEven ? '#fff' : '#000';
+                    ctx.fillRect(x, y, size, size);
+                }
+            }
+
+            ctx.fillStyle = 'rgba(128,0,255,0.8)';
+            ctx.fillRect(w / 2 - 200, 10, 400, 30);
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Xadrez ${size}px (${step + 1}/${sizes.length}) — Verifique nitidez e moiré`, w / 2, 30);
+        }
+
+        // --- Mouse Trail ---
+        let trailPoints = [];
+
+        function renderMouseTrailBase(w, h) {
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw reference lines
+            ctx.strokeStyle = 'rgba(108, 92, 231, 0.3)';
+            ctx.lineWidth = 1;
+            for (let y = 50; y < h; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(w, y + 0.5);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mova o mouse lentamente — observe se as linhas de referência tremem', w / 2, 30);
+
+            document.getElementById('mouseInfo').style.display = 'block';
+            trailPoints = [];
+        }
+
+        function drawMouseTrail(e) {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            trailPoints.push({ x: e.clientX, y: e.clientY, t: Date.now() });
+            if (trailPoints.length > 200) trailPoints.shift();
+
+            // Redraw base
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, w, h);
+
+            // Reference lines
+            ctx.strokeStyle = 'rgba(108, 92, 231, 0.3)';
+            ctx.lineWidth = 1;
+            for (let y = 50; y < h; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(w, y + 0.5);
+                ctx.stroke();
+            }
+
+            // Trail
+            if (trailPoints.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#00d68f';
+                ctx.lineWidth = 2;
+                ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                for (let i = 1; i < trailPoints.length; i++) {
+                    ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+                }
+                ctx.stroke();
+            }
+
+            // Cursor crosshair
+            ctx.strokeStyle = 'rgba(255, 71, 87, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(e.clientX, 0);
+            ctx.lineTo(e.clientX, h);
+            ctx.moveTo(0, e.clientY);
+            ctx.lineTo(w, e.clientY);
+            ctx.stroke();
+
+            // Circle at cursor
+            ctx.strokeStyle = '#ff4757';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(e.clientX, e.clientY, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mova o mouse lentamente — observe se as linhas de referência tremem', w / 2, 30);
+        }
+
+        // --- Toolbar Zone ---
+        function renderToolbarZone(w, h) {
+            // Dark background
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, w, h);
+
+            const toolbarEstimate = screen.height - screen.availHeight;
+            const zoneStart = 0;
+            const zoneHeight = Math.max(toolbarEstimate + 50, 100);
+
+            // Highlight zone with critical lines
+            ctx.fillStyle = 'rgba(255, 71, 87, 0.05)';
+            ctx.fillRect(0, zoneStart, w, zoneHeight);
+
+            // Draw precise 1px lines in the toolbar zone
+            for (let y = 0; y <= zoneHeight; y += 1) {
+                const brightness = y % 2 === 0 ? 200 : 50;
+                ctx.strokeStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(w, y + 0.5);
+                ctx.stroke();
+            }
+
+            // Reference markers every 10px
+            ctx.fillStyle = '#ff4757';
+            ctx.font = '10px monospace';
+            for (let y = 0; y <= zoneHeight; y += 10) {
+                ctx.fillText(`${y}px`, 5, y + 10);
+                ctx.strokeStyle = '#ff4757';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(40, y + 0.5);
+                ctx.lineTo(60, y + 0.5);
+                ctx.stroke();
+            }
+
+            // Rest of screen: subtle pattern
+            for (let y = zoneHeight; y < h; y += 20) {
+                ctx.strokeStyle = 'rgba(108, 92, 231, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(w, y + 0.5);
+                ctx.stroke();
+            }
+
+            // Info
+            ctx.fillStyle = 'rgba(0,0,0,0.85)';
+            ctx.fillRect(w / 2 - 300, h / 2 - 60, 600, 120);
+            ctx.strokeStyle = 'var(--accent)';
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🔍 ZONA DA BARRA DE FERRAMENTAS', w / 2, h / 2 - 30);
+            ctx.font = '13px Inter, sans-serif';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText(`Barra estimada: ${toolbarEstimate}px | Zona de teste: 0-${zoneHeight}px`, w / 2, h / 2);
+            ctx.fillText('Mova o mouse sobre as linhas no topo e observe se alguma treme', w / 2, h / 2 + 25);
+            ctx.fillText('Pressione M para ativar a lupa e inspecionar pixels individuais', w / 2, h / 2 + 45);
+        }
+
+        function drawToolbarZoneTracker(e) {
+            // Only redraw cursor area for performance
+            const w = window.innerWidth;
+
+            // Cursor indicator
+            ctx.strokeStyle = 'rgba(0, 214, 143, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, e.clientY + 0.5);
+            ctx.lineTo(w, e.clientY + 0.5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Re-render to clean up old cursor lines
+            renderToolbarZone(w, window.innerHeight);
+        }
+
+        // ===== AUTO TEST =====
+        async function runAutoTest() {
+            const banner = document.getElementById('autoBanner');
+            banner.innerHTML = `
+                <div class="pulse" style="background: var(--warning);"></div>
+                <p><strong>Executando diagnóstico completo...</strong> Isso pode levar alguns segundos.</p>
+            `;
+
+            const results = [];
+
+            // Test 1: DPR Analysis
+            const dpr = window.devicePixelRatio;
+            if (dpr % 1 !== 0) {
+                results.push({
+                    name: '⚠️ Escala fracionada detectada',
+                    status: 'warning',
+                    detail: `DPR ${dpr} (${Math.round(dpr * 100)}%) — esta é a causa mais provável da linha tremendo`
+                });
+            } else {
+                results.push({
+                    name: '✓ Escala inteira',
+                    status: 'ok',
+                    detail: `DPR ${dpr} — sem artefatos de subpixel`
+                });
+            }
+
+            // Test 2: Rendering consistency
+            await new Promise(r => setTimeout(r, 300));
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 100;
+            testCanvas.height = 2;
+            const tctx = testCanvas.getContext('2d');
+            tctx.strokeStyle = '#fff';
+            tctx.lineWidth = 1;
+            tctx.beginPath();
+            tctx.moveTo(0, 0.5);
+            tctx.lineTo(100, 0.5);
+            tctx.stroke();
+
+            const lineData = tctx.getImageData(0, 0, 100, 2).data;
+            let inconsistentPixels = 0;
+            for (let x = 0; x < 100; x++) {
+                const idx = x * 4;
+                if (lineData[idx] < 200) inconsistentPixels++;
+            }
+
+            if (inconsistentPixels > 10) {
+                results.push({
+                    name: '⚠️ Renderização de linha inconsistente',
+                    status: 'warning',
+                    detail: `${inconsistentPixels}% de pixels imprecisos em linha 1px`
+                });
+            } else {
+                results.push({
+                    name: '✓ Renderização de linhas',
+                    status: 'ok',
+                    detail: 'Linhas 1px renderizadas corretamente'
+                });
+            }
+
+            // Test 3: Hardware acceleration
+            const gpu = detectGPU();
+            results.push({
+                name: gpu.accelerated ? '✓ Aceleração de hardware' : '⚠️ Aceleração de hardware',
+                status: gpu.accelerated ? 'ok' : 'warning',
+                detail: gpu.renderer || 'Não detectado'
+            });
+
+            // Test 4: Screen refresh consistency
+            let frameTimes = [];
+            await new Promise(resolve => {
+                let lastTime = performance.now();
+                let frameCount = 0;
+                function measure(time) {
+                    frameTimes.push(time - lastTime);
+                    lastTime = time;
+                    frameCount++;
+                    if (frameCount < 60) {
+                        requestAnimationFrame(measure);
+                    } else {
+                        resolve();
+                    }
+                }
+                requestAnimationFrame(measure);
+            });
+
+            const avgFrame = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+            const frameJitter = Math.max(...frameTimes) - Math.min(...frameTimes);
+            const estimatedHz = Math.round(1000 / avgFrame);
+
+            results.push({
+                name: frameJitter > 10 ? '⚠️ Jitter nos frames' : '✓ Timing de frames',
+                status: frameJitter > 10 ? 'warning' : 'ok',
+                detail: `~${estimatedHz}Hz | Jitter: ${frameJitter.toFixed(1)}ms`
+            });
+
+            // Test 5: Resolution match
+            const cssW = window.innerWidth;
+            const cssH = window.innerHeight;
+            const physW = cssW * dpr;
+            const physH = cssH * dpr;
+
+            results.push({
+                name: '📐 Resolução lógica vs física',
+                status: 'ok',
+                detail: `CSS: ${cssW}×${cssH} | Físico: ${physW}×${physH}`
+            });
+
+            // Test 6: Specific toolbar zone analysis
+            const taskbarHeight = screen.height - screen.availHeight;
+            if (taskbarHeight > 0 && dpr !== 1 && dpr !== 2) {
+                results.push({
+                    name: '🔴 Zona da barra de ferramentas',
+                    status: 'error',
+                    detail: `Escala ${Math.round(dpr * 100)}% + barra de ${taskbarHeight}px = artefatos prováveis`
+                });
+            } else if (taskbarHeight > 0) {
+                results.push({
+                    name: '✓ Zona da barra de ferramentas',
+                    status: 'ok',
+                    detail: `Barra de ${taskbarHeight}px com escala inteira — sem risco`
+                });
+            }
+
+            renderResults(results);
+
+            banner.innerHTML = `
+                <div class="pulse" style="background: var(--success);"></div>
+                <p><strong>Diagnóstico concluído!</strong> Veja os resultados abaixo. Clique nos testes individuais para verificação visual detalhada.</p>
+            `;
+        }
+
+        function detectGPU() {
+            try {
+                const c = document.createElement('canvas');
+                const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                if (!gl) return { accelerated: false, renderer: 'WebGL não disponível' };
+
+                const dbgInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (dbgInfo) {
+                    const renderer = gl.getParameter(dbgInfo.UNMASKED_RENDERER_WEBGL);
+                    const vendor = gl.getParameter(dbgInfo.UNMASKED_VENDOR_WEBGL);
+                    const isSwift = renderer.toLowerCase().includes('swiftshader') ||
+                                    renderer.toLowerCase().includes('llvmpipe') ||
+                                    renderer.toLowerCase().includes('mesa');
+                    return {
+                        accelerated: !isSwift,
+                        renderer: `${vendor} — ${renderer}`
+                    };
+                }
+                return { accelerated: true, renderer: 'GPU detectada (detalhes indisponíveis)' };
+            } catch (e) {
+                return { accelerated: false, renderer: 'Erro ao detectar GPU' };
+            }
+        }
+
+        // ===== INIT =====
+        window.addEventListener('resize', () => {
+            if (state.currentTest) {
+                setupCanvas();
+                renderTest();
+            }
+        });
+
+        gatherSystemInfo();
+    </script>
+</body>
+</html>

@@ -1,11 +1,22 @@
 # RESUMO DE PROJETO: Click Marido CRM
 
 ## Informações Gerais
-- **Status Atual:** Histórico de movimentações (extrato) por conta bancária integrado com design expansível no card de contas bancárias. API resolvida e deploy pronto.
+- **Status Atual:** Correção da DRE — receita bruta agora calculada por pagamentos confirmados (regime de caixa).
 - **Objetivo Central:** Transformar o Click Marido CRM em produto SaaS comercializável. Migrar para multi-tenancy, billing, white-label e go-to-market.
-- **Última Atualização:** 16/07/2026 - 16:55
+- **Última Atualização:** 23/07/2026 - 15:30
 
 ## Histórico de Alterações
+- **[23/07/2026 - 15:30]:** Correção do cálculo de Receita Bruta na DRE:
+  - **Problema**: A DRE mostrava R$776 de receita bruta, quando o valor efetivamente recebido foi R$587,50. O cálculo somava `totalAmount` de faturas + pagamentos avulsos + `finalTotal` de OS concluídas, causando inflação da receita (usava valor do orçamento ao invés do valor pago).
+  - **Correção**: Receita bruta agora usa exclusivamente a soma de `Payment.amount` com `status: 'confirmado'` (regime de caixa). Removida query de `ServiceOrder.completedOrders` que ficou órfã.
+  - Arquivos modificados: `frontend/app/api/financeiro/dre/route.ts`
+- **[22/07/2026 - 10:39]:** Propagação Automática de Valores do Orçamento para Módulos Dependentes:
+  - **Utilitário `quotation-value-sync.ts`**: Criada função `syncQuotationValueToModules()` que propaga alterações no total do orçamento para ServiceOrder (`finalTotal`), Invoice (`subtotal`/`totalAmount`), Payment (`amount`) e AccountReceivable (`totalAmount`), com regras de segurança: pagamentos confirmados e faturas pagas NÃO são alterados.
+  - **PUT /api/quotations/[id]**: Integrada a chamada de propagação em dois pontos: (1) quando o total é alterado diretamente via `body.total` e (2) quando é recalculado via itens/deslocamento/folga/desconto. Propagação só ocorre quando a diferença é ≥ R$ 0,01.
+  - **Auditoria**: Cada propagação registra log detalhado no `AuditLog` com valores antigos, novos e lista de módulos afetados.
+  - Arquivos criados: `frontend/lib/quotation-value-sync.ts`
+  - Arquivos modificados: `frontend/app/api/quotations/[id]/route.ts`
+
 - **[16/07/2026 - 16:55]:** Histórico de Movimentações por Conta Bancária e Expansão de Card:
   - **Histórico de Transações por Conta**: Criada a rota de API `/api/financeiro/bank-accounts/[id]/transactions` para buscar, unificar e ordenar por data as transações reais da conta bancária (Contas a Pagar pagas, Contas a Receber recebidas, Transferências concluídas e Ajustes de saldo manuais).
   - **Identificação da Ação**: Implementado mapeamento inteligente que resolve e extrai códigos de identificação compactos para cada movimentação (ex: `OC-2026-000004`, `OS-0001`, `INV-2026-0001`, `TF-ENV` ou `AJUSTE`) a partir dos relacionamentos de banco e textos do lançamento.

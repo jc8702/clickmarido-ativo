@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateToken } from '@/lib/auth';
 import { integrateQuotationItemsToStock } from '@/lib/stock-integration';
+import { syncQuotationValueToModules } from '@/lib/quotation-value-sync';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -99,6 +100,15 @@ export async function PUT(
       include: { customer: true },
     });
 
+    // Propagar valor para módulos dependentes quando total é alterado diretamente (sem items)
+    if (!body.items && body.total !== undefined && oldValue) {
+      const newTotal = Number(body.total);
+      const prevTotal = Number(oldValue.total);
+      if (Math.abs(newTotal - prevTotal) >= 0.01) {
+        await syncQuotationValueToModules(id, newTotal, prevTotal);
+      }
+    }
+
     // If items were sent, replace all QuotationItem records
     if (body.items && Array.isArray(body.items)) {
       // Delete existing items
@@ -138,6 +148,14 @@ export async function PUT(
           travelRate,
         },
       });
+
+      // Propagar valor para módulos dependentes quando total muda via recálculo de items
+      if (oldValue) {
+        const prevTotal = Number(oldValue.total);
+        if (Math.abs(total - prevTotal) >= 0.01) {
+          await syncQuotationValueToModules(id, total, prevTotal);
+        }
+      }
 
       // Create new items
       for (const item of body.items) {

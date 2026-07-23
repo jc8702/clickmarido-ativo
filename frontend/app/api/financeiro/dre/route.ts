@@ -54,18 +54,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Buscar OS concluídas no período (receita real mesmo sem pagamento)
-    const completedOrders = await prisma.serviceOrder.findMany({
-      where: {
-        status: 'concluida',
-        completedAt: { gte: start, lte: end },
-      },
-      select: {
-        id: true,
-        finalTotal: true,
-        quotationId: true,
-      },
-    });
+
+
 
     // Buscar despesas do período
     const expenses = await prisma.expense.findMany({
@@ -93,26 +83,9 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Calcular DRE - Receita Bruta (maior entre faturas, pagamentos e OS)
-    const receitaFaturas = invoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
-    
-    // Pagamentos sem fatura vinculada (avulsos) 
-    const receitaPagamentosAvulsos = confirmedPayments
-      .filter(p => !p.invoiceId)
-      .reduce((sum, p) => sum + Number(p.amount), 0);
-    
-    // OS concluídas sem fatura vinculada
-    const invoiceQuotationIds = new Set(
-      invoices
-        .filter((i: any) => i.quotationId)
-        .map((i: any) => i.quotationId)
-    );
-    const receitaOsSemFatura = completedOrders
-      .filter(os => !invoiceQuotationIds.has(os.quotationId))
-      .reduce((sum, os) => sum + Number(os.finalTotal), 0);
-
-    // Receita bruta = faturas + pagamentos avulsos + OS sem fatura (evitando dupla contagem)
-    const receitaBruta = receitaFaturas + receitaPagamentosAvulsos + receitaOsSemFatura;
+    // Calcular DRE - Receita Bruta baseada em dinheiro efetivamente recebido
+    // Pagamentos confirmados são a fonte de verdade (regime de caixa)
+    const receitaBruta = confirmedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     
     const impostosSobreReceita = invoices.reduce((sum, i) => sum + Number(i.taxAmount || 0), 0);
     const descontos = invoices.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
