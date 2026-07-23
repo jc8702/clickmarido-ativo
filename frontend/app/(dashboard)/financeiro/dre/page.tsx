@@ -2,18 +2,37 @@
 
 import { useState } from 'react';
 import { useDRE } from '@/hooks/useDRE';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatDate } from '@/lib/format';
 
 export default function DREPage() {
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState<{ startDate?: string; endDate?: string; period?: string }>({});
   const { data, isLoading } = useDRE(filters);
+
+  const handleFilterChange = (field: string, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">DRE - Demonstrativo de Resultado</h1>
           <p className="text-neutral-600 dark:text-neutral-400">Leitura gerencial da operação</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="date"
+            value={filters.startDate || ''}
+            onChange={(e) => handleFilterChange('startDate', e.target.value)}
+            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+          />
+          <span className="text-neutral-500">até</span>
+          <input
+            type="date"
+            value={filters.endDate || ''}
+            onChange={(e) => handleFilterChange('endDate', e.target.value)}
+            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+          />
         </div>
       </div>
 
@@ -117,6 +136,48 @@ export default function DREPage() {
                   <span className="font-medium text-neutral-900 dark:text-white">{formatCurrency(amount)}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Histórico de Movimentações */}
+          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 col-span-full">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
+              Histórico de Movimentações
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-200 dark:border-neutral-800 text-neutral-500">
+                    <th className="pb-3 font-medium">Data</th>
+                    <th className="pb-3 font-medium">Descrição</th>
+                    <th className="pb-3 font-medium">Categoria</th>
+                    <th className="pb-3 font-medium text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {data.transactions?.map((t) => (
+                    <tr key={t.id} className="text-neutral-900 dark:text-neutral-300">
+                      <td className="py-3">{formatDate(t.date)}</td>
+                      <td className="py-3">{t.description}</td>
+                      <td className="py-3">
+                        <span className="px-2 py-1 text-xs rounded-full bg-neutral-100 dark:bg-neutral-800">
+                          {t.category}
+                        </span>
+                      </td>
+                      <td className={`py-3 text-right font-medium ${t.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {formatCurrency(t.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data.transactions || data.transactions.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-neutral-500">
+                        Nenhuma movimentação encontrada neste período.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </>

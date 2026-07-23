@@ -28,6 +28,14 @@ interface DREData {
     growth: number;
   };
   expensesByCategory: Record<string, number>;
+  transactions: Array<{
+    id: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: 'revenue' | 'expense';
+    category: string;
+  }>;
 }
 
 export function useDRE(filters?: { startDate?: string; endDate?: string; period?: string }) {

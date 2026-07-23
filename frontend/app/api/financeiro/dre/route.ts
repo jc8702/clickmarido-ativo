@@ -49,13 +49,13 @@ export async function GET(request: NextRequest) {
         paidAt: { gte: start, lte: end },
       },
       select: {
+        id: true,
         amount: true,
         invoiceId: true,
+        description: true,
+        paidAt: true,
       },
     });
-
-
-
 
     // Buscar despesas do período
     const expenses = await prisma.expense.findMany({
@@ -64,9 +64,12 @@ export async function GET(request: NextRequest) {
         status: { not: 'cancelada' },
       },
       select: {
+        id: true,
         amount: true,
         category: true,
         costCenter: true,
+        description: true,
+        expenseDate: true,
       },
     });
 
@@ -77,8 +80,11 @@ export async function GET(request: NextRequest) {
         status: { in: ['pago', 'parcial'] },
       },
       select: {
+        id: true,
         paidAmount: true,
         totalAmount: true,
+        description: true,
+        paidDate: true,
         chartOfAccount: { select: { type: true } },
       },
     });
@@ -143,6 +149,34 @@ export async function GET(request: NextRequest) {
     const previousRevenue = previousInvoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
     const revenueGrowth = previousRevenue > 0 ? ((receitaBruta - previousRevenue) / previousRevenue) * 100 : 0;
 
+    // Unificar transações
+    const transactions = [
+      ...confirmedPayments.map(p => ({
+        id: p.id,
+        date: p.paidAt,
+        description: p.description || 'Recebimento',
+        amount: Number(p.amount),
+        type: 'revenue',
+        category: 'Receita',
+      })),
+      ...expenses.map(e => ({
+        id: e.id,
+        date: e.expenseDate,
+        description: e.description,
+        amount: -Number(e.amount),
+        type: 'expense',
+        category: e.category,
+      })),
+      ...paidPayables.map(p => ({
+        id: p.id,
+        date: p.paidDate,
+        description: p.description,
+        amount: -Number(p.paidAmount || p.totalAmount),
+        type: 'expense',
+        category: p.chartOfAccount?.type || 'OUTROS',
+      }))
+    ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
     return NextResponse.json({
       period: { start, end },
       dre: {
@@ -173,6 +207,7 @@ export async function GET(request: NextRequest) {
         acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
         return acc;
       }, {} as Record<string, number>),
+      transactions,
     });
   } catch (error) {
     console.error('Erro ao buscar DRE:', error);

@@ -6,6 +6,12 @@
 - **Última Atualização:** 23/07/2026 - 15:30
 
 ## Histórico de Alterações
+- **[23/07/2026 - 15:40]:** DRE - Histórico de Transações e Filtros de Data:
+  - **Filtros**: Adicionados inputs de data (`startDate` e `endDate`) no cabeçalho da página de DRE para filtrar dinamicamente o período de análise.
+  - **Histórico**: A DRE API agora retorna e unifica todos os pagamentos confirmados (receita), despesas fixas e contas a pagar (despesa) em uma array `transactions`.
+  - **UI**: Adicionada tabela "Histórico de Movimentações" no final da página DRE listando os lançamentos ordenados por data com valores (positivos para receita, negativos para despesa).
+  - Arquivos modificados: `frontend/app/api/financeiro/dre/route.ts`, `frontend/hooks/useDRE.ts`, `frontend/app/(dashboard)/financeiro/dre/page.tsx`
+
 - **[23/07/2026 - 15:30]:** Correção do cálculo de Receita Bruta na DRE:
   - **Problema**: A DRE mostrava R$776 de receita bruta, quando o valor efetivamente recebido foi R$587,50. O cálculo somava `totalAmount` de faturas + pagamentos avulsos + `finalTotal` de OS concluídas, causando inflação da receita (usava valor do orçamento ao invés do valor pago).
   - **Correção**: Receita bruta agora usa exclusivamente a soma de `Payment.amount` com `status: 'confirmado'` (regime de caixa). Removida query de `ServiceOrder.completedOrders` que ficou órfã.
