@@ -149,14 +149,16 @@ export async function GET(request: NextRequest) {
     const previousRevenue = previousInvoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
     const revenueGrowth = previousRevenue > 0 ? ((receitaBruta - previousRevenue) / previousRevenue) * 100 : 0;
 
-    // Unificar transações
+    // Unificar transações — apenas fontes primárias para evitar dupla contagem
+    // Receita: pagamentos confirmados (regime de caixa)
+    // Despesa: tabela Expense (fonte primária; AccountPayable é derivada e já está contabilizada)
     const transactions = [
       ...confirmedPayments.map(p => ({
         id: p.id,
         date: p.paidAt,
         description: p.description || 'Recebimento',
         amount: Number(p.amount),
-        type: 'revenue',
+        type: 'revenue' as const,
         category: 'Receita',
       })),
       ...expenses.map(e => ({
@@ -164,17 +166,9 @@ export async function GET(request: NextRequest) {
         date: e.expenseDate,
         description: e.description,
         amount: -Number(e.amount),
-        type: 'expense',
+        type: 'expense' as const,
         category: e.category,
       })),
-      ...paidPayables.map(p => ({
-        id: p.id,
-        date: p.paidDate,
-        description: p.description,
-        amount: -Number(p.paidAmount || p.totalAmount),
-        type: 'expense',
-        category: p.chartOfAccount?.type || 'OUTROS',
-      }))
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
 
     return NextResponse.json({
