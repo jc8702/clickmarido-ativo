@@ -6,6 +6,12 @@
 - **Última Atualização:** 23/07/2026 - 15:30
 
 ## Histórico de Alterações
+- **[23/07/2026 - 17:00]:** Correção Definitiva de Receitas e Filtro por Período na DRE:
+  - **Unificação de Fontes de Receita**: A DRE agora unifica todas as 3 origens de receita do CRM: `Payment` (pagamentos confirmados), `AccountReceivable` (contas a receber baixadas/parciais) e `Invoice` (faturas pagas), com desduplicação automática por `invoiceId`.
+  - **Tratamento de Datas e Fuso Horário**: Tratado o parsing de datas (`startDate` e `endDate`) para cobrir desde a meia-noite do primeiro dia até 23:59:59 do último dia no fuso horário local.
+  - **Unificação de Despesas**: As despesas unificam `Expense` e `AccountPayable` (contas a pagar pagas), evitando duplicidades.
+  - Arquivos modificados: `frontend/app/api/financeiro/dre/route.ts`
+
 - **[23/07/2026 - 15:40]:** DRE - Histórico de Transações e Filtros de Data:
   - **Filtros**: Adicionados inputs de data (`startDate` e `endDate`) no cabeçalho da página de DRE para filtrar dinamicamente o período de análise.
   - **Histórico**: A DRE API agora retorna e unifica todos os pagamentos confirmados (receita), despesas fixas e contas a pagar (despesa) em uma array `transactions`.

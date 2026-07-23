@@ -11,126 +11,257 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const period = searchParams.get('period') || 'monthly'; // monthly, quarterly, yearly
 
     // Definir período padrão: mês atual (com transição inteligente nos primeiros 10 dias)
     let start: Date, end: Date;
     const now = new Date();
 
     if (startDate && endDate) {
-      start = new Date(startDate);
-      // Garantir que endDate inclua o dia inteiro (23:59:59)
-      end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+      // Usar datas exatas considerando início do dia para startDate e fim do dia para endDate
+      const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+      const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+      start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0);
+      end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999);
     } else {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
       // Nos primeiros 10 dias do mês, incluir mês anterior para manter dados visíveis
       if (now.getDate() <= 10) {
-        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
       }
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     }
 
-    // Buscar faturamento do período
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        issueDate: { gte: start, lte: end },
-        status: { in: ['emitida', 'paga'] },
-      },
-      select: {
-        totalAmount: true,
-        taxAmount: true,
-        discountAmount: true,
-      },
-    });
+    // 1. Buscar todas as fontes de receitas (Payment, AccountReceivable, Invoice)
+    const [allPayments, allReceivables, allInvoices] = await Promise.all([
+      prisma.payment.findMany({
+        where: { status: 'confirmado' },
+        select: {
+          id: true,
+          amount: true,
+          invoiceId: true,
+          quotationId: true,
+          description: true,
+          paidAt: true,
+          confirmedAt: true,
+          createdAt: true,
+        },
+      }),
+      prisma.accountReceivable.findMany({
+        where: {
+          status: { in: ['baixado', 'parcial'] },
+          paidAmount: { gt: 0 },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          paidAmount: true,
+          totalAmount: true,
+          paidDate: true,
+          invoiceId: true,
+          updatedAt: true,
+          createdAt: true,
+        },
+      }),
+      prisma.invoice.findMany({
+        where: { status: { in: ['emitida', 'paga'] } },
+        select: {
+          id: true,
+          invoiceNumber: true,
+          totalAmount: true,
+          taxAmount: true,
+          discountAmount: true,
+          status: true,
+          issueDate: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
 
-    // Buscar pagamentos confirmados no período (receita real mesmo sem fatura)
-    const confirmedPayments = await prisma.payment.findMany({
-      where: {
-        status: 'confirmado',
-        paidAt: { gte: start, lte: end },
-      },
-      select: {
-        id: true,
-        amount: true,
-        invoiceId: true,
-        description: true,
-        paidAt: true,
-      },
-    });
+    // Filtrar e desduplicar receitas no período selecionado
+    const revenueItems: Array<{
+      id: string;
+      date: Date;
+      description: string;
+      amount: number;
+      invoiceId?: string | null;
+    }> = [];
 
-    // Buscar despesas do período
-    const expenses = await prisma.expense.findMany({
-      where: {
-        expenseDate: { gte: start, lte: end },
-        status: { not: 'cancelada' },
-      },
-      select: {
-        id: true,
-        amount: true,
-        category: true,
-        costCenter: true,
-        description: true,
-        expenseDate: true,
-      },
-    });
+    const recordedInvoiceIds = new Set<string>();
 
-    // Buscar contas a pagar pagas no período
-    const paidPayables = await prisma.accountPayable.findMany({
-      where: {
-        paidDate: { gte: start, lte: end },
-        status: { in: ['pago', 'parcial'] },
-      },
-      select: {
-        id: true,
-        paidAmount: true,
-        totalAmount: true,
-        description: true,
-        paidDate: true,
-        chartOfAccount: { select: { type: true } },
-      },
-    });
+    // a) Pagamentos confirmados no período
+    for (const p of allPayments) {
+      const pDate = p.paidAt || p.confirmedAt || p.createdAt;
+      if (pDate >= start && pDate <= end) {
+        revenueItems.push({
+          id: p.id,
+          date: pDate,
+          description: p.description || 'Recebimento de Pagamento',
+          amount: Number(p.amount),
+          invoiceId: p.invoiceId,
+        });
+        if (p.invoiceId) recordedInvoiceIds.add(p.invoiceId);
+      }
+    }
 
-    // Calcular DRE - Receita Bruta baseada em dinheiro efetivamente recebido
-    // Pagamentos confirmados são a fonte de verdade (regime de caixa)
-    const receitaBruta = confirmedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    
-    const impostosSobreReceita = invoices.reduce((sum, i) => sum + Number(i.taxAmount || 0), 0);
-    const descontos = invoices.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
+    // b) Contas a Receber baixadas no período
+    for (const r of allReceivables) {
+      const rDate = r.paidDate || r.updatedAt || r.createdAt;
+      if (rDate >= start && rDate <= end) {
+        if (r.invoiceId && recordedInvoiceIds.has(r.invoiceId)) {
+          continue; // Já contabilizado via Payment
+        }
+        revenueItems.push({
+          id: r.id,
+          date: rDate,
+          description: r.title || r.description || 'Recebimento de Conta a Receber',
+          amount: Number(r.paidAmount || r.totalAmount),
+          invoiceId: r.invoiceId,
+        });
+        if (r.invoiceId) recordedInvoiceIds.add(r.invoiceId);
+      }
+    }
+
+    // c) Faturas pagas no período
+    for (const inv of allInvoices) {
+      if (inv.status === 'paga') {
+        const invDate = inv.updatedAt || inv.issueDate;
+        if (invDate >= start && invDate <= end) {
+          if (!recordedInvoiceIds.has(inv.id)) {
+            revenueItems.push({
+              id: inv.id,
+              date: invDate,
+              description: `Fatura #${inv.invoiceNumber} Paga`,
+              amount: Number(inv.totalAmount),
+              invoiceId: inv.id,
+            });
+            recordedInvoiceIds.add(inv.id);
+          }
+        }
+      }
+    }
+
+    // 2. Buscar despesas do período (Expense e AccountPayable)
+    const [allExpenses, allPayables] = await Promise.all([
+      prisma.expense.findMany({
+        where: { status: { not: 'cancelada' } },
+        select: {
+          id: true,
+          amount: true,
+          category: true,
+          costCenter: true,
+          description: true,
+          expenseDate: true,
+          createdAt: true,
+        },
+      }),
+      prisma.accountPayable.findMany({
+        where: {
+          status: { in: ['pago', 'parcial'] },
+          paidAmount: { gt: 0 },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          paidAmount: true,
+          totalAmount: true,
+          paidDate: true,
+          expenseId: true,
+          chartOfAccount: { select: { type: true, name: true } },
+          updatedAt: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    const expenseItems: Array<{
+      id: string;
+      date: Date;
+      description: string;
+      amount: number;
+      category: string;
+      costCenter?: string | null;
+    }> = [];
+
+    const recordedExpenseIds = new Set<string>();
+
+    for (const e of allExpenses) {
+      const eDate = e.expenseDate || e.createdAt;
+      if (eDate >= start && eDate <= end) {
+        expenseItems.push({
+          id: e.id,
+          date: eDate,
+          description: e.description || 'Despesa',
+          amount: Number(e.amount),
+          category: e.category || 'OUTROS',
+          costCenter: e.costCenter,
+        });
+        recordedExpenseIds.add(e.id);
+      }
+    }
+
+    for (const p of allPayables) {
+      const pDate = p.paidDate || p.updatedAt || p.createdAt;
+      if (pDate >= start && pDate <= end) {
+        if (p.expenseId && recordedExpenseIds.has(p.expenseId)) {
+          continue; // Já contabilizado via Expense
+        }
+        expenseItems.push({
+          id: p.id,
+          date: pDate,
+          description: p.title || p.description || 'Conta a Pagar',
+          amount: Number(p.paidAmount || p.totalAmount),
+          category: p.chartOfAccount?.type || 'OUTROS',
+          costCenter: null,
+        });
+      }
+    }
+
+    // Calcular totais da DRE
+    const receitaBruta = revenueItems.reduce((sum, item) => sum + item.amount, 0);
+
+    const impostosSobreReceita = allInvoices
+      .filter(i => {
+        const d = i.issueDate || i.updatedAt;
+        return d >= start && d <= end;
+      })
+      .reduce((sum, i) => sum + Number(i.taxAmount || 0), 0);
+
+    const descontos = allInvoices
+      .filter(i => {
+        const d = i.issueDate || i.updatedAt;
+        return d >= start && d <= end;
+      })
+      .reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
+
     const receitaLiquida = receitaBruta - impostosSobreReceita - descontos;
 
-    // Custos dos produtos/serviços vendidos (CPV) - materiais e serviços diretos
-    const custosProdutosServicos = expenses
+    // CPV (Custos Produtos/Serviços Vendidos)
+    const custosProdutosServicos = expenseItems
       .filter(e => ['MATERIAL', 'SERVICO', 'TRANSPORTE', 'PECA', 'MAO_DE_OBRA'].includes(e.category))
-      .reduce((sum, e) => sum + Number(e.amount), 0);
+      .reduce((sum, e) => sum + e.amount, 0);
 
     const lucroBruto = receitaLiquida - custosProdutosServicos;
 
-    // Despesas operacionais (fixas e administrativas)
-    const despesasOperacionais = expenses
+    // Despesas operacionais
+    const despesasOperacionais = expenseItems
       .filter(e => ['ALUGUEL', 'UTILIDADES', 'FERRAMENTAS', 'MARKETING', 'RH', 'OUTROS', 'OUTROS_CUSTOS'].includes(e.category))
-      .reduce((sum, e) => sum + Number(e.amount), 0);
+      .reduce((sum, e) => sum + e.amount, 0);
 
     const resultadoOperacional = lucroBruto - despesasOperacionais;
 
-    // Despesas financeiras (juros, tarifas bancárias, etc)
-    const despesasFinanceiras = expenses
+    // Despesas financeiras
+    const totalDespesasFinanceiras = expenseItems
       .filter(e => ['JUROS', 'TARIFAS', 'FINANCEIRO'].includes(e.category))
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-
-    // Somar contas a pagar pagas que são despesas financeiras
-    const paidPayableFinancial = paidPayables
-      .filter(p => p.chartOfAccount?.type === 'FINANCEIRO')
-      .reduce((sum, p) => sum + Number(p.paidAmount || p.totalAmount), 0);
-
-    const totalDespesasFinanceiras = despesasFinanceiras + paidPayableFinancial;
+      .reduce((sum, e) => sum + e.amount, 0);
 
     const resultadoFinanceiro = resultadoOperacional - totalDespesasFinanceiras;
 
     // Impostos
-    const impostos = expenses
+    const impostos = expenseItems
       .filter(e => ['IMPOSTOS_TAXAS', 'IMPOSTOS', 'TAXAS'].includes(e.category) || e.costCenter === 'IMPOSTOS')
-      .reduce((sum, e) => sum + Number(e.amount), 0);
+      .reduce((sum, e) => sum + e.amount, 0);
 
     const lucroLiquido = resultadoFinanceiro - impostos;
 
@@ -151,30 +282,28 @@ export async function GET(request: NextRequest) {
     const previousRevenue = previousInvoices.reduce((sum, i) => sum + Number(i.totalAmount), 0);
     const revenueGrowth = previousRevenue > 0 ? ((receitaBruta - previousRevenue) / previousRevenue) * 100 : 0;
 
-    // Unificar transações — apenas fontes primárias para evitar dupla contagem
-    // Receita: pagamentos confirmados (regime de caixa)
-    // Despesa: tabela Expense (fonte primária; AccountPayable é derivada e já está contabilizada)
+    // Unificar transações
     const transactions = [
-      ...confirmedPayments.map(p => ({
-        id: p.id,
-        date: p.paidAt,
-        description: p.description || 'Recebimento',
-        amount: Number(p.amount),
+      ...revenueItems.map(item => ({
+        id: item.id,
+        date: item.date.toISOString(),
+        description: item.description,
+        amount: item.amount,
         type: 'revenue' as const,
         category: 'Receita',
       })),
-      ...expenses.map(e => ({
-        id: e.id,
-        date: e.expenseDate,
-        description: e.description,
-        amount: -Number(e.amount),
+      ...expenseItems.map(item => ({
+        id: item.id,
+        date: item.date.toISOString(),
+        description: item.description,
+        amount: -item.amount,
         type: 'expense' as const,
-        category: e.category,
+        category: item.category,
       })),
-    ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return NextResponse.json({
-      period: { start, end },
+      period: { start: start.toISOString(), end: end.toISOString() },
       dre: {
         receitaBruta,
         impostosSobreReceita,
@@ -199,8 +328,8 @@ export async function GET(request: NextRequest) {
         currentRevenue: receitaBruta,
         growth: revenueGrowth,
       },
-      expensesByCategory: expenses.reduce((acc, e) => {
-        acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
+      expensesByCategory: expenseItems.reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount;
         return acc;
       }, {} as Record<string, number>),
       transactions,
