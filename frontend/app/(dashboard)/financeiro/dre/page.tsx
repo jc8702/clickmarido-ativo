@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useDRE } from '@/hooks/useDRE';
 import { formatCurrency, formatDate } from '@/lib/format';
 
@@ -8,9 +8,30 @@ export default function DREPage() {
   const [filters, setFilters] = useState<{ startDate?: string; endDate?: string; period?: string }>({});
   const { data, isLoading } = useDRE(filters);
 
+  // Filtros do histórico de movimentações
+  const [txType, setTxType] = useState<'all' | 'revenue' | 'expense'>('all');
+  const [txCategory, setTxCategory] = useState('all');
+
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
+
+  // Categorias únicas extraídas das transações
+  const categories = useMemo(() => {
+    if (!data?.transactions) return [];
+    const set = new Set(data.transactions.map(t => t.category));
+    return Array.from(set).sort();
+  }, [data?.transactions]);
+
+  // Transações filtradas
+  const filteredTransactions = useMemo(() => {
+    if (!data?.transactions) return [];
+    return data.transactions.filter(t => {
+      if (txType !== 'all' && t.type !== txType) return false;
+      if (txCategory !== 'all' && t.category !== txCategory) return false;
+      return true;
+    });
+  }, [data?.transactions, txType, txCategory]);
 
   return (
     <div className="p-6 space-y-6">
@@ -24,14 +45,14 @@ export default function DREPage() {
             type="date"
             value={filters.startDate || ''}
             onChange={(e) => handleFilterChange('startDate', e.target.value)}
-            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm"
           />
           <span className="text-neutral-500">até</span>
           <input
             type="date"
             value={filters.endDate || ''}
             onChange={(e) => handleFilterChange('endDate', e.target.value)}
-            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+            className="px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm"
           />
         </div>
       </div>
@@ -140,10 +161,46 @@ export default function DREPage() {
           </div>
 
           {/* Histórico de Movimentações */}
-          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 col-span-full">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-              Histórico de Movimentações
-            </h2>
+          <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Histórico de Movimentações
+              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Filtro por tipo */}
+                <div className="flex rounded-lg border border-neutral-300 dark:border-neutral-700 overflow-hidden text-sm">
+                  <button
+                    onClick={() => { setTxType('all'); setTxCategory('all'); }}
+                    className={`px-3 py-1.5 transition-colors ${txType === 'all' ? 'bg-neutral-800 text-white dark:bg-white dark:text-neutral-900' : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'}`}
+                  >
+                    Tudo
+                  </button>
+                  <button
+                    onClick={() => { setTxType('revenue'); setTxCategory('all'); }}
+                    className={`px-3 py-1.5 border-l border-neutral-300 dark:border-neutral-700 transition-colors ${txType === 'revenue' ? 'bg-green-600 text-white' : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'}`}
+                  >
+                    Receitas
+                  </button>
+                  <button
+                    onClick={() => { setTxType('expense'); setTxCategory('all'); }}
+                    className={`px-3 py-1.5 border-l border-neutral-300 dark:border-neutral-700 transition-colors ${txType === 'expense' ? 'bg-red-600 text-white' : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'}`}
+                  >
+                    Despesas
+                  </button>
+                </div>
+                {/* Filtro por categoria */}
+                <select
+                  value={txCategory}
+                  onChange={(e) => setTxCategory(e.target.value)}
+                  className="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white text-sm"
+                >
+                  <option value="all">Todas categorias</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -155,12 +212,12 @@ export default function DREPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                  {data.transactions?.map((t) => (
+                  {filteredTransactions.map((t) => (
                     <tr key={t.id} className="text-neutral-900 dark:text-neutral-300">
                       <td className="py-3">{formatDate(t.date)}</td>
                       <td className="py-3">{t.description}</td>
                       <td className="py-3">
-                        <span className="px-2 py-1 text-xs rounded-full bg-neutral-100 dark:bg-neutral-800">
+                        <span className={`px-2 py-1 text-xs rounded-full ${t.type === 'revenue' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                           {t.category}
                         </span>
                       </td>
@@ -169,7 +226,7 @@ export default function DREPage() {
                       </td>
                     </tr>
                   ))}
-                  {(!data.transactions || data.transactions.length === 0) && (
+                  {filteredTransactions.length === 0 && (
                     <tr>
                       <td colSpan={4} className="py-6 text-center text-neutral-500">
                         Nenhuma movimentação encontrada neste período.
@@ -179,6 +236,15 @@ export default function DREPage() {
                 </tbody>
               </table>
             </div>
+            {/* Resumo filtrado */}
+            {filteredTransactions.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-sm">
+                <span className="text-neutral-500">{filteredTransactions.length} movimentação(ões)</span>
+                <span className={`font-semibold ${filteredTransactions.reduce((s, t) => s + t.amount, 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  Total: {formatCurrency(filteredTransactions.reduce((s, t) => s + t.amount, 0))}
+                </span>
+              </div>
+            )}
           </div>
         </>
       ) : null}

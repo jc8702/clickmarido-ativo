@@ -19,7 +19,9 @@ export async function GET(request: NextRequest) {
 
     if (startDate && endDate) {
       start = new Date(startDate);
+      // Garantir que endDate inclua o dia inteiro (23:59:59)
       end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
     } else {
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       // Nos primeiros 10 dias do mês, incluir mês anterior para manter dados visíveis
